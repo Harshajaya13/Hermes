@@ -43,3 +43,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android local configuration
+/android/local.properties
+/android/.gradle/
+/android/app/local.properties
+/android/sdk.dir
+
+# Temp scripts
+/install_sdk.sh
+
