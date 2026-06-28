@@ -24,19 +24,24 @@ subprojects {
         val androidExtension = extensions.findByName("android")
         if (androidExtension != null) {
             val android = androidExtension as? com.android.build.gradle.BaseExtension
-            if (android != null && android.namespace == null) {
-                val manifestFile = file("src/main/AndroidManifest.xml")
-                if (manifestFile.exists()) {
-                    val manifestText = manifestFile.readText()
-                    val packageRegex = Regex("""package="([^"]+)"""")
-                    val match = packageRegex.find(manifestText)
-                    if (match != null) {
-                        android.namespace = match.groupValues[1]
+            if (android != null) {
+                // Force compileSdk to 36 to resolve dependency AAR metadata check failures
+                android.compileSdkVersion(36)
+                
+                if (android.namespace == null) {
+                    val manifestFile = file("src/main/AndroidManifest.xml")
+                    if (manifestFile.exists()) {
+                        val manifestText = manifestFile.readText()
+                        val packageRegex = Regex("""package="([^"]+)"""")
+                        val match = packageRegex.find(manifestText)
+                        if (match != null) {
+                            android.namespace = match.groupValues[1]
+                        } else {
+                            android.namespace = "com.hermes.${name.replace("-", "_")}"
+                        }
                     } else {
                         android.namespace = "com.hermes.${name.replace("-", "_")}"
                     }
-                } else {
-                    android.namespace = "com.hermes.${name.replace("-", "_")}"
                 }
             }
         }
