@@ -1,0 +1,65 @@
+# Hermes Implementation Rules
+
+**CRITICAL DIRECTIVE:**
+Your job is NOT to design Hermes. Your job is to faithfully implement Hermes. If a design decision is not explicitly specified, STOP and ask for clarification instead of inventing one.
+
+You are forbidden from making design decisions.
+Never fill gaps with assumptions.
+Implement exactly what is written.
+Architecture is frozen.
+
+---
+
+## The Workflow Protocol
+
+Do NOT attempt to build entire screens at once. You must follow the Component-by-Component protocol.
+
+### Implementation Process:
+1. **Request the Contract:** Before writing any code, ask the user for the "Screen Contract" or "Component Contract".
+2. **Strict Adherence:** Read ONLY the relevant sections of the Codex provided by the user. Ignore everything else to save context window.
+3. **Micro-Tasks:** Build sequentially. (e.g., Build Header -> Verify. Build Question Card -> Verify).
+
+---
+
+## Strict Measurable Constraints
+
+Abstract words like "minimal" or "clean" are banned. Use these hard constraints instead:
+
+1. **Section Limit:** Maximum 5 major sections per screen.
+2. **Visual Hierarchy:** Maximum 2 visual emphasis levels (e.g., Title and Subtitle).
+3. **Card Height:** No card can be taller than 180px.
+4. **Whitespace:** Whitespace MUST separate groups (using HermesSpacing tokens). It must never create empty dead zones.
+5. **Action Limit:** The Primary Action (e.g., "Solve", "Create Block") must appear only ONCE per screen.
+6. **No Gamification:** Zero charts, zero progress bars, zero streaks, zero XP.
+
+---
+
+## Example Screen Contract (The Standard)
+
+When implementing, you must adhere to contracts formatted exactly like this:
+
+**TODAY SCREEN CONTRACT**
+*Purpose:* Guide today's intentional growth.
+
+*Must contain:*
+✓ Greeting
+✓ Today's Question
+✓ Pinned Blocks
+✓ Recent Evolutios
+✓ Veritas
+
+*Must NOT contain:*
+✗ Analytics
+✗ Charts
+✗ Large hero cards
+✗ Streaks
+✗ Progress bars
+
+*Visual Rules:*
+- Question card maximum 160px height.
+- Pinned blocks shown in compact chips.
+- Evolutios appear as timeline.
+- Veritas only visible when applicable.
+
+*Success Criteria:*
+The user knows what to do within 3 seconds.

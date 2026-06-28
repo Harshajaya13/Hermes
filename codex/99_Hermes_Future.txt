@@ -1,0 +1,25 @@
+
+This is where all your future dreams go.
+
+Things like:
+
+AI Companion
+NanoGPT integration
+Desktop version
+Cloud sync
+FOSS roadmap
+Community contributions
+Plugins
+Widgets
+Wear OS
+Linux app
+
+Notice something?
+
+They're not in the architecture.
+
+They're intentionally separated.
+
+Why?
+
+Because future ideas should never distort today's archite

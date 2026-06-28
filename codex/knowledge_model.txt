@@ -1,0 +1,903 @@
+Identity
+
+How is every object uniquely identified?
+
+Example
+
+Workspace
+
+↓
+
+workspace_id
+
+Domain
+
+↓
+
+domain_id
+
+Block
+
+↓
+
+block_id
+
+Item
+
+↓
+
+item_id
+
+Reflection
+
+↓
+
+reflection_id
+
+
+Simple.
+
+---
+
+## Relationships
+
+Example
+
+```text
+Workspace
+
+1
+
+↓
+
+Many
+
+Domains
+
+1
+
+↓
+
+Many
+
+Blocks
+
+1
+
+↓
+
+Many
+
+Items
+
+1
+
+↓
+
+Many
+
+Reflections
+
+This becomes the database relationships.
+
+Metadata
+
+Every object should answer:
+
+What information always exists?
+
+For example.
+
+Block.
+
+Name
+
+Description
+
+Icon
+
+Color
+
+Created Date
+
+Modified Date
+
+Archived
+
+Pinned
+
+Reflection
+
+Created
+
+Modified
+
+Content
+
+Linked Item
+
+Linked Evolutio
+Ownership
+
+This is important.
+
+Who owns what?
+
+Example.
+
+Delete Workspace.
+
+Should every Domain disappear?
+
+Yes.
+
+Should every Block disappear?
+
+Yes.
+
+Should every Reflection disappear?
+
+No.
+
+They move into the Workspace Archive.
+
+That's a data rule.
+
+Import / Export
+
+You already solved this.
+
+Everything becomes JSON.
+
+That is brilliant.
+
+Because Hermes becomes future-proof.
+
+Even if Flutter disappears...
+
+JSON survives.
+
+Search Index
+
+What is searchable?
+
+Questions
+
+Articles
+
+Reflections
+
+Quotes
+
+Block names
+
+Domain names
+
+Evolutios
+
+Veritas (optional)
+
+Everything searchable.
+
+Versioning
+
+I want to add something.
+
+Imagine.
+
+Hermes v4.
+
+Someone imports Hermes v1 JSON.
+
+What happens?
+
+We need
+
+schema_version
+
+inside every export.
+
+Otherwise future versions become painful.
+
+One thing I want to challenge before we finish.
+
+You said:
+
+"Local JSON backups."
+
+I agree.
+
+But I think Hermes should also support complete workspace portability.
+
+Imagine this:
+
+College Lore.hermes
+
+Startup Lore.hermes
+
+Development.hermes
+
+Instead of generic JSON files.
+
+Internally they can still be JSON.
+
+But users interact with a .hermes file.
+
+Then importing feels natural:
+
+Import Workspace
+
+📁 Development.hermes
+
+Now Hermes has its own file format, just like:
+
+.gitignore
+.psd
+.blend
+.obsidian
+That small decision gives Hermes its own identity even at the file level.
+
+I genuinely think that's the kind of detail that makes software feel thoughtfully designed. It's not necessary for functionality, but it makes the ecosystem feel complete and gives users a clear mental model: a workspace isn't just data, it's a portable part of their journey.
+Now let's talk about portability.
+
+This is where I got excited.
+
+I don't think users should ever see JSON.
+
+JSON is for Hermes.
+
+Users should see...
+
+Development.hermes
+
+College.hermes
+
+Startup.hermes
+
+Internally
+
+Development.hermes
+
+↓
+
+zip
+
+↓
+
+metadata.json
+
+database.json
+
+attachments/
+
+icon.png
+
+Exactly like how Office files work.
+
+They're actually ZIP containers.
+
+The user never cares.
+Option 2: Encrypt only hidden workspaces ⭐⭐⭐⭐⭐
+
+
+
+Imagine
+
+
+
+Workspaces
+
+
+
+📖 College
+
+
+
+🚀 Startup
+
+
+
+🔒 Personal
+
+
+
+Only
+
+
+
+🔒 Personal
+
+
+
+is encrypted.
+
+
+
+Everything else behaves normally.
+
+
+
+This gives you
+
+
+
+Fast app
+
+Simpler search
+
+Optional privacy
+
+
+
+I actually think this fits Hermes.
+
+that too unless they choose trhe way to encrpyt we dint need to use it bro no need at all
+
+
+
+Option 3: User chooses
+
+yeah bro see this usually the workspace creation we ask the description na so that private means unbuilt pin bro no need ,pin or pattern and then 
+
+hide from home only we will hide them in a way that,like lng press that user icon on the home to get the pin and reach the workspace like that bro we hides so private can hidden too not a different ones and encryoted private hidden all asks the locks bro 
+
+and then encryptions first remove at the description
+
+private public hidden and then encryption was inside the workspace settings na no issues to add here inside 
+
+it is very much fine bro if you did added in that way so far i even accept that .hermes 
+
+Imagine this workflow.
+
+
+
+Friend asks
+
+
+
+"Can you share your Mathematics workspace?"
+
+
+
+You send
+
+
+
+Mathematics.hermes
+
+
+
+Friend imports.
+
+
+
+Done.
+
+
+
+Everything comes.
+
+
+
+Domains
+
+Blocks
+
+Questions
+
+Reflections
+
+Evolutios
+
+Icons
+
+Colors
+
+
+
+Everything.
+
+
+
+That feels like a real product.
+
+peak bro this peak peak 
+
+
+
+Another idea.
+
+
+
+Since Hermes is FOSS...
+
+
+
+Imagine
+
+
+
+Hermes Marketplace
+
+
+
+Community Workspaces
+
+
+
+Probability.hermes
+
+
+
+Psychology.hermes
+
+
+
+Stoicism.hermes
+
+
+
+System Design.hermes
+
+
+
+People share complete learning environments.
+
+
+
+Not templates.
+
+
+
+Entire journeys.
+
+
+
+This becomes possible only because workspaces are portable.
+
+okay bro 
+
+One thing I would add.
+
+
+
+Every .hermes file should contain
+
+
+
+Hermes Package
+
+
+
+Version
+
+
+
+Created With
+
+
+
+Hermes 1.2
+
+
+
+Created
+
+
+
+2026-06-28
+
+
+
+Author
+
+
+
+(optional)
+
+
+
+Checksum
+
+
+
+Description
+
+
+
+Icon
+
+
+
+Workspace Data
+
+
+
+Now Hermes can still open files made years ago.
+
+okay for sure bro
+
+And I want to leave you with one principle that I think belongs in the Hermes Codex:
+
+
+
+The user owns every part of their journey. Hermes must make it easy to protect it, move it, back it up, and restore it without depending on any online service.
+
+
+
+That one sentence quietly justifies offline-first, local backups, .hermes files, optional encryption, import/export, and workspace portability. It's a strong architectural principle that ties all of those features together.
+# 06_Data_Model.md
+
+## Purpose
+
+The Data Model defines how every object inside Hermes is stored, connected, backed up, restored and moved between devices.
+
+It is responsible for preserving the user's journey, not just application data.
+
+---
+
+# Core Principles
+
+* Offline First
+* User Owns Their Data
+* Local Storage by Default
+* Portable Workspaces
+* Reversible Actions
+* Privacy by Choice
+* Future Compatible
+
+---
+
+# Object Relationships
+
+Workspace
+└── Domain
+└── Block
+└── Item
+└── Reflection
+└── Evolutio
+
+Evolution is **not stored**.
+
+Evolution is generated dynamically from every Evolutio.
+
+---
+
+# Identity
+
+Every object has a permanent unique identifier.
+
+Workspace
+
+* workspace_id
+
+Domain
+
+* domain_id
+
+Block
+
+* block_id
+
+Item
+
+* item_id
+
+Reflection
+
+* reflection_id
+
+Evolutio
+
+* evolutio_id
+
+Veritas
+
+* veritas_id
+
+---
+
+# Metadata
+
+Every object stores:
+
+* id
+* created_at
+* modified_at
+* archived
+* deleted
+* version
+
+Optional:
+
+* icon
+* color
+* description
+
+---
+
+# Workspace
+
+Contains:
+
+* Domains
+* Settings
+* Archive
+* Privacy Settings
+
+Properties:
+
+* Name
+* Description
+* Icon
+* Visibility
+* Privacy
+* Theme Override (optional)
+
+Capabilities:
+
+* Rename
+* Export
+* Import
+* Backup
+* Restore
+* Lock
+* Hide
+* Archive
+
+---
+
+# Workspace Privacy
+
+Visibility
+
+* Public
+* Private
+
+Private Workspace
+
+* Hidden from Home
+* Requires PIN or Pattern
+* Can optionally enable Encryption
+
+Encryption is optional.
+
+It is never forced.
+
+---
+
+# Domain
+
+Purpose
+
+Represents one intentional area of growth.
+
+Examples
+
+* Engineering
+* Thinking
+* Business
+* Life
+
+Capabilities
+
+* Rename
+* Archive
+* Export
+* Import
+* Reorder
+* Lock (optional)
+
+Contains
+
+Multiple Blocks.
+
+---
+
+# Block
+
+Purpose
+
+Interactive environment dedicated to one specific area of growth.
+
+Examples
+
+* Mathematics
+* Psychology
+* Startup
+* Python
+
+Capabilities
+
+* Rename
+* Pin
+* Favorite
+* Archive
+* Export
+* Import
+* Change Color
+* Change Icon
+
+Contains
+
+Items.
+
+---
+
+# Item
+
+Supported Types
+
+* Question
+* Article
+* Reflection Note
+* Quote
+* Observation
+* Idea
+
+Items intentionally do not contain:
+
+* Videos
+* PDFs
+
+Those remain external resources.
+
+---
+
+# Reflection
+
+Purpose
+
+Capture the user's own thinking.
+
+Rules
+
+* Required for meaningful growth.
+* Multiple reflections allowed.
+* Editable.
+* Timestamp preserved.
+
+Reflection belongs to an Item.
+
+---
+
+# Evolutio
+
+Purpose
+
+Represents one meaningful recorded change in understanding.
+
+Rules
+
+* Never based on streaks.
+* Never based on points.
+* Never compared with others.
+* Created after meaningful reflection.
+* User driven.
+
+An Evolutio is evidence of growth.
+
+Not a score.
+
+---
+
+# Evolution
+
+Not stored.
+
+Generated dynamically.
+
+Evolution = Sum of all Evolutios over time.
+
+---
+
+# Veritas
+
+Independent object.
+
+Purpose
+
+Record honest reasons for missed days.
+
+Rules
+
+* Optional
+* Searchable only when enabled
+* Appears on empty calendar days
+* Never judged
+
+---
+
+# Archive
+
+Acts like a filesystem archive.
+
+Deleting a parent object moves every child object with it.
+
+Example
+
+Deleting a Workspace archives:
+
+* Domains
+* Blocks
+* Items
+* Reflections
+* Evolutios
+
+Restoring restores the entire hierarchy.
+
+Permanent deletion is available only from Archive.
+
+---
+
+# Search Index
+
+Search includes
+
+* Domains
+* Blocks
+* Questions
+* Articles
+* Reflections
+* Quotes
+* Evolutios
+
+Veritas is excluded unless enabled.
+
+---
+
+# Import & Export
+
+Hermes uses a portable workspace format.
+
+Extension
+
+.hermes
+
+A .hermes package contains
+
+* Metadata
+* Workspace Information
+* Domains
+* Blocks
+* Items
+* Reflections
+* Evolutios
+* Icons
+* Settings
+* Archive
+* Manifest
+
+---
+
+# Package Metadata
+
+Every .hermes package stores
+
+* Schema Version
+* Hermes Version
+* Created Date
+* Modified Date
+* Description
+* Optional Author
+* Checksum
+
+This guarantees compatibility across future Hermes versions.
+
+---
+
+# Ownership Principle
+
+The user owns every part of their journey.
+
+Hermes must make it easy to:
+
+* Protect
+* Move
+* Backup
+* Restore
+* Archive
+* Share
+
+without depending on any online service.
+

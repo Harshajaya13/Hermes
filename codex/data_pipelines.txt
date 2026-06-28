@@ -1,0 +1,357 @@
+# 2. Questions Database
+
+This is actually brilliant.
+
+You said
+
+> AI generates questions and answers.
+
+Exactly.
+
+Imagine
+
+```
+Probability
+
+↓
+
+AI Generator
+
+↓
+
+questions.json
+
+answers.json
+
+metadata.json
+
+↓
+
+Bundle inside Hermes
+```
+
+The app ships with them.
+
+No API.
+
+No internet.
+
+Fast.
+
+---
+
+But...
+
+I wouldn't use TXT.
+
+I'd use JSON.
+
+For example
+
+```json
+{
+  "id": "prob_001",
+  "difficulty": "medium",
+  "topic": "Expected Value",
+  "question": "...",
+  "latex": "...",
+  "answer": "...",
+  "hint": "...",
+  "tags": ["Probability","Betting"]
+}
+```
+
+JSON is much easier to extend.
+
+Tomorrow you add
+
+* hints
+* references
+* difficulty
+* sources
+* images
+
+Nothing breaks.
+
+---
+Chapter 1
+Content Philosophy
+
+This belongs at the top.
+
+Rules like:
+
+Every piece of content must have a purpose.
+Quality is more important than quantity.
+Content should encourage thinking, not memorization.
+The user should learn principles rather than isolated facts.
+Every question should create curiosity.
+Every article should invite reflection.
+Chapter 2
+Question Pipeline
+Idea
+    ↓
+AI Generation
+    ↓
+Human Review
+    ↓
+Difficulty Review
+    ↓
+LaTeX Validation
+    ↓
+JSON Validation
+    ↓
+Bundle into Hermes
+
+Every question should contain:
+
+Question
+Answer
+Hint
+Explanation
+Reflection Prompt
+Tags
+Difficulty
+Topic
+Chapter 3
+Article Pipeline
+
+This is probably one of Hermes' biggest strengths.
+
+Internet
+
+↓
+
+Fetch
+
+↓
+
+Extract Main Content
+
+↓
+
+Remove Ads
+
+↓
+
+Remove Popups
+
+↓
+
+Convert to Markdown
+
+↓
+
+Hermes Reader
+
+↓
+
+Cache Offline
+
+↓
+
+Reflection
+
+Notice...
+
+Hermes never stores the website's design.
+
+Only the knowledge.
+
+Chapter 4
+Starter Content
+
+This chapter is important.
+
+Hermes shouldn't open empty.
+
+Every Starter Block should contain:
+
+Sample Question
+Sample Reflection
+Sample Evolutio
+Sample Article
+
+The user should immediately understand how Hermes works.
+
+Chapter 5
+Content Standards
+
+Every question should have
+
+Correct
+
+Timeless
+
+Clear
+
+Practical
+
+Thought-provoking
+
+Every article should be
+
+Readable
+
+Minimal
+
+Distraction-free
+
+Offline-compatible
+Chapter 6
+Item Templates
+
+Every Item Type should have a template.
+
+Example
+
+Question
+
+Title
+
+Difficulty
+
+Question
+
+Hint
+
+Solution
+
+Reflection Prompt
+
+Article
+
+Title
+
+Author
+
+Source
+
+Reading Time
+
+Content
+
+Reflection Prompt
+
+Quote
+
+Quote
+
+Author
+
+Meaning
+
+Reflection
+
+Observation
+
+Title
+
+Observation
+
+Reflection
+
+Tags
+
+Now every Item Type remains consistent.
+
+Chapter 7
+AI Content Generation
+
+This deserves its own section.
+
+Hermes should never blindly trust AI.
+
+Pipeline
+
+AI
+
+↓
+
+Generate
+
+↓
+
+Validate
+
+↓
+
+Human Review
+
+↓
+
+Hermes Bundle
+
+AI helps create.
+
+Humans approve.
+
+Chapter 8
+Versioning
+
+Every content package stores
+
+Content Version
+
+Created
+
+Updated
+
+Compatible Hermes Version
+
+Future-proof.
+
+Chapter 9
+Community Content
+
+Since Hermes is FOSS.
+
+Imagine
+
+Probability.hermes
+
+Stoicism.hermes
+
+DSA.hermes
+
+Python.hermes
+
+Every community package should
+
+follow Hermes standards
+include metadata
+include license
+include version
+include description
+Chapter 10
+Future Expansion
+
+Hermes should be able to support future Item Types without changing the pipeline.
+
+Examples
+
+Research Papers
+
+Books
+
+Experiments
+
+Projects
+
+Code Snippets
+
+Flashcards
+
+Case Studies
+
+The pipeline should remain the same.
+
+Only the Item Type changes.
+
+Bro...
+
+I think we just found another architectural law.
+
+Content should be modular. The application should never care whether an Item is a Question, Article, Quote, or something invented five years later.
+
+That's how Hermes stays scalable.

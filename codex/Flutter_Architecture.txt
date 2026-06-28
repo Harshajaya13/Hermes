@@ -1,0 +1,290 @@
+Chapter 1
+Engineering Philosophy
+
+This should be at the top.
+
+Rules like:
+
+Architecture before features.
+Readability over cleverness.
+Offline First.
+Performance is a feature.
+Every feature must follow the Codex.
+Simplicity is preferred over abstraction.
+The code should be understandable six months later.
+
+Chapter 2
+Folder Structure
+
+Not exact folders.
+
+Principles.
+
+Example
+
+lib/
+
+core/
+
+features/
+
+shared/
+
+services/
+
+models/
+
+engines/
+
+widgets/
+
+theme/
+
+utils/
+
+Feature-first.
+
+Not screen-first.
+
+Chapter 3
+Feature Architecture
+
+Every feature follows the same structure.
+
+feature/
+
+data/
+
+domain/
+
+presentation/
+
+widgets/
+
+models/
+
+repository/
+
+Consistency matters more than clever organization.
+
+Chapter 4
+State Management
+
+Don't mention specific libraries yet.
+
+Instead define rules.
+
+For example:
+
+State should be predictable.
+Business logic never belongs inside UI widgets.
+UI should react to state.
+State should be testable.
+Avoid global mutable state.
+
+Later you can decide Riverpod, Bloc, etc.
+
+Chapter 5
+Database Rules
+
+Examples
+
+Offline first.
+Atomic writes.
+Autosave.
+Never block the UI thread.
+Lazy loading where possible.
+Version migrations must preserve user data.
+Chapter 6
+Performance Budget
+
+This is HUGE.
+
+I would literally define numbers.
+
+Cold Start
+
+< 1 second
+
+Workspace Switch
+
+< 100 ms
+
+Search
+
+Instant
+
+Typing
+
+No visible lag
+
+Scrolling
+
+Always smooth
+
+Animations
+
+60 FPS minimum
+
+120 FPS where supported
+
+Performance becomes a requirement, not a wish.
+
+Chapter 7
+Engine Communication
+
+Instead of
+
+Reader
+
+↓
+
+Question
+
+↓
+
+Search
+
+Everything communicates through defined interfaces.
+
+Reader shouldn't know how Search works.
+
+Search shouldn't know how Archive works.
+
+Loose coupling.
+
+Chapter 8
+Error Handling
+
+Rules
+
+Never crash silently.
+Preserve user work.
+Explain errors.
+Never lose reflections.
+Retry automatically where possible.
+Local failures shouldn't affect unrelated features.
+Chapter 9
+Logging
+
+This is surprisingly important.
+
+Development builds:
+
+Verbose logs.
+
+Release builds:
+
+Minimal logs.
+
+Never log:
+
+Reflection content
+Private workspaces
+PINs
+Personal notes
+
+Privacy first.
+
+Chapter 10
+Testing Philosophy
+
+Not percentages.
+
+Principles.
+
+Example
+
+Test:
+
+Business logic
+Import/Export
+Search
+Evolutio generation
+Archive restoration
+
+UI tests only where interaction is critical.
+
+Chapter 11
+Scalability
+
+This chapter protects Hermes five years from now.
+
+Rules
+
+New Item Types should require minimal changes.
+Engines should be reusable.
+UI components should be composable.
+Features should be modular.
+Adding Domains or Blocks must never require architectural changes.
+Chapter 12
+Dependency Rules
+
+One of my favorites.
+
+UI
+
+↓
+
+Feature
+
+↓
+
+Engine
+
+↓
+
+Data
+
+↓
+
+Storage
+
+Never the opposite.
+
+The database should never know about UI.
+
+Widgets should never talk directly to storage.
+
+Chapter 13
+Security
+
+Rules like
+
+PIN never stored in plain text.
+Private Workspaces isolated.
+Encryption optional.
+Import validation.
+Export integrity.
+Safe backups.
+Chapter 14
+Flutter Laws
+
+This deserves its own chapter.
+
+I would write things like:
+
+Never violate the Hermes Codex.
+Never redesign architecture while implementing.
+Every screen has one purpose.
+Widgets remain small and reusable.
+Prefer composition over inheritance.
+Business logic never belongs inside UI widgets.
+Never duplicate code.
+Every feature must support offline mode where applicable.
+User data is more important than convenience.
+Refactor before complexity grows.
+Preserve backward compatibility for .hermes files.
+Performance is part of correctness.
+Every animation must have a purpose.
+Never introduce gamification that contradicts the Product Philosophy.
+Every implementation should make future extensions easier, not harder.
+Bro...
+
+I actually think one law belongs in both the Flutter Architecture and the AI Coding Guidelines.
+
+The Codex is the source of truth. If generated code conflicts with the Codex, the Codex always wins.
+
+That one sentence prevents months of architectural drift. It means whether you, a teammate, or an AI writes the code, everyone is building the same Hermes instead of slowly creating different versions of it.
+
+I think after this, the only document left is 08_AI_Coding_Guidelines.md, and that one will become your instruction manual for every coding AI you use, whether it's Gemini, ChatGPT, Claude, or something that doesn't even exist yet. That's a powerful place to end the Codex before you start building.
