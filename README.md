@@ -1,6 +1,10 @@
 # 🌌 Hermes OS
 
-> **A Personal Development Operating System.** Distraction-free, offline-first, portable, and built to capture your long-term personal evolution.
+> *"How do I deliberately become the person I want to become?"*
+
+Hermes is a premium, distraction-free **Personal Development Operating System** built to answer that single question. 
+
+It is not a task manager. It is not a habit tracker. It is not a gamified productivity app. Hermes exists to catalog your intellectual and emotional growth over decades. Built strictly around the **Hermes Codex** philosophy, it operates completely offline, with zero subscription gates, zero notifications, and absolute data portability.
 
 ---
 
@@ -8,18 +12,45 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44+-02569B.svg?style=flat-square&logo=flutter)](https://flutter.dev)
 [![Platform: Linux & Android](https://img.shields.io/badge/Platform-Linux%20%7C%20Android-black.svg?style=flat-square)](#)
 
-Hermes is not a task manager, a habit tracker, or a gamified productivity app. It is a premium **Personal Development Operating System** designed strictly around the **Hermes Codex** philosophy. Hermes exists to catalog your intellectual and emotional growth, completely offline, with zero subscription gates, zero notifications, and absolute data portability.
-
 ---
 
 ## 👁️ The Codex Philosophy
 
-Hermes operates on a set of core laws defined in the original Codex specifications:
+Most applications ask: *"Did you complete your task?"*
+Hermes asks: *"Did you become even slightly different today?"*
 
-*   **Mindfulness over Gamification:** You will find no streaks, arbitrary level-ups, points, or leaderboards here. Hermes tracks progress through **Evolutios**—meaningful, self-reflected milestones—and **Veritas**—private, daily check-ins that are completely unjudged by the system.
-*   **Offline-First & Local-First:** Your data never leaves your device unless you choose to export it. There are no cloud servers, no user accounts, and no sync locks. 
-*   **Zero Noise, Maximum Focus:** High-fidelity, distraction-free OLED dark theme. Designed to let you sit, think, read, and write in silence.
-*   **FOSS Portability:** Every workspace can be packed into a community-shareable format so you can pass entire knowledge bases, lore systems, or learning tracks to anyone in the world.
+Hermes operates on a strict set of core laws defined in the original Codex specifications. 
+
+### 1. What Hermes Refuses to Become
+We don't want to be a to-do list with streaks, XP, coins, or leaderboards. We are not an infinite-scrolling feed or a dopamine hitter. Not all people can maintain streaks—not because of a lack of discipline, but because life happens. Breaking a streak makes you feel guilt for your own work. Hermes refuses to punish absence.
+**No streaks. No XP. No coins. No leaderboards. No notifications begging users. No endless feeds. No infinite scrolling. No advertisements.**
+
+### 2. Intentionality
+Nothing enters Hermes by accident. Everything inside Hermes exists because the user deliberately chose it to become part of their journey. You don't want random scrolling or random learning. Everything is chosen. Everything has intention.
+
+### 3. Veritas (Truth)
+Most productivity apps punish absence. Hermes understands reality. 
+If you missed a day because you reached home at 10 PM completely exhausted, or because of semester exams, or burnout—you log it in **Veritas**. 
+Hermes never says *"You failed."* It says *"Tell the truth."* Years later, your timeline becomes honest, not fake perfection. Writing the truth decreases the pressure of missing a streak, because you cannot fool yourself.
+
+### 4. Evolutio: The Core Metric of Growth
+In 2035, you won't care that you solved 5,000 math problems. You will care about moments like: *"This article completely changed how I see product design."*
+Those are not tasks. They are transformations. 
+Hermes preserves **change**. Every meaningful change becomes an **Evolutio**.
+
+**The Central Equation of Hermes:**
+```text
+Experience 
+  ↓ 
+Reflection 
+  ↓ 
+Insight 
+  ↓ 
+Evolutio 
+  ↓ 
+Σ(Evolutios) = Evolution
+```
+Not every reflection changes you. But every Evolutio represents a genuine shift.
 
 ---
 
@@ -49,7 +80,6 @@ graph TD
 
 ### 1. Self-Healing Archive Engine ("Felix" Fallbacks)
 Like a true Unix filesystem, deleting a parent object (like a Domain or Block) does not permanently destroy its child elements; it safely moves them to the **Archive**. 
-
 If you restore an orphaned Item or Block whose parent has been permanently deleted, the storage engine self-heals by redirecting them into the **Felix Domain** and **Felix Block** fallback zones, preventing data loss or database crashes.
 
 ### 2. Distraction-Free Article Fetcher & Reader
@@ -67,7 +97,7 @@ Your entire workspace is packaged as a proprietary `.hermes` file.
 
 ## 🛠️ Technical Stack
 
-*   **Framework:** [Flutter](https://flutter.dev) (built for Linux Desktop and Android Mobile)
+*   **Framework:** [Flutter](https://flutter.dev) (Linux Desktop & Android Mobile)
 *   **State Management:** [Riverpod](https://riverpod.dev)
 *   **Storage Engine:** Offline-first JSON Local Storage Engine
 *   **HTML Parsing & Markdown:** [html2md](https://pub.dev/packages/html2md) & [flutter_markdown](https://pub.dev/packages/flutter_markdown)
@@ -87,12 +117,11 @@ java -version
 flutter doctor
 ```
 
-### Manual Android SDK Setup (No Android Studio required)
+### Manual Android SDK Setup (Linux/Ubuntu)
 
 If you prefer a clean Linux environment without Snaps or the heavy Android Studio IDE:
 
 1.  **Download Command Line Tools:**
-    Get the Linux cmdline tools from Google:
     ```bash
     wget https://dl.google.com/android/repository/commandlinetools-linux-14742923_latest.zip -O ~/cmdline-tools.zip
     ```
@@ -104,9 +133,8 @@ If you prefer a clean Linux environment without Snaps or the heavy Android Studi
     rm -rf ~/cmdline-tools.zip ~/cmdline-tools-extracted
     ```
 3.  **Install SDK Components:**
-    Using the local `sdkmanager`, download the required platform and compiler tools:
+    Using the local `sdkmanager`, download the required platform and compiler tools (Flutter 3.44+ targets Android SDK 36):
     ```bash
-    # Android SDK 36 (Android 16) is target version for Flutter 3.44+
     ~/Android/Sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-36" "build-tools;28.0.3"
     ```
 4.  **Link and Accept Licenses:**
