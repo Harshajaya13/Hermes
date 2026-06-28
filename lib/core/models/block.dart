@@ -64,6 +64,7 @@ class Block {
       );
 
   Block copyWith({
+    String? domainId,
     String? name,
     String? description,
     String? icon,
@@ -76,7 +77,7 @@ class Block {
   }) {
     return Block(
       id: id,
-      domainId: domainId,
+      domainId: domainId ?? this.domainId,
       name: name ?? this.name,
       description: description ?? this.description,
       icon: icon ?? this.icon,

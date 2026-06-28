@@ -1,94 +1,98 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
+import '../../core/providers/providers.dart';
+import '../../core/models/models.dart';
+import 'veritas_sheet.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
-/// EVOLUTION SCREEN
+/// EVOLUTION SCREEN (Dynamic & Redesigned)
 /// ─────────────────────────────────────────────────────────────────────────────
-/// Purpose: Show evolution through time.
-/// Never: Replace Google Calendar.
-///
 /// Codex: "Evolution isn't stored. Evolution is generated from all Evolutios."
-/// Codex: "Not Event Calendar — Evolution Calendar."
-///
-/// This screen shows:
-/// 1. Contribution graph (like GitHub but for growth)
-/// 2. Recent Evolutios timeline
-/// 3. Monthly stats
-///
-/// Feeling: Progress.
 /// ─────────────────────────────────────────────────────────────────────────────
 
-class EvolutionScreen extends StatelessWidget {
+class EvolutionScreen extends ConsumerStatefulWidget {
   const EvolutionScreen({super.key});
 
   @override
+  ConsumerState<EvolutionScreen> createState() => _EvolutionScreenState();
+}
+
+class _EvolutionScreenState extends ConsumerState<EvolutionScreen> {
+  String? _selectedDateFilter;
+
+  @override
   Widget build(BuildContext context) {
+    // Dynamic Data
+    final evolutios = ref.watch(allEvolutiosProvider);
+    final blocks = ref.watch(allBlocksProvider);
+    final storage = ref.watch(storageEngineProvider);
+    final activeWorkspace = ref.watch(currentWorkspaceProvider);
+    
+    final evolutiosCount = evolutios.length;
+    final blocksCount = blocks.length;
+    final List<Veritas> veritasEntries = activeWorkspace != null ? storage.getVeritas(activeWorkspace.id) : <Veritas>[];
+    
+    // Active Days = unique days of Evolutios + unique days of Veritas
+    final Set<String> uniqueDays = {};
+    for (var evo in evolutios) {
+      uniqueDays.add(evo.createdAt.toString().substring(0, 10));
+    }
+    for (var v in veritasEntries) {
+      uniqueDays.add(v.dateMissed.toString().substring(0, 10));
+    }
+    final activeDaysCount = uniqueDays.length;
+
     return Scaffold(
       backgroundColor: HermesColors.background,
       body: SafeArea(
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            // ── Top Spacing ─────────────────────────────────────────
-            const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.xl),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: HermesSpacing.xl)),
 
             // ── Screen Title ────────────────────────────────────────
             SliverToBoxAdapter(
               child: HermesFadeIn(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HermesSpacing.screenHorizontal,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Evolution',
-                        style: HermesTypography.screenTitle,
-                      ),
+                      Text('Evolution', style: HermesTypography.screenTitle),
                       const SizedBox(height: HermesSpacing.xxs),
-                      Text(
-                        'Your journey, visualized',
-                        style: HermesTypography.metadata,
-                      ),
+                      Text('Your journey, visualized', style: HermesTypography.metadata),
                     ],
                   ),
                 ),
               ),
             ),
 
-            // ── Section Gap ─────────────────────────────────────────
-            const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.sectionGap),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: HermesSpacing.xl)),
 
-            // ── Stats Summary ───────────────────────────────────────
+            // ── Minimal Stats Summary ───────────────────────────────
             SliverToBoxAdapter(
               child: HermesFadeIn(
                 delay: const Duration(milliseconds: 80),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HermesSpacing.screenHorizontal,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
                   child: Row(
                     children: [
                       _StatCard(
-                        value: '23',
+                        value: evolutiosCount.toString(),
                         label: 'Evolutios',
                         color: HermesColors.evolutioGlow,
                       ),
-                      const SizedBox(width: HermesSpacing.sm),
+                      const SizedBox(width: HermesSpacing.md),
                       _StatCard(
-                        value: '12',
+                        value: activeDaysCount.toString(),
                         label: 'Active Days',
                         color: HermesColors.accent,
                       ),
-                      const SizedBox(width: HermesSpacing.sm),
+                      const SizedBox(width: HermesSpacing.md),
                       _StatCard(
-                        value: '4',
+                        value: blocksCount.toString(),
                         label: 'Blocks',
                         color: HermesColors.accentWarm,
                       ),
@@ -98,144 +102,137 @@ class EvolutionScreen extends StatelessWidget {
               ),
             ),
 
-            // ── Section Gap ─────────────────────────────────────────
-            const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.sectionGap),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: HermesSpacing.xxxl)),
 
             // ── Contribution Graph ──────────────────────────────────
             SliverToBoxAdapter(
               child: HermesFadeIn(
                 delay: const Duration(milliseconds: 160),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HermesSpacing.screenHorizontal,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const HermesSectionHeader(title: 'Growth Map'),
-                          Text(
-                            'June 2026',
-                            style: HermesTypography.metadata,
+                          HermesSectionHeader(
+                            title: _selectedDateFilter != null ? 'Growth Map (Filtered)' : 'Growth Map'
                           ),
+                          if (_selectedDateFilter != null)
+                            GestureDetector(
+                              onTap: () => setState(() => _selectedDateFilter = null),
+                              child: Text('Clear', style: HermesTypography.metadata.copyWith(color: HermesColors.evolutioGlow)),
+                            )
+                          else
+                            Text(_getMonthYear(DateTime.now()), style: HermesTypography.metadata),
                         ],
                       ),
-                      const SizedBox(height: HermesSpacing.md),
-                      const _ContributionGraph(),
+                      const SizedBox(height: HermesSpacing.lg),
+                      _ContributionGraph(
+                        evolutios: evolutios,
+                        onDateSelected: (date) {
+                          setState(() => _selectedDateFilter = date.toString().substring(0, 10));
+                        },
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
 
-            // ── Section Gap ─────────────────────────────────────────
-            const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.sectionGap),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: HermesSpacing.xxxl)),
 
-            // ── Recent Evolutios Timeline ───────────────────────────
+            // ── Dynamic Timeline ────────────────────────────────────
             SliverToBoxAdapter(
               child: HermesFadeIn(
                 delay: const Duration(milliseconds: 240),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HermesSpacing.screenHorizontal,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const HermesSectionHeader(title: 'Recent Evolutios'),
-                      const SizedBox(height: HermesSpacing.xs),
-                      _TimelineEntry(
-                        date: 'Today',
-                        entries: [
-                          _TimelineEvolutio(
-                            text:
-                                'Expected value finally clicked — it\'s about the long-run average.',
-                            block: 'Mathematics',
-                            blockColor: HermesColors.accent,
-                          ),
-                          _TimelineEvolutio(
-                            text:
-                                'Positioning matters more than features in a startup\'s first year.',
-                            block: 'Startup',
-                            blockColor: HermesColors.accentWarm,
-                          ),
-                        ],
-                      ),
+                      const HermesSectionHeader(title: 'Timeline'),
                       const SizedBox(height: HermesSpacing.lg),
-                      _TimelineEntry(
-                        date: 'Yesterday',
-                        entries: [
-                          _TimelineEvolutio(
-                            text:
-                                'Cognitive dissonance explains most resistance to change.',
-                            block: 'Psychology',
-                            blockColor: HermesColors.accentMuted,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: HermesSpacing.lg),
-                      _TimelineEntry(
-                        date: 'June 25',
-                        entries: [
-                          _TimelineEvolutio(
-                            text:
-                                'Neural networks are just function approximators — everything clicked.',
-                            block: 'AI',
-                            blockColor: HermesColors.accentMuted,
-                          ),
-                          _TimelineEvolutio(
-                            text:
-                                'Decorators in Python are essentially higher-order functions.',
-                            block: 'Python',
-                            blockColor: HermesColors.accentSoft,
-                          ),
-                        ],
-                      ),
+                      if (evolutios.isEmpty && veritasEntries.isEmpty)
+                        Text(
+                          'Your timeline is empty. Start exploring to generate evolutios.',
+                          style: HermesTypography.metadata,
+                        )
+                      else ..._buildTimeline(evolutios, veritasEntries, blocks),
                     ],
                   ),
                 ),
               ),
             ),
 
-            // ── Veritas Entries on Missing Days ─────────────────────
-            SliverToBoxAdapter(
-              child: HermesFadeIn(
-                delay: const Duration(milliseconds: 320),
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: HermesSpacing.screenHorizontal,
-                    right: HermesSpacing.screenHorizontal,
-                    top: HermesSpacing.lg,
-                  ),
-                  child: _TimelineEntry(
-                    date: 'June 24',
-                    isVeritas: true,
-                    entries: const [],
-                    veritasText: 'College record work. Reached home at 10 PM.',
-                  ),
-                ),
-              ),
-            ),
-
-            // ── Bottom Spacing ──────────────────────────────────────
-            const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.xxxl * 2),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
           ],
         ),
       ),
     );
   }
+  
+  String _getMonthYear(DateTime d) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[d.month - 1]} ${d.year}';
+  }
+
+  List<Widget> _buildTimeline(List<Evolutio> evolutios, List<Veritas> veritas, List<Block> blocks) {
+    // Combine and sort
+    final Map<String, List<dynamic>> grouped = {};
+    
+    for (var e in evolutios) {
+      final dateStr = e.createdAt.toString().substring(0, 10);
+      grouped.putIfAbsent(dateStr, () => []).add(e);
+    }
+    
+    for (var v in veritas) {
+      final dateStr = v.dateMissed.toString().substring(0, 10);
+      grouped.putIfAbsent(dateStr, () => []).add(v);
+    }
+    
+    final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+    
+    final filteredDates = _selectedDateFilter != null 
+        ? sortedDates.where((d) => d == _selectedDateFilter).toList()
+        : sortedDates;
+
+    if (filteredDates.isEmpty && _selectedDateFilter != null) {
+      return [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: HermesSpacing.xl),
+          child: Center(
+            child: Text('No activity on this date.', style: HermesTypography.metadata),
+          ),
+        )
+      ];
+    }
+    
+    return filteredDates.map((date) {
+      final items = grouped[date]!;
+      
+      return _TimelineEntry(
+        date: _formatTimelineDate(date),
+        items: items,
+        blocks: blocks,
+      );
+    }).toList();
+  }
+  
+  String _formatTimelineDate(String yyyymmdd) {
+    final now = DateTime.now();
+    final todayStr = now.toString().substring(0, 10);
+    if (yyyymmdd == todayStr) return 'Today';
+    
+    final date = DateTime.parse(yyyymmdd);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.day}';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STAT CARD
+// MINIMAL STAT CARD
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _StatCard extends StatelessWidget {
@@ -253,27 +250,30 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: HermesSpacing.md,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: HermesSpacing.lg, horizontal: HermesSpacing.md),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(HermesRadius.md),
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(HermesRadius.lg),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               value,
               style: HermesTypography.stat.copyWith(
-                color: color.withValues(alpha: 0.8),
+                color: color.withValues(alpha: 0.9),
                 fontSize: 28,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             Text(
               label,
               style: HermesTypography.metadata.copyWith(
-                color: color.withValues(alpha: 0.5),
+                color: color.withValues(alpha: 0.6),
+                fontSize: 12,
+                letterSpacing: 0.5,
               ),
             ),
           ],
@@ -284,98 +284,139 @@ class _StatCard extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CONTRIBUTION GRAPH — GitHub-style growth visualization
+// TIGHT CONTRIBUTION GRAPH
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _ContributionGraph extends StatelessWidget {
-  const _ContributionGraph();
+  final List<Evolutio> evolutios;
+  final Function(DateTime) onDateSelected;
+
+  const _ContributionGraph({
+    required this.evolutios,
+    required this.onDateSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Sample data — 4 weeks × 7 days
-    final List<List<int>> weeks = [
-      [0, 1, 0, 2, 1, 0, 0], // Week 1
-      [1, 0, 3, 1, 0, 2, 0], // Week 2
-      [0, 2, 1, 0, 0, 1, 3], // Week 3
-      [2, 1, 0, 3, 2, 0, 0], // Week 4
-    ];
+    // Generate actual 4-week grid ending today
+    final now = DateTime.now();
+    // Normalize to start of day
+    final today = DateTime(now.year, now.month, now.day);
+    // Find the Monday of the week that is 25 weeks ago (total 26 weeks)
+    int weekday = today.weekday; // 1=Mon, 7=Sun
+    final startDate = today.subtract(Duration(days: (weekday - 1) + 175)); // 25 weeks * 7 = 175 days + days to Monday
+    
+    // Build frequency map
+    final Map<String, int> freq = {};
+    for (var e in evolutios) {
+      final d = e.createdAt.toString().substring(0, 10);
+      freq[d] = (freq[d] ?? 0) + 1;
+    }
 
-    return Column(
-      children: [
-        // Day labels
-        Padding(
-          padding: const EdgeInsets.only(
-            left: 32,
-            bottom: HermesSpacing.xxs,
-          ),
-          child: Row(
-            children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-                .map((d) => Expanded(
-                      child: Text(
-                        d,
-                        style: HermesTypography.metadata.copyWith(
-                          fontSize: 10,
-                          color: HermesColors.textDisabled,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ))
-                .toList(),
-          ),
-        ),
-        // Grid
-        ...weeks.asMap().entries.map((weekEntry) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 3),
+    final List<List<DateTime>> weeks = [];
+    DateTime curr = startDate;
+    for (int i = 0; i < 26; i++) {
+      final List<DateTime> week = [];
+      for (int j = 0; j < 7; j++) {
+        week.add(curr);
+        curr = curr.add(const Duration(days: 1));
+      }
+      weeks.add(week);
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(HermesSpacing.lg),
+      decoration: BoxDecoration(
+        color: HermesColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(HermesRadius.lg),
+        border: Border.all(color: HermesColors.border, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Grid
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 28,
-                  child: Text(
-                    'W${weekEntry.key + 1}',
-                    style: HermesTypography.metadata.copyWith(
-                      fontSize: 10,
-                      color: HermesColors.textDisabled,
+              // Days labels
+              Padding(
+                padding: const EdgeInsets.only(top: 8, right: 12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: ['M', 'W', 'F'].map((d) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Text(
+                      d,
+                      style: HermesTypography.metadata.copyWith(fontSize: 9, color: HermesColors.textDisabled),
                     ),
-                  ),
+                  )).toList(),
                 ),
-                ...weekEntry.value.map((level) {
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(1.5),
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: _getCommitColor(level),
-                            borderRadius: BorderRadius.circular(3),
+              ),
+              // Weeks
+              ...weeks.map((week) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 4.0),
+                  child: Column(
+                    children: week.map((date) {
+                      // Don't show future days
+                      if (date.isAfter(today)) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 4.0),
+                          child: SizedBox(width: 14, height: 14),
+                        );
+                      }
+                      
+                      final dateStr = date.toString().substring(0, 10);
+                      final count = freq[dateStr] ?? 0;
+                      int level = 0;
+                      if (count > 0) level = 1;
+                      if (count > 2) level = 2;
+                      if (count > 4) level = 3;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 4.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (count == 0) {
+                              VeritasSheet.show(context, dateMissed: date);
+                            } else {
+                              onDateSelected(date);
+                            }
+                          },
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: _getCommitColor(level),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          );
-        }),
-        // Legend
-        Padding(
-          padding: const EdgeInsets.only(top: HermesSpacing.sm),
-          child: Row(
+                      );
+                    }).toList(),
+                  ),
+                );
+              }),
+            ],
+          ),
+          ),
+          
+          const SizedBox(height: HermesSpacing.md),
+          // Legend
+          Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(
-                'Less',
-                style: HermesTypography.metadata.copyWith(fontSize: 10),
-              ),
-              const SizedBox(width: HermesSpacing.xxs),
+              Text('Less', style: HermesTypography.metadata.copyWith(fontSize: 10)),
+              const SizedBox(width: HermesSpacing.xs),
               ...[0, 1, 2, 3].map((level) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 1),
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: Container(
-                    width: 12,
-                    height: 12,
+                    width: 10,
+                    height: 10,
                     decoration: BoxDecoration(
                       color: _getCommitColor(level),
                       borderRadius: BorderRadius.circular(2),
@@ -383,30 +424,22 @@ class _ContributionGraph extends StatelessWidget {
                   ),
                 );
               }),
-              const SizedBox(width: HermesSpacing.xxs),
-              Text(
-                'More',
-                style: HermesTypography.metadata.copyWith(fontSize: 10),
-              ),
+              const SizedBox(width: HermesSpacing.xs),
+              Text('More', style: HermesTypography.metadata.copyWith(fontSize: 10)),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Color _getCommitColor(int level) {
     switch (level) {
-      case 0:
-        return HermesColors.commitEmpty;
-      case 1:
-        return HermesColors.commitLight;
-      case 2:
-        return HermesColors.commitMedium;
-      case 3:
-        return HermesColors.commitStrong;
-      default:
-        return HermesColors.commitFull;
+      case 0: return Colors.white.withValues(alpha: 0.05); // Visible empty state
+      case 1: return HermesColors.evolutioGlow.withValues(alpha: 0.3);
+      case 2: return HermesColors.evolutioGlow.withValues(alpha: 0.6);
+      case 3: return HermesColors.evolutioGlow;
+      default: return HermesColors.evolutioGlow;
     }
   }
 }
@@ -415,109 +448,100 @@ class _ContributionGraph extends StatelessWidget {
 // TIMELINE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-class _TimelineEvolutio {
-  final String text;
-  final String block;
-  final Color blockColor;
-
-  const _TimelineEvolutio({
-    required this.text,
-    required this.block,
-    required this.blockColor,
-  });
-}
-
 class _TimelineEntry extends StatelessWidget {
   final String date;
-  final List<_TimelineEvolutio> entries;
-  final bool isVeritas;
-  final String? veritasText;
+  final List<dynamic> items; // Evolutios or Veritas
+  final List<Block> blocks;
 
   const _TimelineEntry({
     required this.date,
-    required this.entries,
-    this.isVeritas = false,
-    this.veritasText,
+    required this.items,
+    required this.blocks,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Date column
-        SizedBox(
-          width: 60,
-          child: Text(
-            date,
-            style: HermesTypography.metadata.copyWith(
-              color: isVeritas
-                  ? HermesColors.veritasColor.withValues(alpha: 0.6)
-                  : HermesColors.textTertiary,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: HermesSpacing.lg),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Date column
+          SizedBox(
+            width: 50,
+            child: Text(
+              date,
+              style: HermesTypography.metadata.copyWith(
+                color: HermesColors.textTertiary,
+                fontSize: 11,
+              ),
             ),
           ),
-        ),
+          const SizedBox(width: HermesSpacing.md),
 
-        // Timeline line
-        Column(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: isVeritas
-                    ? HermesColors.veritasColor.withValues(alpha: 0.5)
-                    : HermesColors.evolutioGlow.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(2),
-              ),
+          // Content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: items.map((item) {
+                if (item is Veritas) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: HermesSpacing.md),
+                    child: _VeritasContent(text: item.reason),
+                  );
+                } else if (item is Evolutio) {
+                  final block = blocks.firstWhere(
+                    (b) => b.id == item.blockId,
+                    orElse: () => Block(domainId: '', name: 'Unknown', icon: '❓', colorHex: '#FFFFFF'),
+                  );
+                  final color = Color(int.parse(block.colorHex.replaceFirst('#', '0xFF')));
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: HermesSpacing.md),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 5),
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.6),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: HermesSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.content,
+                                style: HermesTypography.bodySmall.copyWith(
+                                  color: HermesColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                block.name,
+                                style: HermesTypography.metadata.copyWith(
+                                  color: color.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }).toList(),
             ),
-            if (entries.length > 1 || isVeritas)
-              Container(
-                width: 1,
-                height: isVeritas ? 40 : (entries.length - 1) * 70.0 + 50,
-                color: HermesColors.divider,
-              ),
-          ],
-        ),
-
-        const SizedBox(width: HermesSpacing.sm),
-
-        // Content
-        Expanded(
-          child: isVeritas
-              ? _VeritasContent(text: veritasText ?? '')
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: entries.asMap().entries.map((entry) {
-                    final e = entry.value;
-                    final isLast = entry.key == entries.length - 1;
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        bottom: isLast ? 0 : HermesSpacing.md,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '✓ ${e.text}',
-                            style: HermesTypography.bodySmall.copyWith(
-                              color: HermesColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            e.block,
-                            style: HermesTypography.metadata.copyWith(
-                              color: e.blockColor.withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -546,18 +570,24 @@ class _VeritasContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Veritas',
-            style: HermesTypography.metadata.copyWith(
-              color: HermesColors.veritasColor.withValues(alpha: 0.6),
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            children: [
+              Icon(Icons.edit_note_rounded, size: 14, color: HermesColors.veritasColor.withValues(alpha: 0.6)),
+              const SizedBox(width: 4),
+              Text(
+                'Veritas',
+                style: HermesTypography.metadata.copyWith(
+                  color: HermesColors.veritasColor.withValues(alpha: 0.6),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: HermesSpacing.xxs),
+          const SizedBox(height: HermesSpacing.xs),
           Text(
-            text,
+            text.isEmpty ? 'No notes provided.' : text,
             style: HermesTypography.bodySmall.copyWith(
-              color: HermesColors.veritasColor.withValues(alpha: 0.5),
+              color: HermesColors.veritasColor.withValues(alpha: 0.7),
               fontStyle: FontStyle.italic,
             ),
           ),

@@ -6,9 +6,11 @@ import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 
 class CreateDomainSheet extends ConsumerStatefulWidget {
-  const CreateDomainSheet({super.key});
+  final Domain? existingDomain;
 
-  static void show(BuildContext context) {
+  const CreateDomainSheet({super.key, this.existingDomain});
+
+  static void show(BuildContext context, [Domain? existingDomain]) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -20,7 +22,7 @@ class CreateDomainSheet extends ConsumerStatefulWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: const CreateDomainSheet(),
+        child: CreateDomainSheet(existingDomain: existingDomain),
       ),
     );
   }
@@ -32,6 +34,14 @@ class CreateDomainSheet extends ConsumerStatefulWidget {
 class _CreateDomainSheetState extends ConsumerState<CreateDomainSheet> {
   final _nameController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingDomain != null) {
+      _nameController.text = widget.existingDomain!.name;
+    }
+  }
+
   void _saveDomain() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
@@ -39,10 +49,12 @@ class _CreateDomainSheetState extends ConsumerState<CreateDomainSheet> {
     final workspace = ref.read(currentWorkspaceProvider);
     if (workspace == null) return;
 
-    final newDomain = Domain(
-      workspaceId: workspace.id,
-      name: name,
-    );
+    final newDomain = widget.existingDomain != null
+        ? widget.existingDomain!.copyWith(name: name)
+        : Domain(
+            workspaceId: workspace.id,
+            name: name,
+          );
 
     await ref.read(storageEngineProvider).saveDomain(newDomain);
     ref.invalidate(domainsProvider);
@@ -59,7 +71,7 @@ class _CreateDomainSheetState extends ConsumerState<CreateDomainSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Create Domain', style: HermesTypography.sectionTitle),
+            Text(widget.existingDomain == null ? 'Create Domain' : 'Edit Domain', style: HermesTypography.sectionTitle),
             const SizedBox(height: HermesSpacing.sm),
             Text(
               'A high-level area that groups related Blocks (e.g., Engineering, Thinking, Life).',
@@ -99,7 +111,7 @@ class _CreateDomainSheetState extends ConsumerState<CreateDomainSheet> {
                     borderRadius: BorderRadius.circular(HermesRadius.pill),
                   ),
                 ),
-                child: const Text('Create Domain'),
+                child: Text(widget.existingDomain == null ? 'Create Domain' : 'Save Changes'),
               ),
             ),
           ],

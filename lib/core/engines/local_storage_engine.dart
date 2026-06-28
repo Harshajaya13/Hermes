@@ -85,8 +85,34 @@ class LocalStorageEngine {
         .toList()..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
   }
 
+  List<Domain> getAllDomainsRaw() {
+    return _domains.values.toList();
+  }
+
   Future<void> saveDomain(Domain domain) async {
     _domains[domain.id] = domain;
+    await _saveToDisk('domains', _domains.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> deleteDomain(String domainId) async {
+    final domain = _domains[domainId];
+    if (domain == null) return;
+    
+    // Soft delete domain
+    _domains[domainId] = domain.copyWith(deleted: true, archived: true);
+    await _saveToDisk('domains', _domains.map((k, v) => MapEntry(k, v.toJson())));
+    
+    // Cascade delete blocks
+    final childBlocks = _blocks.values.where((b) => b.domainId == domainId).toList();
+    for (final b in childBlocks) {
+      await deleteBlock(b.id);
+    }
+  }
+
+  Future<void> restoreDomain(String domainId) async {
+    final domain = _domains[domainId];
+    if (domain == null) return;
+    _domains[domainId] = domain.copyWith(deleted: false, archived: false);
     await _saveToDisk('domains', _domains.map((k, v) => MapEntry(k, v.toJson())));
   }
 
@@ -100,8 +126,60 @@ class LocalStorageEngine {
     return _blocks.values.where((b) => !b.deleted).toList();
   }
 
+  List<Block> getAllBlocksRaw() {
+    return _blocks.values.toList();
+  }
+
   Future<void> saveBlock(Block block) async {
     _blocks[block.id] = block;
+    await _saveToDisk('blocks', _blocks.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> deleteBlock(String blockId) async {
+    final block = _blocks[blockId];
+    if (block == null) return;
+    
+    // Soft delete block
+    _blocks[blockId] = block.copyWith(deleted: true, archived: true);
+    await _saveToDisk('blocks', _blocks.map((k, v) => MapEntry(k, v.toJson())));
+    
+    // Cascade delete items
+    final childItems = _items.values.where((i) => i.blockId == blockId).toList();
+    for (final i in childItems) {
+      await deleteItem(i.id);
+    }
+  }
+
+  Future<void> restoreBlock(String blockId) async {
+    final block = _blocks[blockId];
+    if (block == null) return;
+    
+    String finalDomainId = block.domainId;
+    final parentDomain = _domains[block.domainId];
+    
+    // If parent domain is missing or deleted, move to Felix Domain
+    if (parentDomain == null || parentDomain.deleted) {
+      Domain? felixDomain;
+      for (final d in _domains.values) {
+        if (d.name == 'Felix' && !d.deleted) {
+          felixDomain = d;
+          break;
+        }
+      }
+      
+      if (felixDomain == null) {
+        final workspaceId = parentDomain?.workspaceId ?? 'default';
+        felixDomain = Domain(workspaceId: workspaceId, name: 'Felix');
+        await saveDomain(felixDomain);
+      }
+      finalDomainId = felixDomain.id;
+    }
+
+    _blocks[blockId] = block.copyWith(
+      domainId: finalDomainId,
+      deleted: false, 
+      archived: false,
+    );
     await _saveToDisk('blocks', _blocks.map((k, v) => MapEntry(k, v.toJson())));
   }
 
@@ -111,12 +189,81 @@ class LocalStorageEngine {
     return _items.values.where((i) => i.blockId == blockId && !i.deleted).toList();
   }
 
+  List<Item> getAllItems() {
+    return _items.values.where((i) => !i.deleted).toList();
+  }
+
+  List<Item> getAllItemsRaw() {
+    return _items.values.toList();
+  }
+
   Future<void> saveItem(Item item) async {
     _items[item.id] = item;
     await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
   }
 
+  Future<void> deleteItem(String itemId) async {
+    final item = _items[itemId];
+    if (item == null) return;
+    
+    _items[itemId] = item.copyWith(deleted: true, archived: true);
+    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> restoreItem(String itemId) async {
+    final item = _items[itemId];
+    if (item == null) return;
+    
+    // If the parent block is missing or deleted, we should also restore the item into a fallback.
+    // But since the user specifically requested Felix Domain for blocks, we can just cascade-restore the parent block.
+    // Or we can move it to a Felix Block. Let's just restore the parent block for now, or let it fail gracefully.
+    // Actually, to be safe, if we restore an item and its block is deleted, we just restore it. But it won't show in UI.
+    // Let's create a Felix Block if parent block is dead.
+    
+    String finalBlockId = item.blockId;
+    final parentBlock = _blocks[item.blockId];
+    
+    if (parentBlock == null || parentBlock.deleted) {
+      Block? felixBlock;
+      for (final b in _blocks.values) {
+        if (b.name == 'Felix Block' && !b.deleted) {
+          felixBlock = b;
+          break;
+        }
+      }
+      
+      if (felixBlock == null) {
+        // Need a domain for Felix Block. Let's just find any valid domain or create Felix Domain.
+        Domain? felixDomain;
+        for (final d in _domains.values) {
+          if (d.name == 'Felix' && !d.deleted) {
+            felixDomain = d;
+            break;
+          }
+        }
+        if (felixDomain == null) {
+          felixDomain = Domain(workspaceId: 'default', name: 'Felix');
+          await saveDomain(felixDomain);
+        }
+        felixBlock = Block(domainId: felixDomain.id, name: 'Felix Block', icon: '✨');
+        await saveBlock(felixBlock);
+      }
+      finalBlockId = felixBlock.id;
+    }
+
+    _items[itemId] = item.copyWith(
+      blockId: finalBlockId,
+      deleted: false, 
+      archived: false,
+    );
+    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
   // ── Reflections ─────────────────────────────────────────────────────────────
+
+  List<Reflection> getAllReflections() {
+    return _reflections.values.where((r) => !r.deleted).toList();
+  }
 
   Future<void> saveReflection(Reflection reflection) async {
     _reflections[reflection.id] = reflection;

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/models/models.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import '../blocks/create_item_sheet.dart';
 import '../../core/providers/providers.dart';
 
 class ItemDetailScreen extends ConsumerStatefulWidget {
@@ -84,6 +86,15 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           ],
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: HermesColors.textSecondary, size: 20),
+            onPressed: () {
+              CreateItemSheet.show(context, widget.block, widget.item);
+            },
+          ),
+          const SizedBox(width: HermesSpacing.sm),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -99,9 +110,24 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     const SizedBox(height: HermesSpacing.lg),
                     
                     // Content Area (Reader / Question Engine goes here)
-                    Text(
-                      widget.item.content,
-                      style: HermesTypography.body.copyWith(height: 1.6),
+                    MarkdownBody(
+                      data: widget.item.content,
+                      selectable: true,
+                      styleSheet: MarkdownStyleSheet(
+                        p: HermesTypography.body.copyWith(height: 1.6),
+                        h1: HermesTypography.itemTitle.copyWith(fontSize: 24),
+                        h2: HermesTypography.itemTitle.copyWith(fontSize: 20),
+                        h3: HermesTypography.itemTitle.copyWith(fontSize: 18),
+                        blockquote: HermesTypography.body.copyWith(
+                          color: HermesColors.textSecondary,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        blockquoteDecoration: BoxDecoration(
+                          color: HermesColors.surfaceElevated.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(4),
+                          border: const Border(left: BorderSide(color: HermesColors.accent, width: 4)),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: HermesSpacing.xxxl),
                     

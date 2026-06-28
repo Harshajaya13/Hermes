@@ -6,9 +6,11 @@ import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 
 class CreateBlockSheet extends ConsumerStatefulWidget {
-  const CreateBlockSheet({super.key});
+  final Block? existingBlock;
 
-  static void show(BuildContext context) {
+  const CreateBlockSheet({super.key, this.existingBlock});
+
+  static void show(BuildContext context, [Block? existingBlock]) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -20,7 +22,7 @@ class CreateBlockSheet extends ConsumerStatefulWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: const CreateBlockSheet(),
+        child: CreateBlockSheet(existingBlock: existingBlock),
       ),
     );
   }
@@ -37,13 +39,20 @@ class _CreateBlockSheetState extends ConsumerState<CreateBlockSheet> {
   @override
   void initState() {
     super.initState();
-    // Default to first domain if available
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final domains = ref.read(domainsProvider);
-      if (domains.isNotEmpty) {
+      if (widget.existingBlock != null) {
         setState(() {
-          _selectedDomainId = domains.first.id;
+          _nameController.text = widget.existingBlock!.name;
+          _emojiController.text = widget.existingBlock!.icon;
+          _selectedDomainId = widget.existingBlock!.domainId;
         });
+      } else {
+        final domains = ref.read(domainsProvider);
+        if (domains.isNotEmpty) {
+          setState(() {
+            _selectedDomainId = domains.first.id;
+          });
+        }
       }
     });
   }
@@ -52,17 +61,24 @@ class _CreateBlockSheetState extends ConsumerState<CreateBlockSheet> {
     final name = _nameController.text.trim();
     if (name.isEmpty || _selectedDomainId.isEmpty) return;
 
-    final newBlock = Block(
-      domainId: _selectedDomainId,
-      name: name,
-      icon: _emojiController.text.trim().isEmpty ? '📘' : _emojiController.text.trim(),
-      colorHex: '#7C9EBC', // Default accent
-    );
+    final newBlock = widget.existingBlock != null
+        ? widget.existingBlock!.copyWith(
+            domainId: _selectedDomainId,
+            name: name,
+            icon: _emojiController.text.trim().isEmpty ? '📘' : _emojiController.text.trim(),
+          )
+        : Block(
+            domainId: _selectedDomainId,
+            name: name,
+            icon: _emojiController.text.trim().isEmpty ? '📘' : _emojiController.text.trim(),
+            colorHex: '#7C9EBC', // Default accent
+          );
 
     await ref.read(storageEngineProvider).saveBlock(newBlock);
     
     // Invalidate provider so the UI updates
     ref.invalidate(blocksByDomainProvider(_selectedDomainId));
+    ref.invalidate(allBlocksProvider);
     
     if (mounted) Navigator.pop(context);
   }
@@ -78,7 +94,7 @@ class _CreateBlockSheetState extends ConsumerState<CreateBlockSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Create Block', style: HermesTypography.sectionTitle),
+            Text(widget.existingBlock == null ? 'Create Block' : 'Edit Block', style: HermesTypography.sectionTitle),
             const SizedBox(height: HermesSpacing.sm),
             Text(
               'An intentional environment for a specific area of growth.',
@@ -171,7 +187,7 @@ class _CreateBlockSheetState extends ConsumerState<CreateBlockSheet> {
                     borderRadius: BorderRadius.circular(HermesRadius.pill),
                   ),
                 ),
-                child: const Text('Create Block'),
+                child: Text(widget.existingBlock == null ? 'Create Block' : 'Save Changes'),
               ),
             ),
           ],

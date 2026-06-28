@@ -60,6 +60,7 @@ class Domain {
       );
 
   Domain copyWith({
+    String? workspaceId,
     String? name,
     String? description,
     String? icon,
@@ -71,7 +72,7 @@ class Domain {
   }) {
     return Domain(
       id: id,
-      workspaceId: workspaceId,
+      workspaceId: workspaceId ?? this.workspaceId,
       name: name ?? this.name,
       description: description ?? this.description,
       icon: icon ?? this.icon,

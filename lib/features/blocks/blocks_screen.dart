@@ -132,6 +132,9 @@ class BlocksScreen extends ConsumerWidget {
                               ),
                             );
                           },
+                          onLongPress: () {
+                            _showArchiveDialog(context, ref, domain.id, domain.name, true);
+                          },
                           child: Row(
                             children: [
                               Container(
@@ -200,133 +203,49 @@ class BlocksScreen extends ConsumerWidget {
   Color _parseColor(String hex) {
     return Color(int.parse(hex.replaceFirst('#', '0xFF')));
   }
-}
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// DATA CLASS (UI Helper)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _BlockData {
-  final String id;
-  final String emoji;
-  final String name;
-  final int itemCount;
-  final Color color;
-  final String? recentEvolutio;
-
-  const _BlockData({
-    required this.id,
-    required this.emoji,
-    required this.name,
-    required this.itemCount,
-    required this.color,
-    this.recentEvolutio,
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// DOMAIN SECTION
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _DomainSection extends StatelessWidget {
-  final String title;
-  final List<_BlockData> blocks;
-
-  const _DomainSection({
-    required this.title,
-    required this.blocks,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (blocks.isEmpty) return const SizedBox.shrink();
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: HermesSpacing.screenHorizontal,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          HermesSectionHeader(title: title),
-          const SizedBox(height: HermesSpacing.xs),
-          ...blocks.map((block) => Padding(
-                padding: const EdgeInsets.only(bottom: HermesSpacing.itemGap),
-                child: _BlockRow(data: block),
-              )),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// BLOCK ROW
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _BlockRow extends StatelessWidget {
-  final _BlockData data;
-
-  const _BlockRow({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    return HermesCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: HermesSpacing.md,
-        vertical: HermesSpacing.md,
-      ),
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => BlockDetailScreen(
-              name: data.name,
-              emoji: data.emoji,
-              color: data.color,
-            ),
+  void _showArchiveDialog(BuildContext context, WidgetRef ref, String id, String name, bool isDomain) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: HermesColors.surfaceElevated,
+        title: Text('Archive $name?', style: HermesTypography.body),
+        content: Text(
+          'This will move the ${isDomain ? 'Domain' : 'Block'} and all its contents to the archive.',
+          style: HermesTypography.metadata,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary)),
           ),
-        );
-      },
-      child: Row(
-        children: [
-          HermesIconBadge(
-            emoji: data.emoji,
-            color: data.color,
-          ),
-          const SizedBox(width: HermesSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(data.name, style: HermesTypography.blockTitle),
-                const SizedBox(height: 2),
-                if (data.recentEvolutio != null)
-                  Text(
-                    '✓ ${data.recentEvolutio}',
-                    style: HermesTypography.metadata.copyWith(
-                      color: HermesColors.evolutioGlow.withValues(alpha: 0.6),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  )
-                else
-                  Text(
-                    '${data.itemCount} items',
-                    style: HermesTypography.metadata,
-                  ),
-              ],
-            ),
-          ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            size: 20,
-            color: HermesColors.textDisabled,
+          TextButton(
+            onPressed: () {
+              if (isDomain) {
+                ref.read(storageEngineProvider).deleteDomain(id);
+                ref.invalidate(domainsProvider);
+              } else {
+                ref.read(storageEngineProvider).deleteBlock(id);
+                ref.invalidate(allBlocksProvider);
+              }
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Archived $name.', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
+                  backgroundColor: HermesColors.surfaceElevated,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+            child: Text('Archive', style: HermesTypography.bodySmall.copyWith(color: HermesColors.veritasColor)),
           ),
         ],
       ),
     );
   }
 }
+
+// Dead code removed
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ADD BLOCK BUTTON

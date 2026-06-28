@@ -47,12 +47,14 @@ class HermesSectionHeader extends StatelessWidget {
 class HermesCard extends StatelessWidget {
   final Widget child;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final EdgeInsetsGeometry? padding;
 
   const HermesCard({
     super.key,
     required this.child,
     this.onTap,
+    this.onLongPress,
     this.padding,
   });
 
@@ -63,6 +65,7 @@ class HermesCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(HermesRadius.md),
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(HermesRadius.md),
         splashColor: HermesColors.accent.withValues(alpha: 0.06),
         highlightColor: HermesColors.accent.withValues(alpha: 0.03),

@@ -66,6 +66,8 @@ class Item {
       );
 
   Item copyWith({
+    String? blockId,
+    ItemType? type,
     String? title,
     String? content,
     String? sourceUrl,
@@ -77,8 +79,8 @@ class Item {
   }) {
     return Item(
       id: id,
-      blockId: blockId,
-      type: type,
+      blockId: blockId ?? this.blockId,
+      type: type ?? this.type,
       title: title ?? this.title,
       content: content ?? this.content,
       sourceUrl: sourceUrl ?? this.sourceUrl,

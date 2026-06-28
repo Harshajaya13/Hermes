@@ -1,43 +1,88 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
+import '../../core/providers/providers.dart';
+import '../../core/models/models.dart';
+import '../items/item_detail_screen.dart';
+import '../blocks/block_detail_screen.dart';
+import '../blocks/domain_detail_screen.dart';
 
-/// ─────────────────────────────────────────────────────────────────────────────
-/// SEARCH SCREEN
-/// ─────────────────────────────────────────────────────────────────────────────
-/// Purpose: Find knowledge instantly.
-/// Never: Require users to remember where something was stored.
-///
-/// Codex: "One search. Everything. Like Raycast."
-/// Codex: "Searching should feel immediate."
-///
-/// Search spans: Questions · Articles · Reflections · Evolutios · Blocks
-/// Feeling: Confidence.
-/// ─────────────────────────────────────────────────────────────────────────────
-
-class SearchScreen extends StatefulWidget {
+class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  ConsumerState<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _hasQuery = false;
+  
+  List<Item> _questionResults = [];
+  List<Item> _articleResults = [];
+  List<Reflection> _reflectionResults = [];
+  List<Evolutio> _evolutioResults = [];
+  List<Block> _blockResults = [];
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      setState(() => _hasQuery = _searchController.text.isNotEmpty);
-    });
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+  
+  void _onSearchChanged() {
+    final query = _searchController.text.trim().toLowerCase();
+    
+    if (query.isEmpty) {
+      setState(() {
+        _hasQuery = false;
+        _clearResults();
+      });
+      return;
+    }
+    
+    final storage = ref.read(storageEngineProvider);
+    
+    // Compute Results
+    final blocks = storage.getAllBlocks()
+        .where((b) => b.name.toLowerCase().contains(query))
+        .toList();
+        
+    final items = storage.getAllItems()
+        .where((i) => i.title.toLowerCase().contains(query) || i.content.toLowerCase().contains(query))
+        .toList();
+        
+    final reflections = storage.getAllReflections()
+        .where((r) => r.content.toLowerCase().contains(query))
+        .toList();
+        
+    final evolutios = storage.getEvolutios()
+        .where((e) => e.content.toLowerCase().contains(query))
+        .toList();
+
+    setState(() {
+      _hasQuery = true;
+      _blockResults = blocks;
+      _questionResults = items.where((i) => i.type == ItemType.question).toList();
+      _articleResults = items.where((i) => i.type == ItemType.article).toList();
+      _reflectionResults = reflections;
+      _evolutioResults = evolutios;
+    });
+  }
+  
+  void _clearResults() {
+    _questionResults.clear();
+    _articleResults.clear();
+    _reflectionResults.clear();
+    _evolutioResults.clear();
+    _blockResults.clear();
   }
 
   @override
@@ -47,7 +92,6 @@ class _SearchScreenState extends State<SearchScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // ── Top Spacing ─────────────────────────────────────────
             const SizedBox(height: HermesSpacing.xl),
 
             // ── Search Bar ──────────────────────────────────────────
@@ -79,6 +123,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       Expanded(
                         child: TextField(
                           controller: _searchController,
+                          autofocus: true,
                           style: HermesTypography.body.copyWith(
                             color: HermesColors.textPrimary,
                           ),
@@ -97,7 +142,9 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                       if (_hasQuery)
                         GestureDetector(
-                          onTap: () => _searchController.clear(),
+                          onTap: () {
+                            _searchController.clear();
+                          },
                           child: const Icon(
                             Icons.close_rounded,
                             size: 18,
@@ -122,65 +169,22 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEARCH SUGGESTIONS (when empty)
-  // ═══════════════════════════════════════════════════════════════════════════
-
   Widget _buildSuggestions() {
     return HermesFadeIn(
       delay: const Duration(milliseconds: 80),
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(
-          horizontal: HermesSpacing.screenHorizontal,
-        ),
+      child: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const HermesSectionHeader(title: 'Recent'),
-            const SizedBox(height: HermesSpacing.xs),
-            _RecentItem(
-              icon: Icons.help_outline_rounded,
-              text: 'Expected value',
-              type: 'Question',
-              color: HermesColors.accent,
+            const Icon(
+              Icons.manage_search_rounded,
+              size: 48,
+              color: HermesColors.surfaceElevated,
             ),
-            _RecentItem(
-              icon: Icons.article_outlined,
-              text: 'Why Intuition Fails in Probability',
-              type: 'Article',
-              color: HermesColors.accentWarm,
-            ),
-            _RecentItem(
-              icon: Icons.auto_awesome_outlined,
-              text: 'Positioning matters more than features',
-              type: 'Evolutio',
-              color: HermesColors.evolutioGlow,
-            ),
-
-            const SizedBox(height: HermesSpacing.sectionGap),
-
-            const HermesSectionHeader(title: 'Browse'),
-            const SizedBox(height: HermesSpacing.xs),
-            _BrowseCategory(
-              icon: Icons.help_outline_rounded,
-              label: 'All Questions',
-              count: '47',
-            ),
-            _BrowseCategory(
-              icon: Icons.article_outlined,
-              label: 'All Articles',
-              count: '23',
-            ),
-            _BrowseCategory(
-              icon: Icons.auto_awesome_outlined,
-              label: 'All Evolutios',
-              count: '23',
-            ),
-            _BrowseCategory(
-              icon: Icons.edit_note_rounded,
-              label: 'All Reflections',
-              count: '31',
+            const SizedBox(height: HermesSpacing.md),
+            Text(
+              'Find knowledge instantly.',
+              style: HermesTypography.metadata,
             ),
           ],
         ),
@@ -188,11 +192,22 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SEARCH RESULTS — Raycast-style grouped results
-  // ═══════════════════════════════════════════════════════════════════════════
-
   Widget _buildResults() {
+    final hasResults = _questionResults.isNotEmpty || 
+                       _articleResults.isNotEmpty || 
+                       _reflectionResults.isNotEmpty || 
+                       _evolutioResults.isNotEmpty || 
+                       _blockResults.isNotEmpty;
+
+    if (!hasResults) {
+      return Center(
+        child: Text(
+          'No results found.',
+          style: HermesTypography.metadata,
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(
@@ -201,199 +216,67 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Questions
-          const HermesSectionHeader(title: 'Questions'),
-          _ResultItem(
-            title:
-                'How should I divide betting money across independent events?',
-            subtitle: 'Mathematics · Probability',
-            icon: Icons.help_outline_rounded,
-            color: HermesColors.accent,
-          ),
-          _ResultItem(
-            title:
-                'A fair coin is flipped 3 times. What is the expected number of heads?',
-            subtitle: 'Mathematics · Expected Value',
-            icon: Icons.help_outline_rounded,
-            color: HermesColors.accent,
-          ),
+          if (_questionResults.isNotEmpty) ...[
+            const HermesSectionHeader(title: 'Questions'),
+            ..._questionResults.map((q) => _ResultItem(
+              title: q.title,
+              subtitle: 'Question',
+              icon: Icons.help_outline_rounded,
+              color: HermesColors.accent,
+            )),
+            const SizedBox(height: HermesSpacing.lg),
+          ],
 
-          const SizedBox(height: HermesSpacing.lg),
+          if (_articleResults.isNotEmpty) ...[
+            const HermesSectionHeader(title: 'Articles'),
+            ..._articleResults.map((a) => _ResultItem(
+              title: a.title,
+              subtitle: 'Article',
+              icon: Icons.article_outlined,
+              color: HermesColors.accentWarm,
+            )),
+            const SizedBox(height: HermesSpacing.lg),
+          ],
 
-          // Articles
-          const HermesSectionHeader(title: 'Articles'),
-          _ResultItem(
-            title: 'Why Intuition Fails in Probability',
-            subtitle: 'Medium · 8 min read',
-            icon: Icons.article_outlined,
-            color: HermesColors.accentWarm,
-          ),
+          if (_reflectionResults.isNotEmpty) ...[
+            const HermesSectionHeader(title: 'Reflections'),
+            ..._reflectionResults.map((r) => _ResultItem(
+              title: r.content,
+              subtitle: 'Reflection',
+              icon: Icons.edit_note_rounded,
+              color: HermesColors.reflectionColor,
+            )),
+            const SizedBox(height: HermesSpacing.lg),
+          ],
 
-          const SizedBox(height: HermesSpacing.lg),
+          if (_evolutioResults.isNotEmpty) ...[
+            const HermesSectionHeader(title: 'Evolutios'),
+            ..._evolutioResults.map((e) => _ResultItem(
+              title: e.content,
+              subtitle: 'Evolutio',
+              icon: Icons.auto_awesome_outlined,
+              color: HermesColors.evolutioGlow,
+            )),
+            const SizedBox(height: HermesSpacing.lg),
+          ],
 
-          // Reflections
-          const HermesSectionHeader(title: 'Reflections'),
-          _ResultItem(
-            title:
-                'Today I finally understood why expected value matters for real-world decisions...',
-            subtitle: 'Mathematics · 2 days ago',
-            icon: Icons.edit_note_rounded,
-            color: HermesColors.reflectionColor,
-          ),
-
-          const SizedBox(height: HermesSpacing.lg),
-
-          // Evolutios
-          const HermesSectionHeader(title: 'Evolutios'),
-          _ResultItem(
-            title:
-                'Expected value finally clicked — it\'s about the long-run average',
-            subtitle: 'Mathematics · Today',
-            icon: Icons.auto_awesome_outlined,
-            color: HermesColors.evolutioGlow,
-          ),
-
-          const SizedBox(height: HermesSpacing.lg),
-
-          // Blocks
-          const HermesSectionHeader(title: 'Blocks'),
-          _ResultItem(
-            title: 'Mathematics',
-            subtitle: 'Engineering · 24 items',
-            icon: Icons.grid_view_rounded,
-            color: HermesColors.accent,
-          ),
-
+          if (_blockResults.isNotEmpty) ...[
+            const HermesSectionHeader(title: 'Blocks'),
+            ..._blockResults.map((b) => _ResultItem(
+              title: b.name,
+              subtitle: 'Block',
+              icon: Icons.grid_view_rounded,
+              color: HermesColors.accent,
+            )),
+            const SizedBox(height: HermesSpacing.lg),
+          ],
+          
           const SizedBox(height: HermesSpacing.xxxl),
         ],
       ),
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// RECENT ITEM
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _RecentItem extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final String type;
-  final Color color;
-
-  const _RecentItem({
-    required this.icon,
-    required this.text,
-    required this.type,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          // TODO: Navigate to item
-        },
-        borderRadius: BorderRadius.circular(HermesRadius.sm),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: HermesSpacing.sm,
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: color.withValues(alpha: 0.5),
-              ),
-              const SizedBox(width: HermesSpacing.sm),
-              Expanded(
-                child: Text(
-                  text,
-                  style: HermesTypography.bodySmall,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Text(
-                type,
-                style: HermesTypography.metadata.copyWith(
-                  color: color.withValues(alpha: 0.4),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// BROWSE CATEGORY
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _BrowseCategory extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String count;
-
-  const _BrowseCategory({
-    required this.icon,
-    required this.label,
-    required this.count,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          // TODO: Browse category
-        },
-        borderRadius: BorderRadius.circular(HermesRadius.sm),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: HermesSpacing.sm,
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: HermesColors.textTertiary,
-              ),
-              const SizedBox(width: HermesSpacing.sm),
-              Expanded(
-                child: Text(
-                  label,
-                  style: HermesTypography.bodySmall,
-                ),
-              ),
-              Text(
-                count,
-                style: HermesTypography.metadata,
-              ),
-              const SizedBox(width: HermesSpacing.xxs),
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 16,
-                color: HermesColors.textDisabled,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SEARCH RESULT ITEM
-// ═══════════════════════════════════════════════════════════════════════════════
 
 class _ResultItem extends StatelessWidget {
   final String title;
@@ -414,7 +297,7 @@ class _ResultItem extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to result
+          // Future: Navigate to specific object detail screen
         },
         borderRadius: BorderRadius.circular(HermesRadius.sm),
         child: Padding(

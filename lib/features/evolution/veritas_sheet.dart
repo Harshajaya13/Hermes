@@ -6,9 +6,11 @@ import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 
 class VeritasSheet extends ConsumerStatefulWidget {
-  const VeritasSheet({super.key});
+  final DateTime? dateMissed;
+  
+  const VeritasSheet({super.key, this.dateMissed});
 
-  static void show(BuildContext context) {
+  static void show(BuildContext context, {DateTime? dateMissed}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -20,7 +22,7 @@ class VeritasSheet extends ConsumerStatefulWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: const VeritasSheet(),
+        child: VeritasSheet(dateMissed: dateMissed),
       ),
     );
   }
@@ -42,7 +44,7 @@ class _VeritasSheetState extends ConsumerState<VeritasSheet> {
     final storage = ref.read(storageEngineProvider);
     final veritas = Veritas(
       workspaceId: workspace.id,
-      dateMissed: DateTime.now(), // In reality, this would be the actual missed date
+      dateMissed: widget.dateMissed ?? DateTime.now(),
       reason: reason,
     );
 

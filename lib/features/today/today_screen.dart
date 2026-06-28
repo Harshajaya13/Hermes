@@ -6,6 +6,8 @@ import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
 import '../items/item_detail_screen.dart';
 import '../evolution/veritas_sheet.dart';
+import '../archive/archive_screen.dart';
+import 'package:file_picker/file_picker.dart';
 
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
@@ -60,7 +62,7 @@ class TodayScreen extends ConsumerWidget {
                         child: InkWell(
                           onTap: () {
                             // TODO: Open Workspace/Settings Sheet
-                            _showWorkspaceSettings(context, workspace);
+                            _showWorkspaceSettings(context, ref, workspace);
                           },
                           borderRadius: BorderRadius.circular(HermesRadius.pill),
                           child: Container(
@@ -365,7 +367,7 @@ class TodayScreen extends ConsumerWidget {
     return 'Just now';
   }
 
-  void _showWorkspaceSettings(BuildContext context, Workspace? currentWorkspace) {
+  void _showWorkspaceSettings(BuildContext context, WidgetRef ref, Workspace? currentWorkspace) {
     showModalBottomSheet(
       context: context,
       backgroundColor: HermesColors.surfaceElevated,
@@ -426,11 +428,75 @@ class TodayScreen extends ConsumerWidget {
 
                 // Actions
                 ListTile(
-                  leading: const Icon(Icons.file_download_outlined, color: HermesColors.textPrimary),
-                  title: Text('Export to .hermes', style: HermesTypography.body),
+                  leading: const Icon(Icons.inventory_2_outlined, color: HermesColors.textPrimary),
+                  title: Text('View Archive', style: HermesTypography.body),
                   onTap: () {
                     Navigator.pop(context);
-                    // TODO: Implement Import/Export Engine
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ArchiveScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.file_download_outlined, color: HermesColors.textPrimary),
+                  title: Text('Export Workspace (.hermes)', style: HermesTypography.body),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    if (currentWorkspace == null) return;
+                    try {
+                      final exportEngine = ref.read(exportEngineProvider);
+                      final path = await exportEngine.exportWorkspace(currentWorkspace.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Exported successfully to: $path')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Export failed: $e')),
+                        );
+                      }
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.file_upload_outlined, color: HermesColors.textPrimary),
+                  title: Text('Import Community Bundle', style: HermesTypography.body),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    if (currentWorkspace == null) return;
+                    try {
+                      final result = await FilePicker.platform.pickFiles(
+                        type: FileType.custom,
+                        allowedExtensions: ['hermes'],
+                      );
+                      
+                      if (result != null && result.files.single.path != null) {
+                        final exportEngine = ref.read(exportEngineProvider);
+                        await exportEngine.importWorkspace(result.files.single.path!, currentWorkspace.id);
+                        
+                        // Force refresh everything
+                        ref.invalidate(domainsProvider);
+                        ref.invalidate(allBlocksProvider);
+                        ref.invalidate(allEvolutiosProvider);
+                        
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Import successful!')),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Import failed: $e')),
+                        );
+                      }
+                    }
                   },
                 ),
                 ListTile(

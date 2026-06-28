@@ -5,8 +5,9 @@ import '../../core/widgets/hermes_widgets.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import 'block_detail_screen.dart';
+import 'block_detail_screen.dart';
 import 'create_block_sheet.dart';
-
+import 'create_domain_sheet.dart';
 class DomainDetailScreen extends ConsumerWidget {
   final Domain domain;
 
@@ -27,6 +28,15 @@ class DomainDetailScreen extends ConsumerWidget {
         ),
         title: Text(domain.name, style: HermesTypography.screenTitle.copyWith(fontSize: 20)),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: HermesColors.textSecondary, size: 20),
+            onPressed: () {
+              CreateDomainSheet.show(context, domain);
+            },
+          ),
+          const SizedBox(width: HermesSpacing.sm),
+        ],
       ),
       body: SafeArea(
         child: CustomScrollView(
@@ -67,13 +77,12 @@ class DomainDetailScreen extends ConsumerWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => BlockDetailScreen(
-                                  name: block.name,
-                                  emoji: block.icon,
-                                  color: Color(int.parse(block.colorHex.replaceFirst('#', '0xFF'))),
-                                ),
+                                builder: (context) => BlockDetailScreen(block: block),
                               ),
                             );
+                          },
+                          onLongPress: () {
+                            _showArchiveDialog(context, ref, block.id, block.name);
                           },
                           child: Row(
                             children: [
@@ -145,6 +154,41 @@ class DomainDetailScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showArchiveDialog(BuildContext context, WidgetRef ref, String id, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: HermesColors.surfaceElevated,
+        title: Text('Archive $name?', style: HermesTypography.body),
+        content: Text(
+          'This will move the Block and all its items to the archive.',
+          style: HermesTypography.metadata,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary)),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(storageEngineProvider).deleteBlock(id);
+              ref.invalidate(blocksByDomainProvider);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Archived $name.', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
+                  backgroundColor: HermesColors.surfaceElevated,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+            child: Text('Archive', style: HermesTypography.bodySmall.copyWith(color: HermesColors.veritasColor)),
+          ),
+        ],
       ),
     );
   }

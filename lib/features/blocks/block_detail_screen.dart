@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
+import '../../core/models/models.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
 /// BLOCK DETAIL SCREEN
@@ -13,21 +14,32 @@ import '../../core/widgets/hermes_widgets.dart';
 /// Item Types: Question · Article · Note · Quote · Observation · Idea
 /// Feeling: Curiosity.
 /// ─────────────────────────────────────────────────────────────────────────────
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/models/models.dart';
+import '../../core/providers/providers.dart';
+import '../items/item_detail_screen.dart';
+import 'create_item_sheet.dart';
+import 'create_block_sheet.dart';
 
-class BlockDetailScreen extends StatelessWidget {
-  final String name;
-  final String emoji;
-  final Color color;
+class BlockDetailScreen extends ConsumerStatefulWidget {
+  final Block block;
 
   const BlockDetailScreen({
     super.key,
-    required this.name,
-    required this.emoji,
-    required this.color,
+    required this.block,
   });
 
   @override
+  ConsumerState<BlockDetailScreen> createState() => _BlockDetailScreenState();
+}
+
+class _BlockDetailScreenState extends ConsumerState<BlockDetailScreen> {
+  @override
   Widget build(BuildContext context) {
+    final items = ref.watch(itemsByBlockProvider(widget.block.id));
+    final evolutiosCount = ref.read(storageEngineProvider).getEvolutiosForBlock(widget.block.id).length;
+    final color = Color(int.parse(widget.block.colorHex.replaceFirst('#', '0xFF')));
+
     return Scaffold(
       backgroundColor: HermesColors.background,
       body: SafeArea(
@@ -56,12 +68,12 @@ class BlockDetailScreen extends StatelessWidget {
                     const Spacer(),
                     IconButton(
                       onPressed: () {
-                        // TODO: Block settings / options
+                        CreateBlockSheet.show(context, widget.block);
                       },
                       icon: const Icon(
-                        Icons.more_horiz_rounded,
-                        color: HermesColors.textTertiary,
-                        size: 22,
+                        Icons.edit_outlined,
+                        color: HermesColors.textSecondary,
+                        size: 20,
                       ),
                     ),
                   ],
@@ -83,7 +95,7 @@ class BlockDetailScreen extends StatelessWidget {
                       Row(
                         children: [
                           HermesIconBadge(
-                            emoji: emoji,
+                            emoji: widget.block.icon,
                             color: color,
                             size: 48,
                           ),
@@ -92,12 +104,12 @@ class BlockDetailScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                name,
+                                widget.block.name,
                                 style: HermesTypography.screenTitle,
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '24 items · 5 evolutios',
+                                '${items.length} items · $evolutiosCount evolutios',
                                 style: HermesTypography.metadata,
                               ),
                             ],
@@ -112,117 +124,83 @@ class BlockDetailScreen extends StatelessWidget {
 
             // ── Section Gap ─────────────────────────────────────────
             const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.sectionGap),
-            ),
-
-            // ── Item Type Filter Chips ──────────────────────────────
-            SliverToBoxAdapter(
-              child: HermesFadeIn(
-                delay: const Duration(milliseconds: 80),
-                child: SizedBox(
-                  height: 36,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: HermesSpacing.screenHorizontal,
-                    ),
-                    children: const [
-                      _FilterChip(label: 'All', isActive: true),
-                      SizedBox(width: HermesSpacing.xs),
-                      _FilterChip(label: 'Questions'),
-                      SizedBox(width: HermesSpacing.xs),
-                      _FilterChip(label: 'Articles'),
-                      SizedBox(width: HermesSpacing.xs),
-                      _FilterChip(label: 'Notes'),
-                      SizedBox(width: HermesSpacing.xs),
-                      _FilterChip(label: 'Quotes'),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // ── Section Gap ─────────────────────────────────────────
-            const SliverToBoxAdapter(
               child: SizedBox(height: HermesSpacing.lg),
             ),
 
             // ── Items List ──────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: HermesFadeIn(
-                delay: const Duration(milliseconds: 160),
+            if (items.isEmpty)
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HermesSpacing.screenHorizontal,
+                  padding: const EdgeInsets.all(HermesSpacing.xxxl),
+                  child: Center(
+                    child: Text(
+                      'This environment is empty.\nAdd your first question or article.',
+                      textAlign: TextAlign.center,
+                      style: HermesTypography.metadata,
+                    ),
                   ),
-                  child: Column(
-                    children: [
-                      _ItemRow(
-                        type: ItemType.question,
-                        title:
-                            'A fair coin is flipped 3 times. What is the expected number of heads?',
-                        meta: 'Expected Value · Medium',
-                        hasEvolutio: true,
-                      ),
-                      const HermesDivider(),
-                      _ItemRow(
-                        type: ItemType.question,
-                        title:
-                            'How should one divide money when betting on independent events?',
-                        meta: 'Probability · Hard',
-                        hasEvolutio: true,
-                      ),
-                      const HermesDivider(),
-                      _ItemRow(
-                        type: ItemType.article,
-                        title: 'Why Intuition Fails in Probability',
-                        meta: 'Medium · 8 min read',
-                        hasEvolutio: false,
-                      ),
-                      const HermesDivider(),
-                      _ItemRow(
-                        type: ItemType.question,
-                        title:
-                            'Given P(A) = 0.3 and P(B|A) = 0.7, find P(A∩B)',
-                        meta: 'Bayes · Easy',
-                        hasEvolutio: false,
-                      ),
-                      const HermesDivider(),
-                      _ItemRow(
-                        type: ItemType.quote,
-                        title:
-                            '"Probability is not about the odds. It\'s about what you can\'t predict."',
-                        meta: 'Nassim Taleb',
-                        hasEvolutio: false,
-                      ),
-                      const HermesDivider(),
-                      _ItemRow(
-                        type: ItemType.note,
-                        title:
-                            'Connection between expected value and startup risk assessment',
-                        meta: 'Personal note · Today',
-                        hasEvolutio: true,
-                      ),
-                    ],
+                ),
+              )
+            else
+              SliverToBoxAdapter(
+                child: HermesFadeIn(
+                  delay: const Duration(milliseconds: 160),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: HermesSpacing.screenHorizontal,
+                    ),
+                    child: Column(
+                      children: items.map((item) {
+                        return Dismissible(
+                          key: Key(item.id),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: HermesSpacing.xl),
+                            color: HermesColors.veritasColor.withValues(alpha: 0.2),
+                            child: const Icon(Icons.archive_outlined, color: HermesColors.veritasColor),
+                          ),
+                          onDismissed: (_) {
+                            ref.read(storageEngineProvider).deleteItem(item.id);
+                            // Invalidating provider to refresh UI
+                            ref.invalidate(itemsByBlockProvider);
+                            
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Item archived.', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
+                                backgroundColor: HermesColors.surfaceElevated,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: Column(
+                            children: [
+                              _ItemRow(
+                                item: item,
+                                block: widget.block,
+                              ),
+                              const HermesDivider(),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // ── Bottom Spacing ──────────────────────────────────────
             const SliverToBoxAdapter(
               child: SizedBox(height: 120),
             ),
           ],
         ),
       ),
-      // ── FAB — Record Evolutio ─────────────────────────────────────
+      // ── FAB — Add Item ─────────────────────────────────────────────
       floatingActionButton: HermesFadeIn(
         delay: const Duration(milliseconds: 400),
         child: FloatingActionButton.extended(
           onPressed: () {
-            // TODO: Record Evolutio flow
+            CreateItemSheet.show(context, widget.block);
           },
           backgroundColor: HermesColors.surfaceElevated,
           elevation: 0,
@@ -297,8 +275,6 @@ class _FilterChip extends StatelessWidget {
 // ITEM TYPE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-enum ItemType { question, article, note, quote, observation, idea }
-
 extension ItemTypeIcon on ItemType {
   IconData get icon {
     switch (this) {
@@ -340,16 +316,12 @@ extension ItemTypeIcon on ItemType {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _ItemRow extends StatelessWidget {
-  final ItemType type;
-  final String title;
-  final String meta;
-  final bool hasEvolutio;
+  final Item item;
+  final Block block;
 
   const _ItemRow({
-    required this.type,
-    required this.title,
-    required this.meta,
-    required this.hasEvolutio,
+    required this.item,
+    required this.block,
   });
 
   @override
@@ -358,7 +330,12 @@ class _ItemRow extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to Item detail
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ItemDetailScreen(item: item, block: block),
+            ),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -370,9 +347,9 @@ class _ItemRow extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Icon(
-                  type.icon,
+                  item.type.icon,
                   size: 18,
-                  color: type.color.withValues(alpha: 0.6),
+                  color: item.type.color.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(width: HermesSpacing.sm),
@@ -381,7 +358,7 @@ class _ItemRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      item.title,
                       style: HermesTypography.itemTitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -389,19 +366,7 @@ class _ItemRow extends StatelessWidget {
                     const SizedBox(height: HermesSpacing.xxs),
                     Row(
                       children: [
-                        if (hasEvolutio) ...[
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: HermesColors.evolutioGlow
-                                  .withValues(alpha: 0.6),
-                              borderRadius: BorderRadius.circular(1),
-                            ),
-                          ),
-                          const SizedBox(width: HermesSpacing.xxs),
-                        ],
-                        Text(meta, style: HermesTypography.metadata),
+                        Text(item.type.name.toUpperCase(), style: HermesTypography.metadata),
                       ],
                     ),
                   ],
