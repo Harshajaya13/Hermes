@@ -11,6 +11,7 @@ import 'edit_identity_dialog.dart';
 import 'workspace_management_dialogs.dart';
 import '../pipeline/pipeline.dart';
 import '../exchange/exchange_screen.dart';
+import 'package_screens.dart';
 
 class ControlCenterScreen extends ConsumerStatefulWidget {
   const ControlCenterScreen({super.key});
@@ -49,7 +50,6 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
               _buildSectionHeader('Workspace'),
               _buildWorkspaceSection(context, ref, workspace, isLocked),
               const SizedBox(height: HermesSpacing.xxl),
-
               _buildSectionHeader('Exchange'),
               _buildExchangeSection(context),
               const SizedBox(height: HermesSpacing.xxl),
@@ -191,6 +191,20 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
                 context: context,
                 builder: (_) => const CreateWorkspaceDialog(),
               );
+            },
+          ),
+          _buildSettingsTile(
+            icon: Icons.unarchive_outlined,
+            title: 'Import .hermes Package',
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportPackageScreen()));
+            },
+          ),
+          _buildSettingsTile(
+            icon: Icons.archive_outlined,
+            title: 'Export Workspace',
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ExportPackageScreen()));
             },
           ),
         ],

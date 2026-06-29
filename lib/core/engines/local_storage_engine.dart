@@ -113,7 +113,6 @@ class LocalStorageEngine {
   List<Workspace> get workspaces => _workspaces.values.where((e) => !e.deleted).toList();
   
   Workspace? getWorkspace(String id) => _workspaces[id];
-  
   Future<void> saveWorkspace(Workspace workspace) async {
     _workspaces[workspace.id] = workspace;
     await _saveToDisk('workspaces', _workspaces.map((k, v) => MapEntry(k, v.toJson())));
@@ -254,7 +253,6 @@ class LocalStorageEngine {
   Item? getItemById(String id) => _items[id];
   KnowledgeSource? getSourceById(String id) => _sources[id];
   Evolutio? getEvolutioById(String id) => _evolutios[id];
-
   Future<void> saveItem(Item item) async {
     _items[item.id] = item;
     await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));

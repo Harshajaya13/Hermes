@@ -9,13 +9,17 @@ import '../models/models.dart';
 /// ─────────────────────────────────────────────────────────────────────────────
 
 import '../engines/exchange_engine.dart';
-
+import '../engines/export_engine.dart';
 final storageEngineProvider = Provider<LocalStorageEngine>((ref) {
   throw UnimplementedError('Storage engine not initialized');
 });
 
 final exchangeEngineProvider = Provider<ExchangeEngine>((ref) {
   return ExchangeEngine(ref.watch(storageEngineProvider));
+});
+
+final exportEngineProvider = Provider<ExportEngine>((ref) {
+  return ExportEngine(ref.watch(storageEngineProvider));
 });
 
 // ── Active Workspace ─────────────────────────────────────────────────────────
