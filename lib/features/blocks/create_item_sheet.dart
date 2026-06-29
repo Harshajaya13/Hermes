@@ -158,31 +158,26 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
             const SizedBox(height: HermesSpacing.xl),
             
             // Type Selector
-            SizedBox(
-              height: 40,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: ItemType.values.map((type) {
-                  final isSelected = _selectedType == type;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: HermesSpacing.sm),
-                    child: ChoiceChip(
-                      label: Text(type.name.toUpperCase()),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) setState(() => _selectedType = type);
-                      },
-                      backgroundColor: HermesColors.surfaceElevated,
-                      selectedColor: HermesColors.accent,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.black : HermesColors.textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+            Wrap(
+              spacing: HermesSpacing.sm,
+              runSpacing: HermesSpacing.sm,
+              children: ItemType.values.map((type) {
+                final isSelected = _selectedType == type;
+                return ChoiceChip(
+                  label: Text(type.name.toUpperCase()),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    if (selected) setState(() => _selectedType = type);
+                  },
+                  backgroundColor: HermesColors.surfaceElevated,
+                  selectedColor: HermesColors.accent,
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.black : HermesColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              }).toList(),
             ),
             
             const SizedBox(height: HermesSpacing.lg),

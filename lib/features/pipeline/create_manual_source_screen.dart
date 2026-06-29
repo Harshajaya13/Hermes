@@ -80,6 +80,11 @@ class _CreateManualSourceScreenState extends ConsumerState<CreateManualSourceScr
         return;
       }
       
+      if (decoded.length > 500) {
+        setState(() => _validationError = 'Maximum of 500 items allowed per source to maintain performance.');
+        return;
+      }
+      
       for (int i = 0; i < decoded.length; i++) {
         final item = decoded[i];
         if (item is! Map<String, dynamic>) {

@@ -36,17 +36,40 @@ class TodayScreen extends ConsumerWidget {
     // Dynamic daily item calculation based on selected format
     final todayFormatStr = ref.watch(todaySectionFormatProvider);
     final List<MapEntry<Block, Item>> dailyItems = [];
+    final sources = ref.watch(sourcesProvider);
+    final Map<String, KnowledgeSource> sourceMap = { for (var s in sources) s.id: s };
     
     if (allBlocks.isNotEmpty) {
+      // Temporary map to track how many items we've taken per source today
+      final sourceCounts = <String, int>{};
+      
       for (final block in allBlocks) {
         final items = ref.watch(itemsByBlockProvider(block.id));
-        dailyItems.addAll(
-          items.where((i) => i.metadata?['isDailyGoal'] == true &&
-                             i.createdAt.year == now.year && 
-                             i.createdAt.month == now.month && 
-                             i.createdAt.day == now.day)
-               .map((i) => MapEntry(block, i))
-        );
+        
+        final todaysItems = items.where((i) => i.metadata?['isDailyGoal'] == true &&
+                               i.createdAt.year == now.year && 
+                               i.createdAt.month == now.month && 
+                               i.createdAt.day == now.day).toList();
+        
+        // Enforce the Daily Limit from the KnowledgeSource!
+        for (final item in todaysItems) {
+          if (item.sourceId != null) {
+            final source = sourceMap[item.sourceId];
+            if (source != null && source.includeInToday) {
+              final limit = source.dailyLimit;
+              final currentCount = sourceCounts[item.sourceId!] ?? 0;
+              if (currentCount < limit) {
+                sourceCounts[item.sourceId!] = currentCount + 1;
+                dailyItems.add(MapEntry(block, item));
+              }
+            }
+          } else {
+             // For legacy items without a sourceId but with isDailyGoal=true,
+             // these are old imports before the Data Pipeline v2.0 was built.
+             // We completely hide them from Today's Pursuit so they don't pollute the view.
+             // Manually created items don't have isDailyGoal=true by default.
+          }
+        }
       }
       // Sort by newest first
       dailyItems.sort((a, b) => b.value.createdAt.compareTo(a.value.createdAt));

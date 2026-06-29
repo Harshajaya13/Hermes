@@ -283,8 +283,17 @@ class LocalStorageEngine {
   Future<void> deleteSource(String sourceId) async {
     final source = _sources[sourceId];
     if (source == null) return;
+    
+    // Mark source as deleted
     _sources[sourceId] = source.copyWith(deleted: true, archived: true);
     await _saveToDisk('sources', _sources.map((k, v) => MapEntry(k, v.toJson())));
+    
+    // Cascade to items
+    final childItems = _items.values.where((i) => i.sourceId == sourceId).toList();
+    for (final item in childItems) {
+      _items[item.id] = item.copyWith(deleted: true, archived: true);
+    }
+    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
   }
 
   Future<void> restoreItem(String itemId) async {

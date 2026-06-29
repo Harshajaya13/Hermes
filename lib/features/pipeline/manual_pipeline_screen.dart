@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/models.dart';
@@ -109,7 +112,7 @@ class ManualPipelineScreen extends ConsumerWidget {
                         await ref.read(storageEngineProvider).deleteSource(source.id);
                         ref.invalidate(sourcesProvider);
                       } else if (val == 'replace') {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Replace JSON feature coming soon.')));
+                        _handleReplaceJson(context, ref, source);
                       }
                     },
                     itemBuilder: (context) => [
@@ -137,72 +140,254 @@ class ManualPipelineScreen extends ConsumerWidget {
     );
   }
 
-  void _showEditRulesDialog(BuildContext context, WidgetRef ref, KnowledgeSource source) {
-    bool includeInToday = source.includeInToday;
-    int dailyLimit = source.dailyLimit;
+  Future<void> _handleReplaceJson(BuildContext context, WidgetRef ref, KnowledgeSource source) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
 
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        final contents = await file.readAsString();
+        final dynamic decoded = jsonDecode(contents);
+        if (decoded is! List) throw Exception('Root element must be a JSON array.');
+        if (decoded.length > 500) throw Exception('Maximum 500 items allowed per source.');
+        
+        final parsedData = <Map<String, dynamic>>[];
+        for (final item in decoded) {
+          if (item['title'] == null || item['content'] == null) throw Exception('Missing required fields.');
+          parsedData.add({
+            'title': item['title'].toString().trim(),
+            'content': item['content'].toString().trim(),
+            'sourceUrl': item['sourceUrl']?.toString().trim(),
+          });
+        }
+        
+        final storage = ref.read(storageEngineProvider);
+        
+        // 1. Delete all existing items for this source
+        final oldItems = storage.getItems(source.targetBlockId).where((i) => i.sourceId == source.id).toList();
+        for (final oldItem in oldItems) {
+           await storage.deleteItem(oldItem.id); 
+        }
+        
+        // 2. Insert new items
+        final itemsToSave = parsedData.map((data) => Item(
+          blockId: source.targetBlockId,
+          sourceId: source.id,
+          type: source.type == SourceType.manualQuestion ? ItemType.question : ItemType.article,
+          title: data['title'],
+          content: data['content'],
+          sourceUrl: data['sourceUrl'],
+          metadata: {
+            'isDailyGoal': source.includeInToday,
+          },
+        )).toList();
+        
+        await storage.saveItems(itemsToSave);
+        ref.invalidate(itemsByBlockProvider(source.targetBlockId));
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Replaced with ${itemsToSave.length} new items!'),
+              backgroundColor: HermesColors.evolutioGlow,
+            )
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error replacing JSON: $e'),
+            backgroundColor: HermesColors.error,
+          )
+        );
+      }
+    }
+  }
+
+  void _showEditRulesDialog(BuildContext context, WidgetRef ref, KnowledgeSource source) {
     showDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              backgroundColor: HermesColors.surfaceElevated,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HermesRadius.lg)),
-              title: Text('Edit Rules: ${source.name}', style: HermesTypography.sectionTitle),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SwitchListTile(
-                    title: const Text('Include in Today\'s Pursuit?', style: TextStyle(fontSize: 14)),
-                    value: includeInToday,
-                    activeColor: HermesColors.evolutioGlow,
-                    contentPadding: EdgeInsets.zero,
-                    onChanged: (val) => setState(() => includeInToday = val),
-                  ),
-                  if (includeInToday) ...[
-                    const SizedBox(height: HermesSpacing.md),
-                    Text('Daily Maximum Limit:', style: HermesTypography.metadata),
-                    const SizedBox(height: HermesSpacing.sm),
-                    Wrap(
-                      spacing: HermesSpacing.sm,
-                      children: [1, 3, 5, 10, 20].map((limit) {
-                        return ChoiceChip(
-                          label: Text('$limit'),
-                          selected: dailyLimit == limit,
-                          onSelected: (val) {
-                            if (val) setState(() => dailyLimit = limit);
-                          },
-                          selectedColor: HermesColors.evolutioGlow.withValues(alpha: 0.2),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ],
+      builder: (context) => _EditRulesDialog(source: source),
+    );
+  }
+}
+
+class _EditRulesDialog extends ConsumerStatefulWidget {
+  final KnowledgeSource source;
+  const _EditRulesDialog({required this.source});
+
+  @override
+  ConsumerState<_EditRulesDialog> createState() => _EditRulesDialogState();
+}
+
+class _EditRulesDialogState extends ConsumerState<_EditRulesDialog> {
+  late String _sourceName;
+  late bool _includeInToday;
+  late int _dailyLimit;
+  Domain? _selectedDomain;
+  Block? _selectedBlock;
+
+  @override
+  void initState() {
+    super.initState();
+    _sourceName = widget.source.name;
+    _includeInToday = widget.source.includeInToday;
+    _dailyLimit = widget.source.dailyLimit;
+    
+    // We will initialize domain and block in build since we need ref
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final domains = ref.watch(domainsProvider);
+    
+    // Initialize selected domain on first build
+    _selectedDomain ??= domains.where((d) => d.id == widget.source.targetDomainId).firstOrNull;
+    
+    final blocks = _selectedDomain != null 
+        ? ref.watch(blocksByDomainProvider(_selectedDomain!.id)) 
+        : <Block>[];
+        
+    // Initialize selected block on first build if possible
+    if (_selectedBlock == null && _selectedDomain != null) {
+      _selectedBlock = blocks.where((b) => b.id == widget.source.targetBlockId).firstOrNull;
+    }
+
+    return AlertDialog(
+      backgroundColor: HermesColors.surfaceElevated,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HermesRadius.lg)),
+      title: Text('Edit Rules', style: HermesTypography.sectionTitle),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Source Name:', style: HermesTypography.metadata),
+            const SizedBox(height: HermesSpacing.sm),
+            TextFormField(
+              initialValue: _sourceName,
+              onChanged: (val) => _sourceName = val,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: HermesColors.background,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel', style: TextStyle(color: HermesColors.textSecondary)),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    final updated = source.copyWith(
-                      includeInToday: includeInToday,
-                      dailyLimit: dailyLimit,
-                    );
-                    await ref.read(storageEngineProvider).saveSource(updated);
-                    ref.invalidate(sourcesProvider);
-                    if (context.mounted) Navigator.pop(context);
-                  },
-                  child: const Text('Save Rules', style: TextStyle(color: HermesColors.evolutioGlow)),
-                ),
-              ],
+            ),
+            const SizedBox(height: HermesSpacing.md),
+            
+            Text('Target Domain:', style: HermesTypography.metadata),
+            const SizedBox(height: HermesSpacing.sm),
+            DropdownButtonFormField<Domain>(
+              value: _selectedDomain,
+              dropdownColor: HermesColors.surfaceElevated,
+              items: domains.map((d) => DropdownMenuItem(value: d, child: Text(d.name))).toList(),
+              onChanged: (val) {
+                setState(() {
+                  _selectedDomain = val;
+                  _selectedBlock = null; // reset block when domain changes
+                });
+              },
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: HermesColors.background,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: HermesSpacing.md),
+            
+            Text('Target Block:', style: HermesTypography.metadata),
+            const SizedBox(height: HermesSpacing.sm),
+            DropdownButtonFormField<Block>(
+              value: _selectedBlock,
+              dropdownColor: HermesColors.surfaceElevated,
+              items: blocks.map((b) => DropdownMenuItem(value: b, child: Text('${b.icon} ${b.name}'))).toList(),
+              onChanged: _selectedDomain == null ? null : (val) => setState(() => _selectedBlock = val),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: HermesColors.background,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
+              ),
+            ),
+            
+            const SizedBox(height: HermesSpacing.lg),
+            
+            SwitchListTile(
+              title: const Text('Include in Today\'s Pursuit?', style: TextStyle(fontSize: 14)),
+              value: _includeInToday,
+              activeColor: HermesColors.evolutioGlow,
+              contentPadding: EdgeInsets.zero,
+              onChanged: (val) => setState(() => _includeInToday = val),
+            ),
+            if (_includeInToday) ...[
+              const SizedBox(height: HermesSpacing.md),
+              Text('Daily Maximum Limit:', style: HermesTypography.metadata),
+              const SizedBox(height: HermesSpacing.sm),
+              Wrap(
+                spacing: HermesSpacing.sm,
+                children: [1, 3, 5, 10].map((limit) {
+                  return ChoiceChip(
+                    label: Text('$limit'),
+                    selected: _dailyLimit == limit,
+                    onSelected: (val) {
+                      if (val) setState(() => _dailyLimit = limit);
+                    },
+                    selectedColor: HermesColors.evolutioGlow.withValues(alpha: 0.2),
+                  );
+                }).toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel', style: TextStyle(color: HermesColors.textSecondary)),
+        ),
+        TextButton(
+          onPressed: () async {
+            if (_sourceName.trim().isEmpty || _selectedDomain == null || _selectedBlock == null) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields.')));
+              return;
+            }
+            
+            final updatedSource = widget.source.copyWith(
+              name: _sourceName.trim(),
+              targetDomainId: _selectedDomain!.id,
+              targetBlockId: _selectedBlock!.id,
+              includeInToday: _includeInToday,
+              dailyLimit: _dailyLimit,
             );
+            
+            final storage = ref.read(storageEngineProvider);
+            
+            // 1. Save updated source
+            await storage.saveSource(updatedSource);
+            
+            // 2. If the block changed, we need to update all underlying items to the new block!
+            if (widget.source.targetBlockId != updatedSource.targetBlockId) {
+              final oldBlockId = widget.source.targetBlockId;
+              final items = storage.getItems(oldBlockId).where((i) => i.sourceId == updatedSource.id).toList();
+              
+              final updatedItems = items.map((i) => i.copyWith(blockId: updatedSource.targetBlockId)).toList();
+              await storage.saveItems(updatedItems);
+              
+              // Invalidate both blocks so UI updates perfectly
+              ref.invalidate(itemsByBlockProvider(oldBlockId));
+              ref.invalidate(itemsByBlockProvider(updatedSource.targetBlockId));
+            }
+            
+            ref.invalidate(sourcesProvider);
+            if (context.mounted) Navigator.pop(context);
           },
-        );
-      },
+          child: const Text('Save Rules', style: TextStyle(color: HermesColors.evolutioGlow)),
+        ),
+      ],
     );
   }
 }
