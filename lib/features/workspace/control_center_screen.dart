@@ -55,13 +55,7 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
               _buildAppearanceSection(),
               const SizedBox(height: HermesSpacing.xxl),
               
-              _buildSectionHeader('Security'),
-              _buildSecuritySection(context, ref, workspace, isLocked),
-              const SizedBox(height: HermesSpacing.xxl),
-              
-              _buildSectionHeader('Visibility & Archive'),
-              _buildVisibilityAndArchiveSection(context),
-              const SizedBox(height: HermesSpacing.xxl),
+
               
               _buildSectionHeader('About'),
               _buildAboutSection(),
@@ -169,26 +163,21 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
             title: 'Rename Workspace',
             onTap: () {},
           ),
-          if (isLocked)
-            _buildSettingsTile(
-              icon: Icons.lock_open_rounded,
-              title: 'Unlock Workspace',
-              onTap: () {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => const UnlockWorkspaceDialog(),
-                );
-              },
-            )
-          else if (ws?.pin != null && ws!.pin!.isNotEmpty)
-            _buildSettingsTile(
-              icon: Icons.lock_outline,
-              title: 'Lock Workspace',
-              onTap: () {
-                ref.read(workspaceLockedProvider.notifier).setLocked(true);
-              },
-            ),
+          _buildSettingsTile(
+            icon: Icons.swap_horiz_rounded,
+            title: 'Switch Workspace',
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Workspace switching coming soon')));
+            },
+          ),
+          _buildSettingsTile(
+            icon: Icons.add_circle_outline,
+            title: 'Create New Workspace',
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Workspace creation coming soon')));
+            },
+          ),
+          const Divider(color: HermesColors.border, height: 1),
           _buildSettingsTile(
             icon: Icons.archive_outlined,
             title: 'Archive Workspace',
@@ -262,123 +251,6 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
     );
   }
 
-  Widget _buildSecuritySection(BuildContext context, WidgetRef ref, Workspace? ws, bool isLocked) {
-    final hasPin = ws?.pin != null && ws!.pin!.isNotEmpty;
-    
-    return HermesCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          if (!hasPin)
-            _buildSettingsTile(
-              icon: Icons.security_rounded,
-              title: 'Setup Workspace Lock',
-              onTap: () {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => const SetupLockDialog(),
-                );
-              },
-            )
-          else ...[
-            _buildSettingsTile(
-              icon: Icons.pin_outlined,
-              title: 'Change PIN / Pattern',
-              onTap: () {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => VerifyPinDialog(
-                    onSuccess: () {
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (_) => const ChangePinDialog(),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-            _buildSettingsTile(
-              icon: Icons.lock_reset_rounded,
-              title: 'Change Recovery Question',
-              onTap: () {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => VerifyPinDialog(
-                    onSuccess: () {
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (_) => const ChangeRecoveryQuestionDialog(),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-            _buildSettingsTile(
-              icon: Icons.no_encryption_outlined,
-              title: 'Remove Workspace Lock',
-              textColor: Colors.redAccent,
-              iconColor: Colors.redAccent,
-              onTap: () {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => VerifyPinDialog(
-                    onSuccess: () async {
-                      if (ws != null) {
-                        final updated = ws.copyWith(
-                          pin: '',
-                          securityQuestion: '',
-                          securityAnswer: '',
-                          isEncrypted: false,
-                        );
-                        await ref.read(storageEngineProvider).saveWorkspace(updated);
-                        ref.read(currentWorkspaceProvider.notifier).updateWorkspace(updated);
-                        ref.read(workspaceLockedProvider.notifier).setLocked(false);
-                      }
-                    },
-                  ),
-                );
-              },
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVisibilityAndArchiveSection(BuildContext context) {
-    return HermesCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          _buildSettingsTile(
-            icon: Icons.visibility_off_outlined,
-            title: 'Visibility',
-            subtitle: 'Manage hidden domains and blocks.',
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const VisibilityScreen()));
-            },
-          ),
-          const Divider(color: HermesColors.border, height: 1),
-          _buildSettingsTile(
-            icon: Icons.inventory_2_outlined,
-            title: 'Open Archive',
-            subtitle: 'Recover or permanently delete objects.',
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchiveScreen()));
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildAboutSection() {
     return HermesCard(
