@@ -17,6 +17,9 @@ class Workspace {
   final String? pin;
   final String? securityQuestion;
   final String? securityAnswer;
+  final String? ownerName;
+  final String? ownerNickname;
+  final String? lore;
 
   Workspace({
     String? id,
@@ -33,6 +36,9 @@ class Workspace {
     this.pin,
     this.securityQuestion,
     this.securityAnswer,
+    this.ownerName,
+    this.ownerNickname,
+    this.lore,
   })  : id = id ?? _uuid.v4(),
         createdAt = createdAt ?? DateTime.now(),
         modifiedAt = modifiedAt ?? DateTime.now();
@@ -52,6 +58,9 @@ class Workspace {
         'pin': pin,
         'securityQuestion': securityQuestion,
         'securityAnswer': securityAnswer,
+        'ownerName': ownerName,
+        'ownerNickname': ownerNickname,
+        'lore': lore,
       };
 
   factory Workspace.fromJson(Map<String, dynamic> json) => Workspace(
@@ -69,6 +78,9 @@ class Workspace {
         pin: json['pin'] as String?,
         securityQuestion: json['securityQuestion'] as String?,
         securityAnswer: json['securityAnswer'] as String?,
+        ownerName: json['ownerName'] as String?,
+        ownerNickname: json['ownerNickname'] as String?,
+        lore: json['lore'] as String?,
       );
 
   Workspace copyWith({
@@ -84,6 +96,9 @@ class Workspace {
     String? pin,
     String? securityQuestion,
     String? securityAnswer,
+    String? ownerName,
+    String? ownerNickname,
+    String? lore,
   }) {
     return Workspace(
       id: id,
@@ -100,6 +115,9 @@ class Workspace {
       pin: pin ?? this.pin,
       securityQuestion: securityQuestion ?? this.securityQuestion,
       securityAnswer: securityAnswer ?? this.securityAnswer,
+      ownerName: ownerName ?? this.ownerName,
+      ownerNickname: ownerNickname ?? this.ownerNickname,
+      lore: lore ?? this.lore,
     );
   }
 }

@@ -5,6 +5,7 @@ import 'features/today/today_screen.dart';
 import 'features/blocks/blocks_screen.dart';
 import 'features/evolution/evolution_screen.dart';
 import 'features/search/search_screen.dart';
+import 'features/workspace/control_center_screen.dart';
 import 'features/today/workspace_locked_screen.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -86,6 +87,7 @@ class _HermesShellState extends ConsumerState<HermesShell> {
     BlocksScreen(),
     EvolutionScreen(),
     SearchScreen(),
+    ControlCenterScreen(),
   ];
 
   @override
@@ -151,6 +153,13 @@ class _HermesShellState extends ConsumerState<HermesShell> {
                 label: 'Search',
                 isActive: _currentIndex == 3,
                 onTap: () => _switchTab(3),
+              ),
+              _NavItem(
+                icon: Icons.tune_outlined,
+                activeIcon: Icons.tune_rounded,
+                label: 'Control',
+                isActive: _currentIndex == 4,
+                onTap: () => _switchTab(4),
               ),
             ],
           ),
