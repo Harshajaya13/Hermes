@@ -46,13 +46,15 @@ class TodayScreen extends ConsumerWidget {
       for (final block in allBlocks) {
         final items = ref.watch(itemsByBlockProvider(block.id));
         
-        final todaysItems = items.where((i) => i.metadata?['isDailyGoal'] == true &&
-                               i.createdAt.year == now.year && 
-                               i.createdAt.month == now.month && 
-                               i.createdAt.day == now.day).toList();
+        // Find all unsolved items meant for Today's Pursuit
+        final unsolvedItems = items.where((i) => i.metadata?['isDailyGoal'] == true &&
+                               i.metadata?['isSolved'] != true).toList();
+        
+        // Stably sort them so the same items appear until solved
+        unsolvedItems.sort((a, b) => a.id.compareTo(b.id));
         
         // Enforce the Daily Limit from the KnowledgeSource!
-        for (final item in todaysItems) {
+        for (final item in unsolvedItems) {
           if (item.sourceId != null) {
             final source = sourceMap[item.sourceId];
             if (source != null && source.includeInToday) {

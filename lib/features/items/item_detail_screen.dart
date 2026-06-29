@@ -66,6 +66,12 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       }
     }
     
+    // Mark item as solved so it drops out of Today's Pursuit
+    final updatedMetadata = Map<String, dynamic>.from(widget.item.metadata ?? {});
+    updatedMetadata['isSolved'] = true;
+    final updatedItem = widget.item.copyWith(metadata: updatedMetadata);
+    await storage.saveItems([updatedItem]);
+    ref.invalidate(itemsByBlockProvider(widget.block.id));
     if (mounted) Navigator.pop(context);
   }
 
