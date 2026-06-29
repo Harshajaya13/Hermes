@@ -5,6 +5,7 @@ import '../../core/widgets/hermes_widgets.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
 import 'veritas_sheet.dart';
+import '../today/workspace_security_dialogs.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
 /// EVOLUTION SCREEN (Dynamic & Redesigned)
@@ -21,6 +22,8 @@ class EvolutionScreen extends ConsumerStatefulWidget {
 
 class _EvolutionScreenState extends ConsumerState<EvolutionScreen> {
   String? _selectedDateFilter;
+  bool _showVeritas = true;
+  bool _showEvolutios = true;
 
   @override
   Widget build(BuildContext context) {
@@ -32,17 +35,20 @@ class _EvolutionScreenState extends ConsumerState<EvolutionScreen> {
     
     final evolutiosCount = evolutios.length;
     final blocksCount = blocks.length;
-    final List<Veritas> veritasEntries = activeWorkspace != null ? storage.getVeritas(activeWorkspace.id) : <Veritas>[];
+    final List<Veritas> veritasEntries = _showVeritas && activeWorkspace != null ? storage.getVeritas(activeWorkspace.id) : <Veritas>[];
+    final List<Evolutio> displayedEvolutios = _showEvolutios ? evolutios : <Evolutio>[];
     
     // Active Days = unique days of Evolutios + unique days of Veritas
     final Set<String> uniqueDays = {};
-    for (var evo in evolutios) {
+    for (var evo in displayedEvolutios) {
       uniqueDays.add(evo.createdAt.toString().substring(0, 10));
     }
     for (var v in veritasEntries) {
       uniqueDays.add(v.dateMissed.toString().substring(0, 10));
     }
     final activeDaysCount = uniqueDays.length;
+
+    final archivedSections = ref.watch(archivedSectionsProvider);
 
     return Scaffold(
       backgroundColor: HermesColors.background,
@@ -57,12 +63,53 @@ class _EvolutionScreenState extends ConsumerState<EvolutionScreen> {
               child: HermesFadeIn(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Evolution', style: HermesTypography.screenTitle),
-                      const SizedBox(height: HermesSpacing.xxs),
-                      Text('Your journey, visualized', style: HermesTypography.metadata),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Evolution', style: HermesTypography.screenTitle),
+                          const SizedBox(height: HermesSpacing.xxs),
+                          Text('Your journey, visualized', style: HermesTypography.metadata),
+                        ],
+                      ),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.settings_rounded, color: HermesColors.textTertiary),
+                        color: HermesColors.surfaceElevated,
+                        itemBuilder: (context) {
+                          final isPinned = !archivedSections.contains('evolutios');
+                          return [
+                            PopupMenuItem(
+                              value: 'toggle_veritas',
+                              child: Text(_showVeritas ? 'Hide Veritas' : 'Show Veritas', style: HermesTypography.bodySmall),
+                            ),
+                            PopupMenuItem(
+                              value: 'toggle_evolutios',
+                              child: Text(_showEvolutios ? 'Hide Evolutios' : 'Show Evolutios', style: HermesTypography.bodySmall),
+                            ),
+                            const PopupMenuDivider(),
+                            PopupMenuItem(
+                              value: 'toggle_pin',
+                              child: Text(isPinned ? 'Remove from Home' : 'Pin Evolution to Home', style: HermesTypography.bodySmall),
+                            ),
+                          ];
+                        },
+                        onSelected: (value) {
+                          if (value == 'toggle_veritas') {
+                            setState(() => _showVeritas = !_showVeritas);
+                          } else if (value == 'toggle_evolutios') {
+                            setState(() => _showEvolutios = !_showEvolutios);
+                          } else if (value == 'toggle_pin') {
+                            final isPinned = !archivedSections.contains('evolutios');
+                            if (isPinned) {
+                              ref.read(archivedSectionsProvider.notifier).archiveSection('evolutios');
+                            } else {
+                              ref.read(archivedSectionsProvider.notifier).restoreSection('evolutios');
+                            }
+                          }
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -130,7 +177,8 @@ class _EvolutionScreenState extends ConsumerState<EvolutionScreen> {
                       ),
                       const SizedBox(height: HermesSpacing.lg),
                       _ContributionGraph(
-                        evolutios: evolutios,
+                        evolutios: displayedEvolutios,
+                        veritasEntries: veritasEntries,
                         onDateSelected: (date) {
                           setState(() => _selectedDateFilter = date.toString().substring(0, 10));
                         },
@@ -154,12 +202,12 @@ class _EvolutionScreenState extends ConsumerState<EvolutionScreen> {
                     children: [
                       const HermesSectionHeader(title: 'Timeline'),
                       const SizedBox(height: HermesSpacing.lg),
-                      if (evolutios.isEmpty && veritasEntries.isEmpty)
+                      if (displayedEvolutios.isEmpty && veritasEntries.isEmpty)
                         Text(
                           'Your timeline is empty. Start exploring to generate evolutios.',
                           style: HermesTypography.metadata,
                         )
-                      else ..._buildTimeline(evolutios, veritasEntries, blocks),
+                      else ..._buildTimeline(displayedEvolutios, veritasEntries, blocks),
                     ],
                   ),
                 ),
@@ -289,12 +337,48 @@ class _StatCard extends StatelessWidget {
 
 class _ContributionGraph extends StatelessWidget {
   final List<Evolutio> evolutios;
+  final List<Veritas> veritasEntries;
   final Function(DateTime) onDateSelected;
 
   const _ContributionGraph({
     required this.evolutios,
+    required this.veritasEntries,
     required this.onDateSelected,
   });
+
+  String _formatTooltipDate(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  String _formatTooltip(DateTime date, int evoCount, bool hasVeritas) {
+    final dateStr = _formatTooltipDate(date);
+    if (evoCount == 0 && !hasVeritas) {
+      return '$dateStr\nNo Activity';
+    }
+    List<String> parts = [dateStr];
+    if (evoCount > 0) {
+      parts.add('✓ $evoCount Evolutio${evoCount > 1 ? 's' : ''}');
+    }
+    if (hasVeritas) {
+      parts.add('✓ Veritas Recorded');
+    }
+    return parts.join('\n');
+  }
+
+  Widget _buildLegendItem(Color color, String label) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: HermesTypography.metadata.copyWith(fontSize: 10)),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -306,11 +390,17 @@ class _ContributionGraph extends StatelessWidget {
     int weekday = today.weekday; // 1=Mon, 7=Sun
     final startDate = today.subtract(Duration(days: (weekday - 1) + 175)); // 25 weeks * 7 = 175 days + days to Monday
     
-    // Build frequency map
+    // Build frequency map for Evolutios
     final Map<String, int> freq = {};
     for (var e in evolutios) {
       final d = e.createdAt.toString().substring(0, 10);
       freq[d] = (freq[d] ?? 0) + 1;
+    }
+    
+    // Build set for Veritas
+    final Set<String> veritasDays = {};
+    for (var v in veritasEntries) {
+      veritasDays.add(v.dateMissed.toString().substring(0, 10));
     }
 
     final List<List<DateTime>> weeks = [];
@@ -370,28 +460,46 @@ class _ContributionGraph extends StatelessWidget {
                       }
                       
                       final dateStr = date.toString().substring(0, 10);
-                      final count = freq[dateStr] ?? 0;
-                      int level = 0;
-                      if (count > 0) level = 1;
-                      if (count > 2) level = 2;
-                      if (count > 4) level = 3;
+                      final evoCount = freq[dateStr] ?? 0;
+                      final hasVeritas = veritasDays.contains(dateStr);
+                      
+                      Color cellColor;
+                      if (evoCount > 0) {
+                        cellColor = evoCount == 1 
+                            ? HermesColors.evolutioGlow.withValues(alpha: 0.6)
+                            : HermesColors.evolutioGlow;
+                      } else if (hasVeritas) {
+                        cellColor = HermesColors.veritasColor.withValues(alpha: 0.8);
+                      } else {
+                        cellColor = Colors.white.withValues(alpha: 0.05);
+                      }
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 4.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            if (count == 0) {
-                              VeritasSheet.show(context, dateMissed: date);
-                            } else {
-                              onDateSelected(date);
-                            }
-                          },
-                          child: Container(
-                            width: 14,
-                            height: 14,
-                            decoration: BoxDecoration(
-                              color: _getCommitColor(level),
-                              borderRadius: BorderRadius.circular(3),
+                        child: Tooltip(
+                          message: _formatTooltip(date, evoCount, hasVeritas),
+                          decoration: BoxDecoration(
+                            color: HermesColors.surfaceElevated.withValues(alpha: 0.95),
+                            borderRadius: BorderRadius.circular(HermesRadius.sm),
+                            border: Border.all(color: HermesColors.border),
+                          ),
+                          textStyle: HermesTypography.metadata.copyWith(color: Colors.white, height: 1.4),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: GestureDetector(
+                            onTap: () {
+                              if (evoCount == 0 && !hasVeritas) {
+                                VeritasSheet.show(context, dateMissed: date);
+                              } else {
+                                onDateSelected(date);
+                              }
+                            },
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: cellColor,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
                             ),
                           ),
                         ),
@@ -409,38 +517,18 @@ class _ContributionGraph extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text('Less', style: HermesTypography.metadata.copyWith(fontSize: 10)),
-              const SizedBox(width: HermesSpacing.xs),
-              ...[0, 1, 2, 3].map((level) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: _getCommitColor(level),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(width: HermesSpacing.xs),
-              Text('More', style: HermesTypography.metadata.copyWith(fontSize: 10)),
+              _buildLegendItem(Colors.white.withValues(alpha: 0.05), 'Inactive'),
+              const SizedBox(width: HermesSpacing.sm),
+              _buildLegendItem(HermesColors.veritasColor.withValues(alpha: 0.8), 'Veritas'),
+              const SizedBox(width: HermesSpacing.sm),
+              _buildLegendItem(HermesColors.evolutioGlow.withValues(alpha: 0.6), '1 Evolutio'),
+              const SizedBox(width: HermesSpacing.sm),
+              _buildLegendItem(HermesColors.evolutioGlow, '2+ Evolutios'),
             ],
           ),
         ],
       ),
     );
-  }
-
-  Color _getCommitColor(int level) {
-    switch (level) {
-      case 0: return Colors.white.withValues(alpha: 0.05); // Visible empty state
-      case 1: return HermesColors.evolutioGlow.withValues(alpha: 0.3);
-      case 2: return HermesColors.evolutioGlow.withValues(alpha: 0.6);
-      case 3: return HermesColors.evolutioGlow;
-      default: return HermesColors.evolutioGlow;
-    }
   }
 }
 
@@ -448,7 +536,7 @@ class _ContributionGraph extends StatelessWidget {
 // TIMELINE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-class _TimelineEntry extends StatelessWidget {
+class _TimelineEntry extends ConsumerWidget {
   final String date;
   final List<dynamic> items; // Evolutios or Veritas
   final List<Block> blocks;
@@ -459,8 +547,64 @@ class _TimelineEntry extends StatelessWidget {
     required this.blocks,
   });
 
+  void _confirmDelete(BuildContext context, WidgetRef ref, String objectType, String id) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: HermesColors.surfaceElevated,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HermesRadius.lg)),
+        title: Text('Delete $objectType?', style: HermesTypography.screenTitle),
+        content: Text(
+          'This will permanently delete this $objectType. This action is irreversible.',
+          style: HermesTypography.body,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: HermesTypography.button.copyWith(color: HermesColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: HermesColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              final workspace = ref.read(currentWorkspaceProvider);
+              final deleteFunc = () async {
+                if (objectType == 'Evolutio') {
+                  await ref.read(storageEngineProvider).permanentlyDeleteEvolutio(id);
+                  ref.invalidate(allEvolutiosProvider);
+                } else if (objectType == 'Veritas') {
+                  await ref.read(storageEngineProvider).permanentlyDeleteVeritas(id);
+                }
+                // Trigger a UI refresh.
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$objectType permanently deleted.')));
+                  // To trigger a rebuild for Veritas (since it's not a riverpod provider directly in this screen)
+                  ref.invalidate(allEvolutiosProvider);
+                  // Optionally invalidate the screen state or use a generic provider
+                }
+              };
+
+              if (workspace?.isEncrypted == true) {
+                showDialog(
+                  context: context,
+                  builder: (_) => VerifyPinDialog(onSuccess: deleteFunc),
+                );
+              } else {
+                deleteFunc();
+              }
+            },
+            child: const Text('Delete Forever'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.only(bottom: HermesSpacing.lg),
       child: Row(
@@ -487,7 +631,25 @@ class _TimelineEntry extends StatelessWidget {
                 if (item is Veritas) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: HermesSpacing.md),
-                    child: _VeritasContent(text: item.reason),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: _VeritasContent(text: item.reason)),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert_rounded, size: 16, color: HermesColors.textTertiary),
+                          padding: EdgeInsets.zero,
+                          color: HermesColors.surfaceElevated,
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(value: 'delete', child: Text('Delete Veritas', style: TextStyle(color: HermesColors.error))),
+                          ],
+                          onSelected: (value) {
+                            if (value == 'delete') {
+                              _confirmDelete(context, ref, 'Veritas', item.id);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
                   );
                 } else if (item is Evolutio) {
                   final block = blocks.firstWhere(
@@ -531,6 +693,19 @@ class _TimelineEntry extends StatelessWidget {
                               ),
                             ],
                           ),
+                        ),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert_rounded, size: 16, color: HermesColors.textTertiary),
+                          padding: EdgeInsets.zero,
+                          color: HermesColors.surfaceElevated,
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(value: 'delete', child: Text('Delete Evolutio', style: TextStyle(color: HermesColors.error))),
+                          ],
+                          onSelected: (value) {
+                            if (value == 'delete') {
+                              _confirmDelete(context, ref, 'Evolutio', item.id);
+                            }
+                          },
                         ),
                       ],
                     ),

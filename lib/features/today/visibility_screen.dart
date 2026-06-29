@@ -18,6 +18,18 @@ class _VisibilityScreenState extends ConsumerState<VisibilityScreen> {
     
     final hiddenDomains = storage.getAllDomainsRaw().where((d) => d.hidden && !d.deleted).toList();
     final hiddenBlocks = storage.getAllBlocksRaw().where((b) => b.hidden && !b.deleted).toList();
+    final archivedSections = ref.watch(archivedSectionsProvider);
+
+    String _getSectionName(String id) {
+      switch (id) {
+        case 'question': return "Today's Pursuit";
+        case 'evolutios': return "Recent Evolutios";
+        case 'veritas': return "Veritas";
+        case 'pinned': return "Pinned Blocks";
+        case 'pinned_domains': return "Pinned Domains";
+        default: return id;
+      }
+    }
 
     return Scaffold(
       backgroundColor: HermesColors.background,
@@ -33,13 +45,39 @@ class _VisibilityScreenState extends ConsumerState<VisibilityScreen> {
       ),
       body: CustomScrollView(
         slivers: [
-          if (hiddenDomains.isEmpty && hiddenBlocks.isEmpty)
+          if (hiddenDomains.isEmpty && hiddenBlocks.isEmpty && archivedSections.isEmpty)
             SliverFillRemaining(
               child: Center(
                 child: Text('No hidden content.', style: HermesTypography.metadata),
               ),
             )
           else ...[
+            if (archivedSections.isNotEmpty) ...[
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(HermesSpacing.lg),
+                  child: HermesSectionHeader(title: 'Hidden Home Sections'),
+                ),
+              ),
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final sectionId = archivedSections.toList()[index];
+                    return ListTile(
+                      leading: const Icon(Icons.dashboard_rounded, color: HermesColors.textTertiary),
+                      title: Text(_getSectionName(sectionId), style: HermesTypography.body),
+                      trailing: TextButton(
+                        onPressed: () {
+                          ref.read(archivedSectionsProvider.notifier).restoreSection(sectionId);
+                        },
+                        child: Text('Pin to Home', style: HermesTypography.bodySmall.copyWith(color: HermesColors.evolutioGlow)),
+                      ),
+                    );
+                  },
+                  childCount: archivedSections.length,
+                ),
+              ),
+            ],
             if (hiddenDomains.isNotEmpty) ...[
               const SliverToBoxAdapter(
                 child: Padding(
