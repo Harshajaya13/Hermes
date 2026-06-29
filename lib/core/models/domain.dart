@@ -14,6 +14,7 @@ class Domain {
   final bool archived;
   final bool deleted;
   final bool hidden;
+  final bool pinned;
   final int version;
 
   Domain({
@@ -28,6 +29,7 @@ class Domain {
     this.archived = false,
     this.deleted = false,
     this.hidden = false,
+    this.pinned = false,
     this.version = 1,
   })  : id = id ?? _uuid.v4(),
         createdAt = createdAt ?? DateTime.now(),
@@ -45,6 +47,7 @@ class Domain {
         'archived': archived,
         'deleted': deleted,
         'hidden': hidden,
+        'pinned': pinned,
         'version': version,
       };
 
@@ -60,6 +63,7 @@ class Domain {
         archived: json['archived'] as bool? ?? false,
         deleted: json['deleted'] as bool? ?? false,
         hidden: json['hidden'] as bool? ?? false,
+        pinned: json['pinned'] as bool? ?? false,
         version: json['version'] as int? ?? 1,
       );
 
@@ -73,6 +77,7 @@ class Domain {
     bool? archived,
     bool? deleted,
     bool? hidden,
+    bool? pinned,
     int? version,
   }) {
     return Domain(
@@ -87,6 +92,7 @@ class Domain {
       archived: archived ?? this.archived,
       deleted: deleted ?? this.deleted,
       hidden: hidden ?? this.hidden,
+      pinned: pinned ?? this.pinned,
       version: version ?? (this.version + 1),
     );
   }

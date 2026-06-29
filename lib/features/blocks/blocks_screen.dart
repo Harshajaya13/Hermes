@@ -160,6 +160,10 @@ class BlocksScreen extends ConsumerWidget {
                                 onSelected: (value) async {
                                   if (value == 'rename') {
                                     CreateDomainSheet.show(context, domain);
+                                  } else if (value == 'pin') {
+                                    final updatedDomain = domain.copyWith(pinned: !domain.pinned);
+                                    await ref.read(storageEngineProvider).saveDomain(updatedDomain);
+                                    ref.invalidate(domainsProvider);
                                   } else if (value == 'archive') {
                                     _showArchiveDialog(context, ref, domain.id, domain.name, true);
                                   } else if (value == 'hide') {
@@ -178,6 +182,7 @@ class BlocksScreen extends ConsumerWidget {
                                 },
                                 itemBuilder: (context) => [
                                   PopupMenuItem(value: 'rename', child: Text('Rename Domain', style: HermesTypography.bodySmall)),
+                                  PopupMenuItem(value: 'pin', child: Text(domain.pinned ? 'Unpin From Home' : 'Pin To Home', style: HermesTypography.bodySmall)),
                                   PopupMenuItem(value: 'archive', child: Text('Archive Domain', style: HermesTypography.bodySmall)),
                                   PopupMenuItem(value: 'hide', child: Text('Hide Domain', style: HermesTypography.bodySmall)),
                                 ],

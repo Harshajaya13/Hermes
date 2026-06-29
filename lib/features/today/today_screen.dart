@@ -8,6 +8,7 @@ import '../items/item_detail_screen.dart';
 import '../evolution/veritas_sheet.dart';
 import '../archive/archive_screen.dart';
 import '../blocks/block_detail_screen.dart';
+import '../blocks/domain_detail_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import '../blocks/create_item_sheet.dart';
 import 'workspace_security_dialogs.dart';
@@ -25,11 +26,12 @@ class TodayScreen extends ConsumerWidget {
     final recentEvolutios = ref.watch(recentEvolutiosProvider);
     final workspace = ref.watch(currentWorkspaceProvider);
     final archivedSections = ref.watch(archivedSectionsProvider);
+    
+    final allDomains = ref.watch(domainsProvider);
+    final pinnedDomains = allDomains.where((d) => d.pinned && !d.deleted && !d.archived).toList();
+    
     final allBlocks = ref.watch(allBlocksProvider);
     var pinnedBlocks = allBlocks.where((b) => b.pinned && !b.deleted && !b.archived).toList();
-    if (pinnedBlocks.isEmpty) {
-      pinnedBlocks = allBlocks.take(4).toList(); // Fallback if none pinned
-    }
 
     // Dynamic daily item calculation based on selected format
     final todayFormatStr = ref.watch(todaySectionFormatProvider);
@@ -94,7 +96,7 @@ class TodayScreen extends ConsumerWidget {
                     if (!isDailySection)
                       ListTile(
                         leading: const Icon(Icons.visibility_off_outlined, color: HermesColors.textPrimary),
-                        title: Text(sectionId == 'pinned' ? 'Unpin From Home' : 'Hide From Home', style: HermesTypography.body),
+                        title: Text((sectionId == 'pinned' || sectionId == 'pinned_domains') ? 'Unpin From Home' : 'Hide From Home', style: HermesTypography.body),
                         onTap: () {
                           Navigator.pop(ctx);
                           ref.read(archivedSectionsProvider.notifier).archiveSection(sectionId);
@@ -320,6 +322,74 @@ class TodayScreen extends ConsumerWidget {
                               ),
                             );
                           }).toList(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: HermesSpacing.sectionGap),
+              ),
+            ],
+
+
+
+            // ── Pinned Domains ──────────────────────────────────────
+            if (!archivedSections.contains('pinned_domains') && pinnedDomains.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: HermesFadeIn(
+                  delay: Duration.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: HermesSpacing.screenHorizontal,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        HermesSectionHeader(
+                          title: 'Pinned Domains',
+                          onLongPress: () => showSectionOptions('pinned_domains', 'Pinned Domains'),
+                        ),
+                        const SizedBox(height: HermesSpacing.xs),
+                        Wrap(
+                          spacing: HermesSpacing.xs,
+                          runSpacing: HermesSpacing.xs,
+                          children: pinnedDomains.map((d) {
+                            return HermesBlockChip(
+                              icon: d.icon,
+                              label: d.name,
+                              color: HermesColors.accent,
+                              onTap: () {
+                                Navigator.push(context, MaterialPageRoute(
+                                  builder: (context) => DomainDetailScreen(domain: d),
+                                ));
+                              },
+                              trailing: PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_vert_rounded, size: 16, color: HermesColors.textTertiary),
+                                padding: EdgeInsets.zero,
+                                color: HermesColors.surfaceElevated,
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(value: 'open', child: Text('Open Domain')),
+                                  const PopupMenuItem(value: 'unpin', child: Text('Unpin From Home')),
+                                  const PopupMenuItem(value: 'archive', child: Text('Archive Domain')),
+                                ],
+                                onSelected: (value) async {
+                                  if (value == 'open') {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => DomainDetailScreen(domain: d)));
+                                  } else if (value == 'unpin') {
+                                    final updated = d.copyWith(pinned: false);
+                                    await ref.read(storageEngineProvider).saveDomain(updated);
+                                    ref.invalidate(domainsProvider);
+                                  } else if (value == 'archive') {
+                                    final updated = d.copyWith(archived: true);
+                                    await ref.read(storageEngineProvider).saveDomain(updated);
+                                    ref.invalidate(domainsProvider);
+                                  }
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ],
                     ),
                   ),
