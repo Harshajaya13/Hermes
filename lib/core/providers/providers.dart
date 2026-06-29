@@ -8,14 +8,14 @@ import '../models/models.dart';
 /// Wiring the UI to the offline-first JSON storage.
 /// ─────────────────────────────────────────────────────────────────────────────
 
-import '../engines/export_engine.dart';
+import '../engines/exchange_engine.dart';
 
 final storageEngineProvider = Provider<LocalStorageEngine>((ref) {
   throw UnimplementedError('Storage engine not initialized');
 });
 
-final exportEngineProvider = Provider<ExportEngine>((ref) {
-  return ExportEngine(ref.watch(storageEngineProvider));
+final exchangeEngineProvider = Provider<ExchangeEngine>((ref) {
+  return ExchangeEngine(ref.watch(storageEngineProvider));
 });
 
 // ── Active Workspace ─────────────────────────────────────────────────────────

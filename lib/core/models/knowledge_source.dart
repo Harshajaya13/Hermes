@@ -70,6 +70,7 @@ class KnowledgeSource {
       );
 
   KnowledgeSource copyWith({
+    String? workspaceId,
     String? name,
     String? targetDomainId,
     String? targetBlockId,
@@ -82,7 +83,7 @@ class KnowledgeSource {
   }) {
     return KnowledgeSource(
       id: id,
-      workspaceId: workspaceId,
+      workspaceId: workspaceId ?? this.workspaceId,
       name: name ?? this.name,
       type: type,
       targetDomainId: targetDomainId ?? this.targetDomainId,

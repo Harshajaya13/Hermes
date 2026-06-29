@@ -206,12 +206,23 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             ),
           ),
           const SizedBox(height: HermesSpacing.lg),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: _submitReflection,
-              child: const Text('Save Reflection', style: TextStyle(color: HermesColors.accent)),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => _recordEvolutio(true, customText: 'Recorded an Evolutio without a formal reflection.'),
+                child: const Text('Record Evolutio', style: TextStyle(color: HermesColors.evolutioGlow)),
+              ),
+              const SizedBox(width: HermesSpacing.md),
+              ElevatedButton(
+                onPressed: _submitReflection,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: HermesColors.accent,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Save Reflection'),
+              ),
+            ],
           ),
         ] else ...[
           HermesFadeIn(

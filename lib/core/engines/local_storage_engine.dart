@@ -112,6 +112,8 @@ class LocalStorageEngine {
 
   List<Workspace> get workspaces => _workspaces.values.where((e) => !e.deleted).toList();
   
+  Workspace? getWorkspace(String id) => _workspaces[id];
+  
   Future<void> saveWorkspace(Workspace workspace) async {
     _workspaces[workspace.id] = workspace;
     await _saveToDisk('workspaces', _workspaces.map((k, v) => MapEntry(k, v.toJson())));

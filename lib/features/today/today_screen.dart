@@ -47,8 +47,16 @@ class TodayScreen extends ConsumerWidget {
         final items = ref.watch(itemsByBlockProvider(block.id));
         
         // Find all unsolved items meant for Today's Pursuit
-        final unsolvedItems = items.where((i) => i.metadata?['isDailyGoal'] == true &&
-                               i.metadata?['isSolved'] != true).toList();
+        final unsolvedItems = items.where((i) {
+          if (i.metadata?['isDailyGoal'] != true) return false;
+          if (i.metadata?['isSolved'] == true) return false;
+          
+          // Philosophy: Today's Pursuit is only a daily reference view.
+          // If today passes, remove it from Today's Pursuit, but keep it in the Block.
+          final createdAt = i.createdAt;
+          final isCreatedToday = createdAt.year == now.year && createdAt.month == now.month && createdAt.day == now.day;
+          return isCreatedToday;
+        }).toList();
         
         // Stably sort them so the same items appear until solved
         unsolvedItems.sort((a, b) => a.id.compareTo(b.id));
