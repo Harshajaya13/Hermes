@@ -7,6 +7,7 @@ import '../../core/models/models.dart';
 import '../items/item_detail_screen.dart';
 import '../evolution/veritas_sheet.dart';
 import '../archive/archive_screen.dart';
+import '../blocks/block_detail_screen.dart';
 import 'package:file_picker/file_picker.dart';
 
 class TodayScreen extends ConsumerWidget {
@@ -20,6 +21,64 @@ class TodayScreen extends ConsumerWidget {
     // Read dynamic data from offline storage
     final recentEvolutios = ref.watch(recentEvolutiosProvider);
     final workspace = ref.watch(currentWorkspaceProvider);
+    final archivedSections = ref.watch(archivedSectionsProvider);
+    final allBlocks = ref.watch(allBlocksProvider);
+    var pinnedBlocks = allBlocks.where((b) => b.pinned && !b.deleted && !b.archived).toList();
+    if (pinnedBlocks.isEmpty) {
+      pinnedBlocks = allBlocks.take(4).toList(); // Fallback if none pinned
+    }
+
+    // Dynamic question calculation
+    Block? questionBlock;
+    Item? questionItem;
+    if (allBlocks.isNotEmpty) {
+      questionBlock = allBlocks.firstWhere((b) => b.name == 'Probability', orElse: () => allBlocks.first);
+      final items = ref.watch(itemsByBlockProvider(questionBlock.id));
+      if (items.isNotEmpty) {
+        questionItem = items.first;
+      }
+    }
+
+    void archiveSection(String sectionId, String sectionName) {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: HermesColors.surfaceElevated,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+        builder: (ctx) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(HermesSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Archive $sectionName?', style: HermesTypography.sectionTitle),
+                const SizedBox(height: HermesSpacing.md),
+                Text('This will hide the section from your Today screen. You can restore it later from the Workspace Archive.', style: HermesTypography.body),
+                const SizedBox(height: HermesSpacing.xl),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancel', style: TextStyle(color: HermesColors.textSecondary)),
+                    ),
+                    const SizedBox(width: HermesSpacing.md),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.veritasColor, foregroundColor: Colors.white),
+                      onPressed: () {
+                        ref.read(archivedSectionsProvider.notifier).archiveSection(sectionId);
+                        Navigator.pop(ctx);
+                      },
+                      child: const Text('Archive Section'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: HermesColors.background,
@@ -119,218 +178,301 @@ class TodayScreen extends ConsumerWidget {
             ),
 
             // ── Morning Question ────────────────────────────────────
-            SliverToBoxAdapter(
-              child: HermesFadeIn(
-                delay: const Duration(milliseconds: 80),
+            if (archivedSections.contains('question')) ...[
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HermesSpacing.screenHorizontal,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const HermesSectionHeader(title: "Today's Question"),
-                      const SizedBox(height: HermesSpacing.xs),
-                      HermesCard(
-                        onTap: () async {
-                          // Fetch the mock item we seeded in the initialization provider
-                          final blocks = ref.read(allBlocksProvider);
-                          if (blocks.isEmpty) return;
-                          final mathBlock = blocks.firstWhere((b) => b.name == 'Mathematics', orElse: () => blocks.first);
-                          final items = ref.read(itemsByBlockProvider(mathBlock.id));
-                          if (items.isEmpty) return;
-                          
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (context) => ItemDetailScreen(
-                              item: items.first,
-                              block: mathBlock,
-                            ),
-                          ));
-                        },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: HermesColors.accent,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: HermesSpacing.xs),
-                                Text(
-                                  'Mathematics · Expected Value',
-                                  style: HermesTypography.metadata.copyWith(
-                                    color: HermesColors.accent,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: HermesSpacing.sm),
-                            Text(
-                              'A fair coin is flipped 3 times. What is the expected number of heads?',
-                              style: HermesTypography.itemTitle.copyWith(
-                                height: 1.5,
-                              ),
-                            ),
-                            const SizedBox(height: HermesSpacing.md),
-                            Text(
-                              'Tap to solve',
-                              style: HermesTypography.metadata,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
+                  child: HermesCard(
+                    padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.md, vertical: HermesSpacing.sm),
+                    onTap: () => ref.read(archivedSectionsProvider.notifier).restoreSection('question'),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Today's Question (Archived)", style: HermesTypography.metadata),
+                        const Icon(Icons.restore_rounded, size: 16, color: HermesColors.textTertiary),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-
-            const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.sectionGap),
-            ),
+              const SliverToBoxAdapter(child: SizedBox(height: HermesSpacing.sectionGap)),
+            ] else ...[
+              SliverToBoxAdapter(
+                child: HermesFadeIn(
+                  delay: Duration.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: HermesSpacing.screenHorizontal,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        HermesSectionHeader(
+                          title: "Today's Question",
+                          onLongPress: () => archiveSection('question', "Today's Question"),
+                        ),
+                        const SizedBox(height: HermesSpacing.xs),
+                        HermesCard(
+                          onTap: () async {
+                            if (questionBlock == null || questionItem == null) return;
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (context) => ItemDetailScreen(
+                                item: questionItem!,
+                                block: questionBlock!,
+                              ),
+                            ));
+                          },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: questionBlock != null ? Color(int.parse(questionBlock.colorHex.replaceAll('#', '0xFF'))) : HermesColors.accent,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: HermesSpacing.xs),
+                                  Text(
+                                    '${questionBlock?.name ?? 'Unknown Block'}${questionItem != null ? ' · ${questionItem.title}' : ''}',
+                                    style: HermesTypography.metadata.copyWith(
+                                      color: questionBlock != null ? Color(int.parse(questionBlock.colorHex.replaceAll('#', '0xFF'))) : HermesColors.accent,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: HermesSpacing.sm),
+                              Text(
+                                questionItem?.content ?? 'No questions available.',
+                                style: HermesTypography.itemTitle.copyWith(
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: HermesSpacing.md),
+                              Text(
+                                questionItem != null ? 'Tap to evaluate' : 'Create an item to begin',
+                                style: HermesTypography.metadata,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: HermesSpacing.sectionGap),
+              ),
+            ],
 
             // ── Pinned Blocks ───────────────────────────────────────
-            SliverToBoxAdapter(
-              child: HermesFadeIn(
-                delay: const Duration(milliseconds: 160),
+            if (archivedSections.contains('pinned')) ...[
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HermesSpacing.screenHorizontal,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const HermesSectionHeader(title: 'Pinned Blocks'),
-                      const SizedBox(height: HermesSpacing.xs),
-                      Wrap(
-                        spacing: HermesSpacing.xs,
-                        runSpacing: HermesSpacing.xs,
-                        children: [
-                          HermesBlockChip(
-                            icon: '📘',
-                            label: 'Mathematics',
-                            color: HermesColors.accent,
-                            onTap: () {},
-                          ),
-                          HermesBlockChip(
-                            icon: '🤖',
-                            label: 'AI',
-                            color: HermesColors.accentMuted,
-                            onTap: () {},
-                          ),
-                        ],
-                      ),
-                    ],
+                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
+                  child: HermesCard(
+                    padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.md, vertical: HermesSpacing.sm),
+                    onTap: () => ref.read(archivedSectionsProvider.notifier).restoreSection('pinned'),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Pinned Blocks (Archived)", style: HermesTypography.metadata),
+                        const Icon(Icons.restore_rounded, size: 16, color: HermesColors.textTertiary),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-
-            const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.sectionGap),
-            ),
+              const SliverToBoxAdapter(child: SizedBox(height: HermesSpacing.sectionGap)),
+            ] else ...[
+              SliverToBoxAdapter(
+                child: HermesFadeIn(
+                  delay: Duration.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: HermesSpacing.screenHorizontal,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        HermesSectionHeader(
+                          title: 'Pinned Blocks',
+                          onLongPress: () => archiveSection('pinned', 'Pinned Blocks'),
+                        ),
+                        const SizedBox(height: HermesSpacing.xs),
+                        if (pinnedBlocks.isEmpty)
+                          Text('No pinned blocks yet.', style: HermesTypography.metadata)
+                        else
+                          Wrap(
+                            spacing: HermesSpacing.xs,
+                            runSpacing: HermesSpacing.xs,
+                            children: pinnedBlocks.map((b) {
+                              return HermesBlockChip(
+                                icon: b.icon,
+                                label: b.name,
+                                color: Color(int.parse(b.colorHex.replaceAll('#', '0xFF'))),
+                                onTap: () {
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (context) => BlockDetailScreen(block: b),
+                                  ));
+                                },
+                              );
+                            }).toList(),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: HermesSpacing.sectionGap),
+              ),
+            ],
 
             // ── Today's Evolutios (Dynamic from storage) ─────────────
-            SliverToBoxAdapter(
-              child: HermesFadeIn(
-                delay: const Duration(milliseconds: 240),
+            if (archivedSections.contains('evolutios')) ...[
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HermesSpacing.screenHorizontal,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const HermesSectionHeader(title: "Recent Evolutios"),
-                      const SizedBox(height: HermesSpacing.xs),
-                      if (recentEvolutios.isEmpty)
-                        Text(
-                          'No evolutios yet. Solve a question or read an article to generate one.',
-                          style: HermesTypography.metadata,
-                        )
-                      else
-                        ...recentEvolutios.map((evo) {
-                          // Note: In reality we'd look up the block name via blockId
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: HermesSpacing.itemGap),
-                            child: _EvolutioEntry(
-                              text: evo.content,
-                              block: 'Dynamic Block', // TODO: lookup block name
-                              time: _formatTimeAgo(evo.createdAt),
-                            ),
-                          );
-                        }),
-                    ],
+                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
+                  child: HermesCard(
+                    padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.md, vertical: HermesSpacing.sm),
+                    onTap: () => ref.read(archivedSectionsProvider.notifier).restoreSection('evolutios'),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Recent Evolutios (Archived)", style: HermesTypography.metadata),
+                        const Icon(Icons.restore_rounded, size: 16, color: HermesColors.textTertiary),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-
-            const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.sectionGap),
-            ),
+              const SliverToBoxAdapter(child: SizedBox(height: HermesSpacing.sectionGap)),
+            ] else ...[
+              SliverToBoxAdapter(
+                child: HermesFadeIn(
+                  delay: Duration.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: HermesSpacing.screenHorizontal,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        HermesSectionHeader(
+                          title: "Recent Evolutios",
+                          onLongPress: () => archiveSection('evolutios', "Recent Evolutios"),
+                        ),
+                        const SizedBox(height: HermesSpacing.xs),
+                        if (recentEvolutios.isEmpty)
+                          Text(
+                            'No evolutios yet. Solve a question or read an article to generate one.',
+                            style: HermesTypography.metadata,
+                          )
+                        else
+                          ...recentEvolutios.map((evo) {
+                            // Note: In reality we'd look up the block name via blockId
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: HermesSpacing.itemGap),
+                              child: _EvolutioEntry(
+                                text: evo.content,
+                                block: 'Dynamic Block', // TODO: lookup block name
+                                time: _formatTimeAgo(evo.createdAt),
+                              ),
+                            );
+                          }),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: HermesSpacing.sectionGap),
+              ),
+            ],
 
             // ── Veritas ─────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: HermesFadeIn(
-                delay: const Duration(milliseconds: 320),
+            if (archivedSections.contains('veritas')) ...[
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HermesSpacing.screenHorizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
+                  child: HermesCard(
+                    padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.md, vertical: HermesSpacing.sm),
+                    onTap: () => ref.read(archivedSectionsProvider.notifier).restoreSection('veritas'),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Veritas (Archived)", style: HermesTypography.metadata),
+                        const Icon(Icons.restore_rounded, size: 16, color: HermesColors.textTertiary),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const HermesSectionHeader(title: 'Veritas'),
-                      const SizedBox(height: HermesSpacing.xs),
-                      HermesCard(
-                        onTap: () {
-                          VeritasSheet.show(context);
-                        },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.edit_note_rounded,
-                                  size: 18,
-                                  color: HermesColors.veritasColor
-                                      .withValues(alpha: 0.7),
-                                ),
-                                const SizedBox(width: HermesSpacing.xs),
-                                Text(
-                                  workspace?.isEncrypted == true 
-                                      ? 'Locked & Encrypted' 
-                                      : 'Always available',
-                                  style: HermesTypography.metadata.copyWith(
+                ),
+              ),
+            ] else ...[
+              SliverToBoxAdapter(
+                child: HermesFadeIn(
+                  delay: Duration.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: HermesSpacing.screenHorizontal,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        HermesSectionHeader(
+                          title: 'Veritas',
+                          onLongPress: () => archiveSection('veritas', 'Veritas'),
+                        ),
+                        const SizedBox(height: HermesSpacing.xs),
+                        HermesCard(
+                          onTap: () {
+                            VeritasSheet.show(context);
+                          },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.edit_note_rounded,
+                                    size: 18,
                                     color: HermesColors.veritasColor
                                         .withValues(alpha: 0.7),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: HermesSpacing.sm),
-                            Text(
-                              'What happened today?',
-                              style: HermesTypography.reflection.copyWith(
-                                fontStyle: FontStyle.normal,
-                                color: HermesColors.textTertiary,
+                                  const SizedBox(width: HermesSpacing.xs),
+                                  Text(
+                                    workspace?.isEncrypted == true 
+                                        ? 'Locked & Encrypted' 
+                                        : 'Always available',
+                                    style: HermesTypography.metadata.copyWith(
+                                      color: HermesColors.veritasColor
+                                          .withValues(alpha: 0.7),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: HermesSpacing.sm),
+                              Text(
+                                'What happened today?',
+                                style: HermesTypography.reflection.copyWith(
+                                  fontStyle: FontStyle.normal,
+                                  color: HermesColors.textTertiary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
 
             const SliverToBoxAdapter(
               child: SizedBox(height: HermesSpacing.xxxl),

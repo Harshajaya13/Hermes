@@ -1,0 +1,41 @@
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 99.0.0 (104.0.0 available)
+  analyzer 12.1.0 (14.0.0 available)
+  archive 3.6.1 (4.0.9 available)
+  file_picker 8.3.7 (11.0.2 available)
+  flutter_markdown 0.7.7+1 (discontinued replaced by flutter_markdown_plus)
+  google_fonts 6.3.3 (8.1.0 available)
+  js 0.6.7 (0.7.2 available)
+  matcher 0.12.19 (0.12.20 available)
+  meta 1.18.0 (1.18.3 available)
+  package_config 2.2.0 (3.0.0 available)
+  test 1.31.0 (1.31.2 available)
+  test_api 0.7.11 (0.7.13 available)
+  test_core 0.6.17 (0.6.19 available)
+  vector_math 2.2.0 (2.4.0 available)
+  win32 5.15.0 (6.3.0 available)
+Got dependencies!
+1 package is discontinued.
+14 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing hermes...                                             
+
+warning • The value of the local variable 'buffer' isn't used. Try removing the variable or using it • lib/core/engines/article_fetcher.dart:31:13 • unused_local_variable
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/core/widgets/hermes_widgets.dart:41:13 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/core/widgets/hermes_widgets.dart:191:15 • use_null_aware_elements
+warning • Duplicate import. Try removing all but one import of the library • lib/features/blocks/block_detail_screen.dart:18:8 • duplicate_import
+warning • The declaration '_FilterChip' isn't referenced. Try removing the declaration of '_FilterChip' • lib/features/blocks/block_detail_screen.dart:235:7 • unused_element
+warning • A value for optional parameter 'isActive' isn't ever given. Try removing the unused parameter • lib/features/blocks/block_detail_screen.dart:241:10 • unused_element_parameter
+warning • Unused import: 'block_detail_screen.dart'. Try removing the import directive • lib/features/blocks/blocks_screen.dart:6:8 • unused_import
+warning • The declaration '_parseColor' isn't referenced. Try removing the declaration of '_parseColor' • lib/features/blocks/blocks_screen.dart:203:9 • unused_element
+warning • Unused import: '../../core/widgets/hermes_widgets.dart'. Try removing the import directive • lib/features/blocks/create_block_sheet.dart:4:8 • unused_import
+warning • Unused import: '../../core/widgets/hermes_widgets.dart'. Try removing the import directive • lib/features/blocks/create_domain_sheet.dart:4:8 • unused_import
+warning • Unused import: '../../core/widgets/hermes_widgets.dart'. Try removing the import directive • lib/features/blocks/create_item_sheet.dart:4:8 • unused_import
+warning • Duplicate import. Try removing all but one import of the library • lib/features/blocks/domain_detail_screen.dart:8:8 • duplicate_import
+warning • Unused import: '../../core/widgets/hermes_widgets.dart'. Try removing the import directive • lib/features/evolution/veritas_sheet.dart:4:8 • unused_import
+warning • Unused import: '../items/item_detail_screen.dart'. Try removing the import directive • lib/features/search/search_screen.dart:7:8 • unused_import
+warning • Unused import: '../blocks/block_detail_screen.dart'. Try removing the import directive • lib/features/search/search_screen.dart:8:8 • unused_import
+warning • Unused import: '../blocks/domain_detail_screen.dart'. Try removing the import directive • lib/features/search/search_screen.dart:9:8 • unused_import
+   info • Unnecessary use of string interpolation. Try replacing the string literal with the variable name • lib/features/today/today_screen.dart:222:37 • unnecessary_string_interpolations
+

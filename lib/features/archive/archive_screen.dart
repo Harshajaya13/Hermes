@@ -21,6 +21,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     final archivedDomains = storage.getAllDomainsRaw().where((d) => d.deleted).toList();
     final archivedBlocks = storage.getAllBlocksRaw().where((b) => b.deleted).toList();
     final archivedItems = storage.getAllItemsRaw().where((i) => i.deleted).toList();
+    final hiddenSections = ref.watch(archivedSectionsProvider);
 
     return Scaffold(
       backgroundColor: HermesColors.background,
@@ -36,13 +37,45 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
       ),
       body: CustomScrollView(
         slivers: [
-          if (archivedDomains.isEmpty && archivedBlocks.isEmpty && archivedItems.isEmpty)
+          if (archivedDomains.isEmpty && archivedBlocks.isEmpty && archivedItems.isEmpty && hiddenSections.isEmpty)
             SliverFillRemaining(
               child: Center(
                 child: Text('The Archive is empty.', style: HermesTypography.metadata),
               ),
             )
           else ...[
+            if (hiddenSections.isNotEmpty) ...[
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(HermesSpacing.lg),
+                  child: HermesSectionHeader(title: 'Home Sections'),
+                ),
+              ),
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final sectionId = hiddenSections.elementAt(index);
+                    String sectionName = sectionId;
+                    if (sectionId == 'question') sectionName = "Today's Question";
+                    if (sectionId == 'pinned') sectionName = "Pinned Blocks";
+                    if (sectionId == 'evolutios') sectionName = "Recent Evolutios";
+                    if (sectionId == 'veritas') sectionName = "Veritas";
+
+                    return ListTile(
+                      leading: const Icon(Icons.visibility_off, color: HermesColors.textTertiary),
+                      title: Text(sectionName, style: HermesTypography.body),
+                      trailing: TextButton(
+                        onPressed: () {
+                          ref.read(archivedSectionsProvider.notifier).restoreSection(sectionId);
+                        },
+                        child: Text('Restore', style: HermesTypography.bodySmall.copyWith(color: HermesColors.evolutioGlow)),
+                      ),
+                    );
+                  },
+                  childCount: hiddenSections.length,
+                ),
+              ),
+            ],
             if (archivedDomains.isNotEmpty) ...[
               const SliverToBoxAdapter(
                 child: Padding(

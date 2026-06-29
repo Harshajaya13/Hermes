@@ -15,26 +15,32 @@ import '../theme/hermes_theme.dart';
 class HermesSectionHeader extends StatelessWidget {
   final String title;
   final Widget? trailing;
+  final VoidCallback? onLongPress;
 
   const HermesSectionHeader({
     super.key,
     required this.title,
     this.trailing,
+    this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: HermesSpacing.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title.toUpperCase(),
-            style: HermesTypography.sectionTitle,
-          ),
-          ?trailing,
-        ],
+      child: GestureDetector(
+        onLongPress: onLongPress,
+        behavior: HitTestBehavior.opaque,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title.toUpperCase(),
+              style: HermesTypography.sectionTitle,
+            ),
+            if (trailing != null) trailing!,
+          ],
+        ),
       ),
     );
   }
@@ -182,7 +188,7 @@ class HermesListTile extends StatelessWidget {
                   ],
                 ),
               ),
-              ?trailing,
+              if (trailing != null) trailing!,
             ],
           ),
         ),

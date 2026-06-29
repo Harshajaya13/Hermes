@@ -31,6 +31,29 @@ class LocalStorageEngine {
     } else {
       await _loadAllFromDisk(hermesDir);
     }
+
+    // Seed initial pure data so the UI looks exactly as requested (Probability & Expected Values)
+    if (_workspaces.isNotEmpty && getDomains(_workspaces.values.first.id).isEmpty) {
+      final workspace = _workspaces.values.first;
+      
+      final engDomain = Domain(workspaceId: workspace.id, name: 'Engineering', sortOrder: 0);
+      await saveDomain(engDomain);
+      
+      final probBlock = Block(domainId: engDomain.id, name: 'Probability', icon: '📘', colorHex: '#7C9EBC', pinned: true);
+      final reflectionsBlock = Block(domainId: engDomain.id, name: 'reflections', icon: '🗒️', colorHex: '#A08EB4', pinned: true);
+      final philosophyBlock = Block(domainId: engDomain.id, name: 'philosophy', icon: '🏛️', colorHex: '#B4A08E', pinned: true);
+      await saveBlock(probBlock);
+      await saveBlock(reflectionsBlock);
+      await saveBlock(philosophyBlock);
+      
+      final qItem = Item(
+        blockId: probBlock.id, 
+        type: ItemType.question, 
+        title: 'Expected Values', 
+        content: 'A fair coin is flipped 3 times. What is the expected number of heads?'
+      );
+      await saveItem(qItem);
+    }
   }
 
   Future<File> _getFile(String collection) async {

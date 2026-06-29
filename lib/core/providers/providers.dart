@@ -71,32 +71,22 @@ final recentEvolutiosProvider = Provider<List<Evolutio>>((ref) {
   return evolutios.take(5).toList();
 });
 
-// ── App Initialization ───────────────────────────────────────────────────────
+// ── App State (UI) ───────────────────────────────────────────────────────────
 
-final appInitializationProvider = FutureProvider<void>((ref) async {
-  final storage = ref.read(storageEngineProvider);
-  await storage.initialize();
-  // We can seed initial data here if empty
-  if (storage.workspaces.isNotEmpty && storage.getDomains(storage.workspaces.first.id).isEmpty) {
-    final workspace = storage.workspaces.first;
-    
-    // Seed Engineering Domain
-    final engDomain = Domain(workspaceId: workspace.id, name: 'Engineering', sortOrder: 0);
-    await storage.saveDomain(engDomain);
-    
-    // Seed Blocks
-    final mathBlock = Block(domainId: engDomain.id, name: 'Mathematics', icon: '📘', colorHex: '#7C9EBC');
-    final aiBlock = Block(domainId: engDomain.id, name: 'AI', icon: '🤖', colorHex: '#A08EB4');
-    await storage.saveBlock(mathBlock);
-    await storage.saveBlock(aiBlock);
-    
-    // Seed Item
-    final qItem = Item(
-      blockId: mathBlock.id, 
-      type: ItemType.question, 
-      title: 'A fair coin is flipped 3 times. What is the expected number of heads?', 
-      content: 'Expected Value formula...'
-    );
-    await storage.saveItem(qItem);
+class ArchivedSectionsNotifier extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => {};
+
+  void archiveSection(String sectionId) {
+    state = {...state, sectionId};
   }
-});
+
+  void restoreSection(String sectionId) {
+    state = {...state}..remove(sectionId);
+  }
+}
+
+final archivedSectionsProvider = NotifierProvider<ArchivedSectionsNotifier, Set<String>>(
+  ArchivedSectionsNotifier.new,
+);
+
