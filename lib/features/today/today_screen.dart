@@ -331,7 +331,7 @@ class TodayScreen extends ConsumerWidget {
             ],
 
             // ── Pinned Blocks ───────────────────────────────────────
-            if (!archivedSections.contains('pinned')) ...[
+            if (!archivedSections.contains('pinned') && pinnedBlocks.isNotEmpty) ...[
               SliverToBoxAdapter(
                 child: HermesFadeIn(
                   delay: Duration.zero,
@@ -347,12 +347,9 @@ class TodayScreen extends ConsumerWidget {
                           onLongPress: () => showSectionOptions('pinned', 'Pinned Blocks'),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
-                        if (pinnedBlocks.isEmpty)
-                          Text('No pinned blocks yet.', style: HermesTypography.metadata)
-                        else
-                          Wrap(
-                            spacing: HermesSpacing.xs,
-                            runSpacing: HermesSpacing.xs,
+                        Wrap(
+                          spacing: HermesSpacing.xs,
+                          runSpacing: HermesSpacing.xs,
                             children: pinnedBlocks.map((b) {
                               return HermesBlockChip(
                                 icon: b.icon,

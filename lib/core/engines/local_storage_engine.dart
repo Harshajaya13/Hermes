@@ -299,6 +299,10 @@ class LocalStorageEngine {
     return list;
   }
   
+  List<Evolutio> getAllEvolutiosRaw() {
+    return _evolutios.values.toList();
+  }
+  
   List<Evolutio> getEvolutiosForBlock(String blockId) {
     final list = _evolutios.values.where((e) => e.blockId == blockId && !e.deleted).toList();
     list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -317,9 +321,99 @@ class LocalStorageEngine {
     list.sort((a, b) => b.dateMissed.compareTo(a.dateMissed));
     return list;
   }
+  
+  List<Veritas> getAllVeritasRaw() {
+    return _veritas.values.toList();
+  }
 
   Future<void> saveVeritas(Veritas veritas) async {
     _veritas[veritas.id] = veritas;
     await _saveToDisk('veritas', _veritas.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  // ── Archive Management ──────────────────────────────────────────────────────
+
+  Future<void> permanentlyDeleteDomain(String id) async {
+    _domains.remove(id);
+    await _saveToDisk('domains', _domains.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> permanentlyDeleteBlock(String id) async {
+    _blocks.remove(id);
+    await _saveToDisk('blocks', _blocks.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> permanentlyDeleteItem(String id) async {
+    _items.remove(id);
+    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> permanentlyDeleteEvolutio(String id) async {
+    _evolutios.remove(id);
+    await _saveToDisk('evolutios', _evolutios.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> permanentlyDeleteVeritas(String id) async {
+    _veritas.remove(id);
+    await _saveToDisk('veritas', _veritas.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> restoreEvolutio(String id) async {
+    final evo = _evolutios[id];
+    if (evo != null) {
+      _evolutios[id] = evo.copyWith(deleted: false, archived: false);
+      await _saveToDisk('evolutios', _evolutios.map((k, v) => MapEntry(k, v.toJson())));
+    }
+  }
+
+  Future<void> restoreVeritas(String id) async {
+    final v = _veritas[id];
+    if (v != null) {
+      _veritas[id] = v.copyWith(deleted: false, archived: false);
+      await _saveToDisk('veritas', _veritas.map((k, v) => MapEntry(k, v.toJson())));
+    }
+  }
+
+  Future<void> emptyArchive() async {
+    _domains.removeWhere((_, v) => v.deleted);
+    _blocks.removeWhere((_, v) => v.deleted);
+    _items.removeWhere((_, v) => v.deleted);
+    _evolutios.removeWhere((_, v) => v.deleted);
+    _veritas.removeWhere((_, v) => v.deleted);
+
+    await Future.wait([
+      _saveToDisk('domains', _domains.map((k, v) => MapEntry(k, v.toJson()))),
+      _saveToDisk('blocks', _blocks.map((k, v) => MapEntry(k, v.toJson()))),
+      _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson()))),
+      _saveToDisk('evolutios', _evolutios.map((k, v) => MapEntry(k, v.toJson()))),
+      _saveToDisk('veritas', _veritas.map((k, v) => MapEntry(k, v.toJson()))),
+    ]);
+  }
+
+  Future<void> restoreAll() async {
+    final deletedDomains = _domains.values.where((d) => d.deleted).map((d) => d.id).toList();
+    for (final id in deletedDomains) {
+      await restoreDomain(id);
+    }
+    
+    final deletedBlocks = _blocks.values.where((b) => b.deleted).map((b) => b.id).toList();
+    for (final id in deletedBlocks) {
+      await restoreBlock(id);
+    }
+    
+    final deletedItems = _items.values.where((i) => i.deleted).map((i) => i.id).toList();
+    for (final id in deletedItems) {
+      await restoreItem(id);
+    }
+    
+    final deletedEvolutios = _evolutios.values.where((e) => e.deleted).map((e) => e.id).toList();
+    for (final id in deletedEvolutios) {
+      await restoreEvolutio(id);
+    }
+    
+    final deletedVeritas = _veritas.values.where((v) => v.deleted).map((v) => v.id).toList();
+    for (final id in deletedVeritas) {
+      await restoreVeritas(id);
+    }
   }
 }

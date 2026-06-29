@@ -40,6 +40,7 @@ class HermesColors {
   static const Color veritasColor = Color(0xFFBFA07A); // Truth / honesty
   static const Color reflectionColor = Color(0xFF7C9EBC); // Thinking moments
   static const Color archiveColor = Color(0xFF6B6B6B); // Safety / storage
+  static const Color error = Color(0xFFCF6679); // Destructive / irreversible
 
   // ── Borders & Dividers ─────────────────────────────────────────────────────
   static const Color border = Color(0xFF1E1E1E);
