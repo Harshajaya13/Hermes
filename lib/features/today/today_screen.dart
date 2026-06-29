@@ -74,10 +74,8 @@ class TodayScreen extends ConsumerWidget {
               }
             }
           } else {
-             // For legacy items without a sourceId but with isDailyGoal=true,
-             // these are old imports before the Data Pipeline v2.0 was built.
-             // We completely hide them from Today's Pursuit so they don't pollute the view.
-             // Manually created items don't have isDailyGoal=true by default.
+             // If a user manually added a goal (sourceId is null), ALWAYS include it.
+             dailyItems.add(MapEntry(block, item));
           }
         }
       }
@@ -739,9 +737,9 @@ class TodayScreen extends ConsumerWidget {
 
                 // Actions
                 Consumer(
-                  builder: (consumerContext, ref, child) {
-                    final isLocked = ref.watch(workspaceLockedProvider);
-                    final ws = ref.watch(currentWorkspaceProvider);
+                  builder: (consumerContext, consumerRef, child) {
+                    final isLocked = consumerRef.watch(workspaceLockedProvider);
+                    final ws = consumerRef.watch(currentWorkspaceProvider);
                     
                     if (isLocked) {
                       return ListTile(
@@ -873,9 +871,16 @@ class TodayScreen extends ConsumerWidget {
                                         securityAnswer: '',
                                         isEncrypted: false,
                                       );
+                                      // Use outer ref to avoid unmounted Consumer error
                                       await ref.read(storageEngineProvider).saveWorkspace(updated);
                                       ref.read(currentWorkspaceProvider.notifier).updateWorkspace(updated);
                                       ref.read(workspaceLockedProvider.notifier).setLocked(false);
+                                      
+                                      if (screenContext.mounted) {
+                                        ScaffoldMessenger.of(screenContext).showSnackBar(
+                                          const SnackBar(content: Text('Workspace lock removed.')),
+                                        );
+                                      }
                                     }
                                   },
                                 ),

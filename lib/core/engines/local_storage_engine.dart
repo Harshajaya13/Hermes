@@ -249,6 +249,12 @@ class LocalStorageEngine {
     return _items.values.toList();
   }
 
+  Domain? getDomainById(String id) => _domains[id];
+  Block? getBlockById(String id) => _blocks[id];
+  Item? getItemById(String id) => _items[id];
+  KnowledgeSource? getSourceById(String id) => _sources[id];
+  Evolutio? getEvolutioById(String id) => _evolutios[id];
+
   Future<void> saveItem(Item item) async {
     _items[item.id] = item;
     await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));

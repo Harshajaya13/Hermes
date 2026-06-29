@@ -164,39 +164,103 @@ class ExchangeEngine {
       if (targetWorkspaceId == null) throw Exception('Merge target workspace not specified');
     }
 
-    // Helper to process lists
-    Future<void> processEntities<T>(String fileName, T Function(Map<String, dynamic>) fromJson, Future<void> Function(T) save) async {
+    final idMap = <String, String>{};
+
+    String getMappedId(String oldId) => idMap[oldId] ?? oldId;
+
+    Future<void> processEntities<T>(
+      String fileName,
+      T Function(Map<String, dynamic>) fromJson,
+      Future<void> Function(T) save,
+      T? Function(String) getById,
+      String Function(T) getId,
+      Map<String, dynamic> Function(Map<String, dynamic>, String, {String? newName}) modifyJson,
+    ) async {
       final jsonStr = _readFileString(archive, fileName);
       if (jsonStr != null) {
         final list = jsonDecode(jsonStr) as List;
         for (final itemJson in list) {
           final item = fromJson(itemJson as Map<String, dynamic>);
-          // Note: Conflict resolution logic (skip, replace, etc.) should be injected here
-          // For now, save simply replaces based on ID
-          await save(item);
+          final oldId = getId(item);
+          final existing = getById(oldId);
+
+          if (existing != null) {
+            if (mergeStrategy == 'skip') {
+              continue; // Do nothing
+            } else if (mergeStrategy == 'replace') {
+              // Ensure we still map any potential parent changes for safety, though replace implies keeping same ID
+              await save(fromJson(modifyJson(Map<String, dynamic>.from(itemJson), oldId)));
+            } else if (mergeStrategy == 'duplicate') {
+              final newId = const Uuid().v4();
+              idMap[oldId] = newId;
+              await save(fromJson(modifyJson(Map<String, dynamic>.from(itemJson), newId)));
+            } else if (mergeStrategy == 'rename') {
+              final newId = const Uuid().v4();
+              idMap[oldId] = newId;
+              final originalName = itemJson['name'] ?? itemJson['title'] ?? 'Imported';
+              await save(fromJson(modifyJson(Map<String, dynamic>.from(itemJson), newId, newName: '$originalName (Copy)')));
+            }
+          } else {
+            // It doesn't exist, just save it. But make sure to map any parent IDs if they were duplicated
+            await save(fromJson(modifyJson(Map<String, dynamic>.from(itemJson), oldId)));
+          }
         }
       }
     }
 
-    await processEntities('domains.json', 
-      (json) => Domain.fromJson(json).copyWith(workspaceId: workspaceId), 
-      storage.saveDomain);
+    await processEntities<Domain>('domains.json', 
+      (json) => Domain.fromJson(json), 
+      storage.saveDomain, storage.getDomainById, (d) => d.id,
+      (json, newId, {newName}) {
+        json['id'] = newId;
+        json['workspaceId'] = workspaceId;
+        if (newName != null) json['name'] = newName;
+        return json;
+      }
+    );
     
-    await processEntities('blocks.json', 
+    await processEntities<Block>('blocks.json', 
       (json) => Block.fromJson(json), 
-      storage.saveBlock);
+      storage.saveBlock, storage.getBlockById, (b) => b.id,
+      (json, newId, {newName}) {
+        json['id'] = newId;
+        json['domainId'] = getMappedId(json['domainId'] as String);
+        if (newName != null) json['name'] = newName;
+        return json;
+      }
+    );
     
-    await processEntities('items.json', 
+    await processEntities<Item>('items.json', 
       (json) => Item.fromJson(json), 
-      storage.saveItem);
+      storage.saveItem, storage.getItemById, (i) => i.id,
+      (json, newId, {newName}) {
+        json['id'] = newId;
+        json['blockId'] = getMappedId(json['blockId'] as String);
+        if (newName != null) json['title'] = newName;
+        return json;
+      }
+    );
       
-    await processEntities('sources.json', 
-      (json) => KnowledgeSource.fromJson(json).copyWith(workspaceId: workspaceId), 
-      storage.saveSource);
+    await processEntities<KnowledgeSource>('sources.json', 
+      (json) => KnowledgeSource.fromJson(json), 
+      storage.saveSource, storage.getSourceById, (s) => s.id,
+      (json, newId, {newName}) {
+        json['id'] = newId;
+        json['workspaceId'] = workspaceId;
+        if (newName != null) json['name'] = newName;
+        return json;
+      }
+    );
       
-    await processEntities('evolutios.json', 
+    await processEntities<Evolutio>('evolutios.json', 
       (json) => Evolutio.fromJson(json), 
-      storage.saveEvolutio);
+      storage.saveEvolutio, storage.getEvolutioById, (e) => e.id,
+      (json, newId, {newName}) {
+        json['id'] = newId;
+        json['blockId'] = getMappedId(json['blockId'] as String);
+        return json;
+      }
+    );
   }
 
   Future<Archive> _decodeArchive(String filePath) async {
