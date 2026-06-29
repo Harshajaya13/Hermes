@@ -12,6 +12,17 @@ Hermes is a premium, distraction-free **Personal Development Operating System** 
 
 ---
 
+## 🏛️ The Mythos: Why "Hermes"?
+
+In Greek mythology, **Hermes** is the messenger, the god of writing, language, and transitions. He is the *psychopomp*—the guide who walks between worlds and crosses thresholds. 
+
+We named this system **Hermes** because it serves the same purpose in your life:
+*   **The Guide of Transitions:** Hermes documents your *Evolutios* (moments of intentional change) as you cross the threshold from who you are today to who you want to become.
+*   **The Messenger of Knowledge:** He brings external ideas (articles, questions, philosophy) cleanly into your local, offline environment.
+*   **The Protector of Lores:** Just as the mythological Hermes crossed boundaries between realms, the OS helps you navigate and isolate different "lores" (startup lore, college lore, personal philosophy) without clutter.
+
+---
+
 ## ⚡ What Can Hermes Actually Do?
 
 * **Distraction-Free Article Reader:** Paste any web URL. Hermes strips all ads, cookie banners, and navbars, converts the HTML to clean Markdown via `html2md`, and renders it in a beautiful OLED-black reader.
