@@ -73,12 +73,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     final ans = _evaluateController.text.trim();
     if (ans.isEmpty) return;
     
-    // In a real app, we'd check against item.metadata?['answer']
-    // For now, if they enter something, we show the feedback UI.
     setState(() {
       _showAnswerFeedback = true;
-      // Mock validation for the coin flip question (1.5 or 3/2)
-      _isAnswerCorrect = ans == '1.5' || ans == '3/2';
+      final expected = widget.item.metadata?['answer']?.toString().toLowerCase();
+      if (expected != null && expected.isNotEmpty) {
+        _isAnswerCorrect = ans.toLowerCase() == expected;
+      } else {
+        _isAnswerCorrect = true; // If no explicit answer, self-evaluated as correct
+      }
     });
   }
 
@@ -106,7 +108,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: HermesColors.textSecondary, size: 20),
             onPressed: () {
-              CreateItemSheet.show(context, widget.block, widget.item);
+              CreateItemSheet.show(context, block: widget.block, existingItem: widget.item);
             },
           ),
           const SizedBox(width: HermesSpacing.sm),

@@ -200,7 +200,7 @@ class _BlockDetailScreenState extends ConsumerState<BlockDetailScreen> {
         delay: const Duration(milliseconds: 400),
         child: FloatingActionButton.extended(
           onPressed: () {
-            CreateItemSheet.show(context, widget.block);
+            CreateItemSheet.show(context, block: widget.block);
           },
           backgroundColor: HermesColors.surfaceElevated,
           elevation: 0,

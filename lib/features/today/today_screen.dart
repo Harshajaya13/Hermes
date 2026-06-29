@@ -9,6 +9,7 @@ import '../evolution/veritas_sheet.dart';
 import '../archive/archive_screen.dart';
 import '../blocks/block_detail_screen.dart';
 import 'package:file_picker/file_picker.dart';
+import '../blocks/create_item_sheet.dart';
 
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
@@ -28,18 +29,28 @@ class TodayScreen extends ConsumerWidget {
       pinnedBlocks = allBlocks.take(4).toList(); // Fallback if none pinned
     }
 
-    // Dynamic question calculation
-    Block? questionBlock;
-    Item? questionItem;
+    // Dynamic daily item calculation based on selected format
+    final todayFormatStr = ref.watch(todaySectionFormatProvider);
+    final List<MapEntry<Block, Item>> dailyItems = [];
+    
     if (allBlocks.isNotEmpty) {
-      questionBlock = allBlocks.firstWhere((b) => b.name == 'Probability', orElse: () => allBlocks.first);
-      final items = ref.watch(itemsByBlockProvider(questionBlock.id));
-      if (items.isNotEmpty) {
-        questionItem = items.first;
+      for (final block in allBlocks) {
+        final items = ref.watch(itemsByBlockProvider(block.id));
+        dailyItems.addAll(
+          items.where((i) => i.metadata?['isDailyGoal'] == true &&
+                             i.createdAt.year == now.year && 
+                             i.createdAt.month == now.month && 
+                             i.createdAt.day == now.day)
+               .map((i) => MapEntry(block, i))
+        );
       }
+      // Sort by newest first
+      dailyItems.sort((a, b) => b.value.createdAt.compareTo(a.value.createdAt));
     }
 
-    void archiveSection(String sectionId, String sectionName) {
+    void showSectionOptions(String sectionId, String sectionName) {
+      final isDailySection = sectionId == 'question';
+      
       showModalBottomSheet(
         context: context,
         backgroundColor: HermesColors.surfaceElevated,
@@ -51,28 +62,49 @@ class TodayScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Archive $sectionName?', style: HermesTypography.sectionTitle),
+                Text('$sectionName Options', style: HermesTypography.sectionTitle),
                 const SizedBox(height: HermesSpacing.md),
-                Text('This will hide the section from your Today screen. You can restore it later from the Workspace Archive.', style: HermesTypography.body),
-                const SizedBox(height: HermesSpacing.xl),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Cancel', style: TextStyle(color: HermesColors.textSecondary)),
-                    ),
-                    const SizedBox(width: HermesSpacing.md),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.veritasColor, foregroundColor: Colors.white),
-                      onPressed: () {
-                        ref.read(archivedSectionsProvider.notifier).archiveSection(sectionId);
-                        Navigator.pop(ctx);
-                      },
-                      child: const Text('Archive Section'),
-                    ),
-                  ],
+                
+                if (isDailySection) ...[
+                  ListTile(
+                    leading: const Icon(Icons.add_circle_outline, color: HermesColors.textPrimary),
+                    title: Text('Add New Goal', style: HermesTypography.body),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      final blockToUse = allBlocks.isNotEmpty ? allBlocks.first : null;
+                      if (blockToUse != null) {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => CreateItemSheet(initialBlock: blockToUse, initialType: ItemType.question, isDailyGoal: true),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please create a block first.')));
+                      }
+                    },
+                  ),
+                ],
+                
+                ListTile(
+                  leading: const Icon(Icons.lock_outline, color: HermesColors.textPrimary),
+                  title: Text('Lock Section', style: HermesTypography.body),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Section Locked (Placeholder)')));
+                  },
                 ),
+                  
+                if (!isDailySection)
+                  ListTile(
+                    leading: const Icon(Icons.archive_outlined, color: HermesColors.textPrimary),
+                    title: Text(sectionId == 'evolutios' ? 'Hide Recent Evolutios' : 'Archive Section', style: HermesTypography.body),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      ref.read(archivedSectionsProvider.notifier).archiveSection(sectionId);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$sectionName hidden.')));
+                    },
+                  ),
               ],
             ),
           ),
@@ -190,57 +222,118 @@ class TodayScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         HermesSectionHeader(
-                          title: ref.watch(todaySectionFormatProvider) == 'article' ? "Today's Article" : "Today's Question",
-                          onLongPress: () => archiveSection('question', ref.read(todaySectionFormatProvider) == 'article' ? "Today's Article" : "Today's Question"),
+                          title: "Today's Pursuit",
+                          onLongPress: () {
+                            showSectionOptions('question', "Today's Pursuit");
+                          },
                         ),
                         const SizedBox(height: HermesSpacing.xs),
-                        HermesCard(
-                          onTap: () async {
-                            if (questionBlock == null || questionItem == null) return;
-                            Navigator.push(context, MaterialPageRoute(
-                              builder: (context) => ItemDetailScreen(
-                                item: questionItem!,
-                                block: questionBlock!,
-                              ),
-                            ));
-                          },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      color: questionBlock != null ? Color(int.parse(questionBlock.colorHex.replaceAll('#', '0xFF'))) : HermesColors.accent,
-                                      shape: BoxShape.circle,
+                        
+                        if (dailyItems.isEmpty)
+                          HermesCard(
+                            onTap: () {},
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: HermesSpacing.lg),
+                              child: Center(child: Text('No goals for today.\nLong press section title to add one.', textAlign: TextAlign.center, style: HermesTypography.metadata)),
+                            ),
+                          )
+                        else
+                          ...dailyItems.take(5).map((entry) {
+                            final item = entry.value;
+                            final block = entry.key;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: HermesSpacing.sm),
+                              child: HermesCard(
+                                onTap: () {
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (context) => ItemDetailScreen(item: item, block: block),
+                                  ));
+                                },
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: BoxDecoration(
+                                            color: item.type.color,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: HermesSpacing.xs),
+                                        Expanded(
+                                          child: Text(
+                                            item.title, // Just show item title!
+                                            style: HermesTypography.metadata.copyWith(
+                                              color: item.type.color,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        PopupMenuButton<String>(
+                                          icon: const Icon(Icons.more_horiz, size: 20, color: HermesColors.textSecondary),
+                                          padding: EdgeInsets.zero,
+                                          color: HermesColors.surfaceElevated,
+                                          onSelected: (value) async {
+                                            if (value == 'remove') {
+                                              final updatedMeta = Map<String, dynamic>.from(item.metadata ?? {});
+                                              updatedMeta['isDailyGoal'] = false;
+                                              final updatedItem = item.copyWith(metadata: updatedMeta);
+                                              await ref.read(storageEngineProvider).saveItem(updatedItem);
+                                              ref.invalidate(itemsByBlockProvider(item.blockId));
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(content: Text('Removed from Today\'s Pursuit')),
+                                                );
+                                              }
+                                            } else if (value == 'open') {
+                                              Navigator.push(context, MaterialPageRoute(
+                                                builder: (context) => BlockDetailScreen(block: block),
+                                              ));
+                                            } else if (value == 'pin') {
+                                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item pinned (Placeholder)')));
+                                            } else if (value == 'lock') {
+                                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item locked (Placeholder)')));
+                                            }
+                                          },
+                                          itemBuilder: (context) => [
+                                            PopupMenuItem(
+                                              value: 'remove',
+                                              child: Text('Remove from Today\'s Pursuit', style: HermesTypography.bodySmall.copyWith(color: HermesColors.veritasColor)),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'open',
+                                              child: Text('Open Original Block', style: HermesTypography.bodySmall),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'pin',
+                                              child: Text('Pin', style: HermesTypography.bodySmall),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'lock',
+                                              child: Text('Lock', style: HermesTypography.bodySmall),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  const SizedBox(width: HermesSpacing.xs),
-                                  Text(
-                                    '${questionBlock?.name ?? 'Unknown Block'}${questionItem != null ? ' · ${questionItem.title}' : ''}',
-                                    style: HermesTypography.metadata.copyWith(
-                                      color: questionBlock != null ? Color(int.parse(questionBlock.colorHex.replaceAll('#', '0xFF'))) : HermesColors.accent,
+                                    const SizedBox(height: HermesSpacing.sm),
+                                    Text(
+                                      item.content,
+                                      style: HermesTypography.itemTitle.copyWith(height: 1.5),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: HermesSpacing.sm),
-                              Text(
-                                questionItem?.content ?? 'No questions available.',
-                                style: HermesTypography.itemTitle.copyWith(
-                                  height: 1.5,
+                                    const SizedBox(height: HermesSpacing.md),
+                                    Text(
+                                      item.type == ItemType.question ? 'Tap to evaluate' : 'Tap to read',
+                                      style: HermesTypography.metadata,
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: HermesSpacing.md),
-                              Text(
-                                questionItem != null ? 'Tap to evaluate' : 'Create an item to begin',
-                                style: HermesTypography.metadata,
-                              ),
-                            ],
-                          ),
-                        ),
+                            );
+                          }).toList(),
                       ],
                     ),
                   ),
@@ -265,7 +358,7 @@ class TodayScreen extends ConsumerWidget {
                       children: [
                         HermesSectionHeader(
                           title: 'Pinned Blocks',
-                          onLongPress: () => archiveSection('pinned', 'Pinned Blocks'),
+                          onLongPress: () => showSectionOptions('pinned', 'Pinned Blocks'),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
                         if (pinnedBlocks.isEmpty)
@@ -311,7 +404,7 @@ class TodayScreen extends ConsumerWidget {
                       children: [
                         HermesSectionHeader(
                           title: "Recent Evolutios",
-                          onLongPress: () => archiveSection('evolutios', "Recent Evolutios"),
+                          onLongPress: () => showSectionOptions('evolutios', "Recent Evolutios"),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
                         if (recentEvolutios.isEmpty)
@@ -321,13 +414,30 @@ class TodayScreen extends ConsumerWidget {
                           )
                         else
                           ...recentEvolutios.map((evo) {
-                            // Note: In reality we'd look up the block name via blockId
+                            final block = allBlocks.where((b) => b.id == evo.blockId).firstOrNull;
+                            final blockName = block?.name ?? 'Unknown Block';
+                            
                             return Padding(
                               padding: const EdgeInsets.only(bottom: HermesSpacing.itemGap),
                               child: _EvolutioEntry(
                                 text: evo.content,
-                                block: 'Dynamic Block', // TODO: lookup block name
+                                block: blockName,
                                 time: _formatTimeAgo(evo.createdAt),
+                                onTap: () {
+                                  final engine = ref.read(storageEngineProvider);
+                                  final allReflections = engine.getAllReflections();
+                                  final allItems = engine.getAllItems();
+                                  
+                                  final reflection = allReflections.where((r) => r.id == evo.reflectionId).firstOrNull;
+                                  if (reflection != null) {
+                                    final item = allItems.where((i) => i.id == reflection.itemId).firstOrNull;
+                                    if (item != null && block != null) {
+                                      Navigator.push(context, MaterialPageRoute(
+                                        builder: (context) => ItemDetailScreen(item: item, block: block),
+                                      ));
+                                    }
+                                  }
+                                },
                               ),
                             );
                           }),
@@ -355,7 +465,7 @@ class TodayScreen extends ConsumerWidget {
                       children: [
                         HermesSectionHeader(
                           title: 'Veritas',
-                          onLongPress: () => archiveSection('veritas', 'Veritas'),
+                          onLongPress: () => showSectionOptions('veritas', 'Veritas'),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
                         HermesCard(
@@ -606,20 +716,20 @@ class _EvolutioEntry extends StatelessWidget {
   final String text;
   final String block;
   final String time;
+  final VoidCallback? onTap;
 
   const _EvolutioEntry({
     required this.text,
     required this.block,
     required this.time,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return HermesCard(
       padding: const EdgeInsets.all(HermesSpacing.md),
-      onTap: () {
-        // TODO: Navigate to Evolutio detail
-      },
+      onTap: onTap,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -7,12 +7,14 @@ import '../../core/providers/providers.dart';
 import '../../core/engines/article_fetcher.dart';
 
 class CreateItemSheet extends ConsumerStatefulWidget {
-  final Block block;
+  final Block? initialBlock;
   final Item? existingItem;
+  final ItemType? initialType;
+  final bool isDailyGoal;
   
-  const CreateItemSheet({super.key, required this.block, this.existingItem});
+  const CreateItemSheet({super.key, this.initialBlock, this.existingItem, this.initialType, this.isDailyGoal = false});
 
-  static void show(BuildContext context, Block block, [Item? existingItem]) {
+  static void show(BuildContext context, {Block? block, Item? existingItem, ItemType? initialType, bool isDailyGoal = false}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -24,7 +26,7 @@ class CreateItemSheet extends ConsumerStatefulWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: CreateItemSheet(block: block, existingItem: existingItem),
+        child: CreateItemSheet(initialBlock: block, existingItem: existingItem, initialType: initialType, isDailyGoal: isDailyGoal),
       ),
     );
   }
@@ -37,12 +39,16 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _urlController = TextEditingController();
-  ItemType _selectedType = ItemType.question;
+  late ItemType _selectedType;
+  Block? _selectedBlock;
   bool _isFetching = false;
 
   @override
   void initState() {
     super.initState();
+    _selectedType = widget.initialType ?? ItemType.question;
+    _selectedBlock = widget.initialBlock;
+    
     if (widget.existingItem != null) {
       _titleController.text = widget.existingItem!.title;
       _contentController.text = widget.existingItem!.content;
@@ -72,24 +78,32 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
       }
     }
 
+    if (_selectedBlock == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a block')));
+      return;
+    }
+
     final newItem = widget.existingItem != null
         ? widget.existingItem!.copyWith(
             type: _selectedType,
             title: title,
             content: finalContent,
             sourceUrl: sourceUrl,
+            metadata: widget.isDailyGoal ? {'isDailyGoal': true, ...?widget.existingItem!.metadata} : widget.existingItem!.metadata,
+            // Cannot easily change blockId in copyWith currently, assuming it stays in same block if edited
           )
         : Item(
-            blockId: widget.block.id,
+            blockId: _selectedBlock!.id,
             type: _selectedType,
             title: title,
             content: finalContent,
             sourceUrl: sourceUrl,
+            metadata: widget.isDailyGoal ? {'isDailyGoal': true} : null,
           );
 
     await ref.read(storageEngineProvider).saveItem(newItem);
     // Invalidate the provider so UI updates
-    ref.invalidate(itemsByBlockProvider(widget.block.id));
+    ref.invalidate(itemsByBlockProvider(_selectedBlock!.id));
     
     if (mounted) Navigator.pop(context);
   }
@@ -103,12 +117,44 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.existingItem == null ? 'Create Item' : 'Edit Item', style: HermesTypography.sectionTitle),
-            const SizedBox(height: HermesSpacing.sm),
-            Text(
-              'Add knowledge to ${widget.block.name}.',
-              style: HermesTypography.metadata,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(widget.existingItem == null ? 'Create Item' : 'Edit Item', style: HermesTypography.sectionTitle),
+                if (widget.existingItem == null)
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final blocks = ref.watch(allBlocksProvider);
+                      if (_selectedBlock == null && blocks.isNotEmpty) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) setState(() => _selectedBlock = blocks.first);
+                        });
+                      }
+                      return DropdownButton<Block>(
+                        value: _selectedBlock,
+                        dropdownColor: HermesColors.surfaceElevated,
+                        style: HermesTypography.metadata,
+                        underline: const SizedBox(),
+                        icon: const Icon(Icons.arrow_drop_down, color: HermesColors.textSecondary),
+                        items: blocks.map((b) => DropdownMenuItem(
+                          value: b,
+                          child: Text(b.name),
+                        )).toList(),
+                        onChanged: (val) {
+                          setState(() => _selectedBlock = val);
+                        },
+                      );
+                    },
+                  ),
+              ],
             ),
+            if (widget.existingItem != null) ...[
+              const SizedBox(height: HermesSpacing.sm),
+              Text(
+                'In ${_selectedBlock?.name ?? "Unknown Block"}',
+                style: HermesTypography.metadata,
+              ),
+            ],
             const SizedBox(height: HermesSpacing.xl),
             
             // Type Selector
