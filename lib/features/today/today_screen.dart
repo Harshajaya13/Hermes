@@ -5,8 +5,9 @@ import '../../core/widgets/hermes_widgets.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
 import '../items/item_detail_screen.dart';
-import '../evolution/veritas_sheet.dart';
 import '../archive/archive_screen.dart';
+import '../evolution/veritas_timeline_screen.dart';
+import '../evolution/veritas_sheet.dart';
 import '../blocks/block_detail_screen.dart';
 import '../blocks/domain_detail_screen.dart';
 import 'package:file_picker/file_picker.dart';
@@ -50,12 +51,7 @@ class TodayScreen extends ConsumerWidget {
         final unsolvedItems = items.where((i) {
           if (i.metadata?['isDailyGoal'] != true) return false;
           if (i.metadata?['isSolved'] == true) return false;
-          
-          // Philosophy: Today's Pursuit is only a daily reference view.
-          // If today passes, remove it from Today's Pursuit, but keep it in the Block.
-          final createdAt = i.createdAt;
-          final isCreatedToday = createdAt.year == now.year && createdAt.month == now.month && createdAt.day == now.day;
-          return isCreatedToday;
+          return true;
         }).toList();
         
         // Stably sort them so the same items appear until solved
@@ -73,14 +69,31 @@ class TodayScreen extends ConsumerWidget {
                 dailyItems.add(MapEntry(block, item));
               }
             }
-          } else {
-             // If a user manually added a goal (sourceId is null), ALWAYS include it.
+          } else if (item.metadata?['isManualDailyGoal'] == true) {
+             // If a user manually added a goal, explicitly include it.
              dailyItems.add(MapEntry(block, item));
+          } else {
+             // For legacy items without a sourceId but with isDailyGoal=true,
+             // these are old imports before the Data Pipeline v2.0 was built.
+             // We drop them.
           }
         }
       }
       // Sort by newest first
       dailyItems.sort((a, b) => b.value.createdAt.compareTo(a.value.createdAt));
+      
+      // Deduplicate by title to hide past duplicate attempts
+      final uniqueTitles = <String>{};
+      final dedupedItems = <MapEntry<Block, Item>>[];
+      for (final entry in dailyItems) {
+        final title = entry.value.title.trim().toLowerCase();
+        if (!uniqueTitles.contains(title)) {
+          uniqueTitles.add(title);
+          dedupedItems.add(entry);
+        }
+      }
+      dailyItems.clear();
+      dailyItems.addAll(dedupedItems);
     }
 
     void showSectionOptions(String sectionId, String sectionName) {
@@ -634,6 +647,17 @@ class TodayScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
+                        const SizedBox(height: HermesSpacing.sm),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const VeritasTimelineScreen()));
+                            },
+                            icon: const Icon(Icons.history_rounded, size: 16, color: HermesColors.textSecondary),
+                            label: const Text('View Timeline', style: TextStyle(color: HermesColors.textSecondary)),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -871,10 +895,11 @@ class TodayScreen extends ConsumerWidget {
                                         securityAnswer: '',
                                         isEncrypted: false,
                                       );
-                                      // Use outer ref to avoid unmounted Consumer error
-                                      await ref.read(storageEngineProvider).saveWorkspace(updated);
-                                      ref.read(currentWorkspaceProvider.notifier).updateWorkspace(updated);
-                                      ref.read(workspaceLockedProvider.notifier).setLocked(false);
+                                      // Safely read providers after dialog pops
+                                      final container = ProviderScope.containerOf(screenContext);
+                                      await container.read(storageEngineProvider).saveWorkspace(updated);
+                                      container.read(currentWorkspaceProvider.notifier).updateWorkspace(updated);
+                                      container.read(workspaceLockedProvider.notifier).setLocked(false);
                                       
                                       if (screenContext.mounted) {
                                         ScaffoldMessenger.of(screenContext).showSnackBar(

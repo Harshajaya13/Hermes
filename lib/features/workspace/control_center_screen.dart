@@ -50,9 +50,6 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
               _buildSectionHeader('Workspace'),
               _buildWorkspaceSection(context, ref, workspace, isLocked),
               const SizedBox(height: HermesSpacing.xxl),
-              _buildSectionHeader('Exchange'),
-              _buildExchangeSection(context),
-              const SizedBox(height: HermesSpacing.xxl),
               
               _buildSectionHeader('Knowledge Sources'),
               _buildKnowledgeSourcesSection(context, ref, workspace),
@@ -205,27 +202,6 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
             title: 'Export Workspace',
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const ExportPackageScreen()));
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExchangeSection(BuildContext context) {
-    return HermesCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          _buildSettingsTile(
-            icon: Icons.sync_alt_rounded,
-            title: 'Import / Export',
-            subtitle: 'Manage .hermes packages',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ExchangeScreen()),
-              );
             },
           ),
         ],

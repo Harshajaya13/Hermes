@@ -89,7 +89,7 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
             title: title,
             content: finalContent,
             sourceUrl: sourceUrl,
-            metadata: widget.isDailyGoal ? {'isDailyGoal': true, ...?widget.existingItem!.metadata} : widget.existingItem!.metadata,
+            metadata: widget.isDailyGoal ? {'isDailyGoal': true, 'isManualDailyGoal': true, ...?widget.existingItem!.metadata} : widget.existingItem!.metadata,
             // Cannot easily change blockId in copyWith currently, assuming it stays in same block if edited
           )
         : Item(
@@ -98,7 +98,7 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
             title: title,
             content: finalContent,
             sourceUrl: sourceUrl,
-            metadata: widget.isDailyGoal ? {'isDailyGoal': true} : null,
+            metadata: widget.isDailyGoal ? {'isDailyGoal': true, 'isManualDailyGoal': true} : null,
           );
 
     await ref.read(storageEngineProvider).saveItem(newItem);

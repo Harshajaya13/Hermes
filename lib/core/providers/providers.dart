@@ -52,7 +52,9 @@ final domainsProvider = Provider<List<Domain>>((ref) {
 
 final allBlocksProvider = Provider<List<Block>>((ref) {
   final storage = ref.watch(storageEngineProvider);
-  return storage.getAllBlocks();
+  final domains = ref.watch(domainsProvider);
+  final domainIds = domains.map((d) => d.id).toSet();
+  return storage.getAllBlocks().where((b) => domainIds.contains(b.domainId)).toList();
 });
 
 final blocksByDomainProvider = Provider.family<List<Block>, String>((ref, domainId) {

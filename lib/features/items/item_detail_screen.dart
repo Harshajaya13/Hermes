@@ -6,6 +6,7 @@ import '../../core/models/models.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../blocks/create_item_sheet.dart';
 import '../../core/providers/providers.dart';
+import '../reader/hermes_reader_screen.dart';
 
 class ItemDetailScreen extends ConsumerStatefulWidget {
   final Item item;
@@ -92,6 +93,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.item.type == ItemType.article) {
+      return HermesReaderScreen(item: widget.item, block: widget.block);
+    }
+
     return Scaffold(
       backgroundColor: HermesColors.background,
       appBar: AppBar(
