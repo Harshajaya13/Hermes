@@ -14,6 +14,7 @@ import 'package:file_picker/file_picker.dart';
 import '../blocks/create_item_sheet.dart';
 import 'workspace_security_dialogs.dart';
 import 'visibility_screen.dart';
+import 'package:intl/intl.dart';
 
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
@@ -27,6 +28,12 @@ class TodayScreen extends ConsumerWidget {
     final recentEvolutios = ref.watch(recentEvolutiosProvider);
     final workspace = ref.watch(currentWorkspaceProvider);
     final archivedSections = ref.watch(archivedSectionsProvider);
+    
+    final storage = ref.watch(storageEngineProvider);
+    final veritasList = workspace != null ? storage.getVeritas(workspace.id) : <Veritas>[];
+    // Create a mutable copy to sort
+    final sortedVeritas = List<Veritas>.from(veritasList)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     
     final allDomains = ref.watch(domainsProvider);
     final pinnedDomains = allDomains.where((d) => d.pinned && !d.deleted && !d.archived).toList();
@@ -648,6 +655,48 @@ class TodayScreen extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: HermesSpacing.sm),
+                        
+                        ...sortedVeritas.take(3).map((v) => Padding(
+                          padding: const EdgeInsets.only(bottom: HermesSpacing.sm),
+                          child: HermesCard(
+                            onTap: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const VeritasTimelineScreen()));
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: const BoxDecoration(
+                                        color: HermesColors.veritasColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: HermesSpacing.sm),
+                                    Text(
+                                      DateFormat('EEEE, MMMM d').format(v.dateMissed),
+                                      style: HermesTypography.metadata.copyWith(
+                                        color: HermesColors.veritasColor.withValues(alpha: 0.8),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: HermesSpacing.xs),
+                                Text(
+                                  v.reason,
+                                  style: HermesTypography.reflection.copyWith(
+                                    color: HermesColors.textPrimary.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )),
+                        
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton.icon(
