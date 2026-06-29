@@ -14,6 +14,9 @@ class Workspace {
   final bool archived;
   final bool deleted;
   final int version;
+  final String? pin;
+  final String? securityQuestion;
+  final String? securityAnswer;
 
   Workspace({
     String? id,
@@ -27,6 +30,9 @@ class Workspace {
     this.archived = false,
     this.deleted = false,
     this.version = 1,
+    this.pin,
+    this.securityQuestion,
+    this.securityAnswer,
   })  : id = id ?? _uuid.v4(),
         createdAt = createdAt ?? DateTime.now(),
         modifiedAt = modifiedAt ?? DateTime.now();
@@ -43,6 +49,9 @@ class Workspace {
         'archived': archived,
         'deleted': deleted,
         'version': version,
+        'pin': pin,
+        'securityQuestion': securityQuestion,
+        'securityAnswer': securityAnswer,
       };
 
   factory Workspace.fromJson(Map<String, dynamic> json) => Workspace(
@@ -57,6 +66,9 @@ class Workspace {
         archived: json['archived'] as bool? ?? false,
         deleted: json['deleted'] as bool? ?? false,
         version: json['version'] as int? ?? 1,
+        pin: json['pin'] as String?,
+        securityQuestion: json['securityQuestion'] as String?,
+        securityAnswer: json['securityAnswer'] as String?,
       );
 
   Workspace copyWith({
@@ -69,6 +81,9 @@ class Workspace {
     bool? archived,
     bool? deleted,
     int? version,
+    String? pin,
+    String? securityQuestion,
+    String? securityAnswer,
   }) {
     return Workspace(
       id: id,
@@ -82,6 +97,9 @@ class Workspace {
       archived: archived ?? this.archived,
       deleted: deleted ?? this.deleted,
       version: version ?? (this.version + 1),
+      pin: pin ?? this.pin,
+      securityQuestion: securityQuestion ?? this.securityQuestion,
+      securityAnswer: securityAnswer ?? this.securityAnswer,
     );
   }
 }

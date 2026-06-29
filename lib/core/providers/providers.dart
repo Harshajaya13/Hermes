@@ -27,6 +27,10 @@ class CurrentWorkspaceNotifier extends Notifier<Workspace?> {
     final workspaces = storage.workspaces;
     return workspaces.isNotEmpty ? workspaces.first : null;
   }
+
+  void updateWorkspace(Workspace? ws) {
+    state = ws;
+  }
 }
 
 final currentWorkspaceProvider = NotifierProvider<CurrentWorkspaceNotifier, Workspace?>(
@@ -103,3 +107,18 @@ final todaySectionFormatProvider = NotifierProvider<TodaySectionFormatNotifier, 
   TodaySectionFormatNotifier.new,
 );
 
+class WorkspaceLockedNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    final ws = ref.watch(currentWorkspaceProvider);
+    return ws?.isEncrypted ?? false;
+  }
+
+  void setLocked(bool locked) {
+    state = locked;
+  }
+}
+
+final workspaceLockedProvider = NotifierProvider<WorkspaceLockedNotifier, bool>(
+  WorkspaceLockedNotifier.new,
+);

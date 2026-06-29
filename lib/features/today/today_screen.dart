@@ -10,6 +10,7 @@ import '../archive/archive_screen.dart';
 import '../blocks/block_detail_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import '../blocks/create_item_sheet.dart';
+import 'workspace_security_dialogs.dart';
 
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
@@ -18,6 +19,7 @@ class TodayScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final greeting = _getGreeting(now.hour);
+    final isLocked = ref.watch(workspaceLockedProvider);
     
     // Read dynamic data from offline storage
     final recentEvolutios = ref.watch(recentEvolutiosProvider);
@@ -58,54 +60,51 @@ class TodayScreen extends ConsumerWidget {
         builder: (ctx) => SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(HermesSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('$sectionName Options', style: HermesTypography.sectionTitle),
-                const SizedBox(height: HermesSpacing.md),
+            child: Consumer(
+              builder: (consumerCtx, ref, child) {
+                final isWorkspaceLocked = ref.watch(workspaceLockedProvider);
                 
-                if (isDailySection) ...[
-                  ListTile(
-                    leading: const Icon(Icons.add_circle_outline, color: HermesColors.textPrimary),
-                    title: Text('Add New Goal', style: HermesTypography.body),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      final blockToUse = allBlocks.isNotEmpty ? allBlocks.first : null;
-                      if (blockToUse != null) {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) => CreateItemSheet(initialBlock: blockToUse, initialType: ItemType.question, isDailyGoal: true),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please create a block first.')));
-                      }
-                    },
-                  ),
-                ],
-                
-                ListTile(
-                  leading: const Icon(Icons.lock_outline, color: HermesColors.textPrimary),
-                  title: Text('Lock Section', style: HermesTypography.body),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Section Locked (Placeholder)')));
-                  },
-                ),
-                  
-                if (!isDailySection)
-                  ListTile(
-                    leading: const Icon(Icons.archive_outlined, color: HermesColors.textPrimary),
-                    title: Text(sectionId == 'evolutios' ? 'Hide Recent Evolutios' : 'Archive Section', style: HermesTypography.body),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      ref.read(archivedSectionsProvider.notifier).archiveSection(sectionId);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$sectionName hidden.')));
-                    },
-                  ),
-              ],
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$sectionName Options', style: HermesTypography.sectionTitle),
+                    const SizedBox(height: HermesSpacing.md),
+                    
+                    if (isDailySection && !isWorkspaceLocked) ...[
+                      ListTile(
+                        leading: const Icon(Icons.add_circle_outline, color: HermesColors.textPrimary),
+                        title: Text('Add New Goal', style: HermesTypography.body),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          final blockToUse = allBlocks.isNotEmpty ? allBlocks.first : null;
+                          if (blockToUse != null) {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => CreateItemSheet(initialBlock: blockToUse, initialType: ItemType.question, isDailyGoal: true),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please create a block first.')));
+                          }
+                        },
+                      ),
+                    ],
+                      
+                    if (!isDailySection)
+                      ListTile(
+                        leading: const Icon(Icons.archive_outlined, color: HermesColors.textPrimary),
+                        title: Text(sectionId == 'evolutios' ? 'Hide Recent Evolutios' : 'Archive Section', style: HermesTypography.body),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          ref.read(archivedSectionsProvider.notifier).archiveSection(sectionId);
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$sectionName hidden.')));
+                        },
+                      ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -229,7 +228,23 @@ class TodayScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: HermesSpacing.xs),
                         
-                        if (dailyItems.isEmpty)
+                        if (isLocked)
+                          HermesCard(
+                            onTap: () {},
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: HermesSpacing.lg),
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    const Icon(Icons.lock_rounded, color: HermesColors.textTertiary),
+                                    const SizedBox(height: HermesSpacing.xs),
+                                    Text('Workspace Locked', textAlign: TextAlign.center, style: HermesTypography.metadata),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                        else if (dailyItems.isEmpty)
                           HermesCard(
                             onTap: () {},
                             child: Padding(
@@ -361,7 +376,23 @@ class TodayScreen extends ConsumerWidget {
                           onLongPress: () => showSectionOptions('pinned', 'Pinned Blocks'),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
-                        if (pinnedBlocks.isEmpty)
+                        if (isLocked)
+                          HermesCard(
+                            onTap: () {},
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: HermesSpacing.lg),
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    const Icon(Icons.lock_rounded, color: HermesColors.textTertiary),
+                                    const SizedBox(height: HermesSpacing.xs),
+                                    Text('Workspace Locked', textAlign: TextAlign.center, style: HermesTypography.metadata),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                        else if (pinnedBlocks.isEmpty)
                           Text('No pinned blocks yet.', style: HermesTypography.metadata)
                         else
                           Wrap(
@@ -407,7 +438,23 @@ class TodayScreen extends ConsumerWidget {
                           onLongPress: () => showSectionOptions('evolutios', "Recent Evolutios"),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
-                        if (recentEvolutios.isEmpty)
+                        if (isLocked)
+                          HermesCard(
+                            onTap: () {},
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: HermesSpacing.lg),
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    const Icon(Icons.lock_rounded, color: HermesColors.textTertiary),
+                                    const SizedBox(height: HermesSpacing.xs),
+                                    Text('Workspace Locked', textAlign: TextAlign.center, style: HermesTypography.metadata),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                        else if (recentEvolutios.isEmpty)
                           Text(
                             'No evolutios yet. Solve a question or read an article to generate one.',
                             style: HermesTypography.metadata,
@@ -468,11 +515,28 @@ class TodayScreen extends ConsumerWidget {
                           onLongPress: () => showSectionOptions('veritas', 'Veritas'),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
-                        HermesCard(
-                          onTap: () {
-                            VeritasSheet.show(context);
-                          },
-                          child: Column(
+                        if (isLocked)
+                          HermesCard(
+                            onTap: () {},
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: HermesSpacing.lg),
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    const Icon(Icons.lock_rounded, color: HermesColors.textTertiary),
+                                    const SizedBox(height: HermesSpacing.xs),
+                                    Text('Workspace Locked', textAlign: TextAlign.center, style: HermesTypography.metadata),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          HermesCard(
+                            onTap: () {
+                              VeritasSheet.show(context);
+                            },
+                            child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
@@ -548,14 +612,14 @@ class TodayScreen extends ConsumerWidget {
     return 'Just now';
   }
 
-  void _showWorkspaceSettings(BuildContext context, WidgetRef ref, Workspace? currentWorkspace) {
+  void _showWorkspaceSettings(BuildContext screenContext, WidgetRef ref, Workspace? currentWorkspace) {
     showModalBottomSheet(
-      context: context,
+      context: screenContext,
       backgroundColor: HermesColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl)),
       ),
-      builder: (context) {
+      builder: (bottomSheetContext) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(HermesSpacing.lg),
@@ -608,94 +672,128 @@ class TodayScreen extends ConsumerWidget {
                 const SizedBox(height: HermesSpacing.lg),
 
                 // Actions
-                ListTile(
-                  leading: const Icon(Icons.inventory_2_outlined, color: HermesColors.textPrimary),
-                  title: Text('View Archive', style: HermesTypography.body),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ArchiveScreen(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.file_download_outlined, color: HermesColors.textPrimary),
-                  title: Text('Export Workspace (.hermes)', style: HermesTypography.body),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    if (currentWorkspace == null) return;
-                    try {
-                      final exportEngine = ref.read(exportEngineProvider);
-                      final path = await exportEngine.exportWorkspace(currentWorkspace.id);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Exported successfully to: $path')),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Export failed: $e')),
-                        );
-                      }
-                    }
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.file_upload_outlined, color: HermesColors.textPrimary),
-                  title: Text('Import Community Bundle', style: HermesTypography.body),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    if (currentWorkspace == null) return;
-                    try {
-                      final result = await FilePicker.platform.pickFiles(
-                        type: FileType.custom,
-                        allowedExtensions: ['hermes'],
-                      );
-                      
-                      if (result != null && result.files.single.path != null) {
-                        final exportEngine = ref.read(exportEngineProvider);
-                        await exportEngine.importWorkspace(result.files.single.path!, currentWorkspace.id);
-                        
-                        // Force refresh everything
-                        ref.invalidate(domainsProvider);
-                        ref.invalidate(allBlocksProvider);
-                        ref.invalidate(allEvolutiosProvider);
-                        
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Import successful!')),
+                Consumer(
+                  builder: (consumerContext, ref, child) {
+                    final isLocked = ref.watch(workspaceLockedProvider);
+                    final ws = ref.watch(currentWorkspaceProvider);
+                    
+                    if (isLocked) {
+                      return ListTile(
+                        leading: const Icon(Icons.lock_open_rounded, color: HermesColors.textPrimary),
+                        title: Text('Unlock Workspace', style: HermesTypography.body),
+                        onTap: () {
+                          Navigator.pop(bottomSheetContext);
+                          showDialog(
+                            context: screenContext,
+                            barrierDismissible: false,
+                            builder: (_) => const UnlockWorkspaceDialog(),
                           );
-                        }
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Import failed: $e')),
-                        );
-                      }
+                        },
+                      );
                     }
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.security_rounded, color: HermesColors.textPrimary),
-                  title: Text('Lock Workspace', style: HermesTypography.body),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: Implement Encryption toggle
-                  },
-                ),
-                const SizedBox(height: HermesSpacing.sm),
-                const Divider(color: HermesColors.border),
-                const SizedBox(height: HermesSpacing.sm),
-                ListTile(
-                  leading: const Icon(Icons.swap_horiz_rounded, color: HermesColors.textSecondary),
-                  title: Text('Switch Workspace', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
-                  onTap: () {
-                    Navigator.pop(context);
+                    
+                    final hasPin = ws?.pin != null && ws!.pin!.isNotEmpty;
+                    
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.inventory_2_outlined, color: HermesColors.textPrimary),
+                          title: Text('View Archive', style: HermesTypography.body),
+                          onTap: () {
+                            Navigator.pop(bottomSheetContext);
+                            Navigator.push(
+                              screenContext,
+                              MaterialPageRoute(
+                                builder: (context) => const ArchiveScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        
+                        const SizedBox(height: HermesSpacing.sm),
+                        Text('Security', style: HermesTypography.metadata.copyWith(color: HermesColors.textSecondary)),
+                        const SizedBox(height: HermesSpacing.xs),
+                        
+                        if (!hasPin)
+                          ListTile(
+                            leading: const Icon(Icons.security_rounded, color: HermesColors.textPrimary),
+                            title: Text('Setup Workspace Lock', style: HermesTypography.body),
+                            onTap: () {
+                              Navigator.pop(bottomSheetContext);
+                              showDialog(
+                                context: screenContext,
+                                barrierDismissible: false,
+                                builder: (_) => const SetupLockDialog(),
+                              );
+                            },
+                          )
+                        else ...[
+                          ListTile(
+                            leading: const Icon(Icons.lock_outline, color: HermesColors.textPrimary),
+                            title: Text('Lock Workspace', style: HermesTypography.body),
+                            onTap: () {
+                              ref.read(workspaceLockedProvider.notifier).setLocked(true);
+                              Navigator.pop(bottomSheetContext);
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.pin_outlined, color: HermesColors.textPrimary),
+                            title: Text('Change PIN', style: HermesTypography.body),
+                            onTap: () {
+                              Navigator.pop(bottomSheetContext);
+                              showDialog(
+                                context: screenContext,
+                                barrierDismissible: false,
+                                builder: (_) => const SetupLockDialog(),
+                              );
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.lock_reset_rounded, color: HermesColors.textPrimary),
+                            title: Text('Change Security Question', style: HermesTypography.body),
+                            onTap: () {
+                              Navigator.pop(bottomSheetContext);
+                              showDialog(
+                                context: screenContext,
+                                barrierDismissible: false,
+                                builder: (_) => const SetupLockDialog(),
+                              );
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.no_encryption_outlined, color: Colors.redAccent),
+                            title: Text('Remove Workspace Lock', style: HermesTypography.body.copyWith(color: Colors.redAccent)),
+                            onTap: () async {
+                              if (ws != null) {
+                                final updated = ws.copyWith(
+                                  pin: '',
+                                  securityQuestion: '',
+                                  securityAnswer: '',
+                                  isEncrypted: false,
+                                );
+                                await ref.read(storageEngineProvider).saveWorkspace(updated);
+                                ref.read(currentWorkspaceProvider.notifier).updateWorkspace(updated);
+                                ref.read(workspaceLockedProvider.notifier).setLocked(false);
+                              }
+                              if (consumerContext.mounted) Navigator.pop(bottomSheetContext);
+                            },
+                          ),
+                        ],
+                        
+                        const SizedBox(height: HermesSpacing.sm),
+                        const Divider(color: HermesColors.border),
+                        const SizedBox(height: HermesSpacing.sm),
+                        
+                        ListTile(
+                          leading: const Icon(Icons.swap_horiz_rounded, color: HermesColors.textSecondary),
+                          title: Text('Switch Workspace', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
+                          onTap: () {
+                            Navigator.pop(bottomSheetContext);
+                          },
+                        ),
+                      ],
+                    );
                   },
                 ),
               ],
