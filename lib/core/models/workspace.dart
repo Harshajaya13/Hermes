@@ -20,6 +20,7 @@ class Workspace {
   final String? ownerName;
   final String? ownerNickname;
   final String? lore;
+  final bool isDefault;
 
   Workspace({
     String? id,
@@ -39,6 +40,7 @@ class Workspace {
     this.ownerName,
     this.ownerNickname,
     this.lore,
+    this.isDefault = false,
   })  : id = id ?? _uuid.v4(),
         createdAt = createdAt ?? DateTime.now(),
         modifiedAt = modifiedAt ?? DateTime.now();
@@ -61,6 +63,7 @@ class Workspace {
         'ownerName': ownerName,
         'ownerNickname': ownerNickname,
         'lore': lore,
+        'isDefault': isDefault,
       };
 
   factory Workspace.fromJson(Map<String, dynamic> json) => Workspace(
@@ -81,6 +84,7 @@ class Workspace {
         ownerName: json['ownerName'] as String?,
         ownerNickname: json['ownerNickname'] as String?,
         lore: json['lore'] as String?,
+        isDefault: json['isDefault'] as bool? ?? false,
       );
 
   Workspace copyWith({
@@ -99,6 +103,7 @@ class Workspace {
     String? ownerName,
     String? ownerNickname,
     String? lore,
+    bool? isDefault,
   }) {
     return Workspace(
       id: id,
@@ -118,6 +123,7 @@ class Workspace {
       ownerName: ownerName ?? this.ownerName,
       ownerNickname: ownerNickname ?? this.ownerNickname,
       lore: lore ?? this.lore,
+      isDefault: isDefault ?? this.isDefault,
     );
   }
 }

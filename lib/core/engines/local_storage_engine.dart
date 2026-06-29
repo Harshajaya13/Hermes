@@ -26,34 +26,43 @@ class LocalStorageEngine {
     if (!await hermesDir.exists()) {
       await hermesDir.create(recursive: true);
       // Create a default workspace if empty
-      final defaultWorkspace = Workspace(name: 'Personal');
+      final defaultWorkspace = Workspace(name: 'Starter', isDefault: true, icon: '⭐');
       await saveWorkspace(defaultWorkspace);
+      await seedStarterWorkspace(defaultWorkspace);
     } else {
       await _loadAllFromDisk(hermesDir);
-    }
-
-    // Seed initial pure data (Mathematics and AI starter blocks)
-    if (_workspaces.isNotEmpty && getDomains(_workspaces.values.first.id).isEmpty) {
-      final workspace = _workspaces.values.first;
       
-      final engDomain = Domain(workspaceId: workspace.id, name: 'Core Disciplines', sortOrder: 0);
-      await saveDomain(engDomain);
-      
-      final mathBlock = Block(domainId: engDomain.id, name: 'Mathematics', icon: '📐', colorHex: '#7C9EBC', pinned: true);
-      final aiBlock = Block(domainId: engDomain.id, name: 'AI', icon: '🧠', colorHex: '#A08EB4', pinned: true);
-      await saveBlock(mathBlock);
-      await saveBlock(aiBlock);
-      
-      final qItem = Item(
-        blockId: mathBlock.id, 
-        type: ItemType.question, 
-        title: 'Starter Mathematics Question', 
-        content: 'Solve a basic probability question from your curriculum.'
-      );
-      await saveItem(qItem);
+      // Safety check: ensure at least one default workspace exists
+      if (_workspaces.values.where((w) => !w.deleted && w.isDefault).isEmpty) {
+        final firstActive = _workspaces.values.where((w) => !w.deleted).firstOrNull;
+        if (firstActive != null) {
+          await saveWorkspace(firstActive.copyWith(isDefault: true));
+        } else {
+          final defaultWorkspace = Workspace(name: 'Starter', isDefault: true, icon: '⭐');
+          await saveWorkspace(defaultWorkspace);
+          await seedStarterWorkspace(defaultWorkspace);
+        }
+      }
     }
   }
 
+  Future<void> seedStarterWorkspace(Workspace workspace) async {
+    final engDomain = Domain(workspaceId: workspace.id, name: 'Core Disciplines', sortOrder: 0);
+    await saveDomain(engDomain);
+    
+    final mathBlock = Block(domainId: engDomain.id, name: 'Mathematics', icon: '📐', colorHex: '#7C9EBC', pinned: true);
+    final aiBlock = Block(domainId: engDomain.id, name: 'AI', icon: '🧠', colorHex: '#A08EB4', pinned: true);
+    await saveBlock(mathBlock);
+    await saveBlock(aiBlock);
+    
+    final qItem = Item(
+      blockId: mathBlock.id, 
+      type: ItemType.question, 
+      title: 'Starter Mathematics Question', 
+      content: 'Solve a basic probability question from your curriculum.'
+    );
+    await saveItem(qItem);
+  }
   Future<File> _getFile(String collection) async {
     final dir = await getApplicationDocumentsDirectory();
     return File('${dir.path}/hermes/$collection.json');

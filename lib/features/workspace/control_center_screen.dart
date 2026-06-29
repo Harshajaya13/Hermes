@@ -8,6 +8,7 @@ import '../today/workspace_security_dialogs.dart';
 import '../today/visibility_screen.dart';
 import '../archive/archive_screen.dart';
 import 'edit_identity_dialog.dart';
+import 'workspace_management_dialogs.dart';
 
 class ControlCenterScreen extends ConsumerStatefulWidget {
   const ControlCenterScreen({super.key});
@@ -45,14 +46,6 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
               
               _buildSectionHeader('Workspace'),
               _buildWorkspaceSection(context, ref, workspace, isLocked),
-              const SizedBox(height: HermesSpacing.xxl),
-              
-              _buildSectionHeader('Data Pipeline'),
-              _buildDataPipelineSection(),
-              const SizedBox(height: HermesSpacing.xxl),
-              
-              _buildSectionHeader('Appearance'),
-              _buildAppearanceSection(),
               const SizedBox(height: HermesSpacing.xxl),
               
 
@@ -161,91 +154,33 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
           _buildSettingsTile(
             icon: Icons.edit_outlined,
             title: 'Rename Workspace',
-            onTap: () {},
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => const RenameWorkspaceDialog(),
+              );
+            },
           ),
           _buildSettingsTile(
             icon: Icons.swap_horiz_rounded,
             title: 'Switch Workspace',
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Workspace switching coming soon')));
+              showDialog(
+                context: context,
+                builder: (_) => const SwitchWorkspaceDialog(),
+              );
             },
           ),
           _buildSettingsTile(
             icon: Icons.add_circle_outline,
             title: 'Create New Workspace',
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Workspace creation coming soon')));
+              showDialog(
+                context: context,
+                builder: (_) => const CreateWorkspaceDialog(),
+              );
             },
           ),
-          const Divider(color: HermesColors.border, height: 1),
-          _buildSettingsTile(
-            icon: Icons.archive_outlined,
-            title: 'Archive Workspace',
-            onTap: () {},
-          ),
-          _buildSettingsTile(
-            icon: Icons.delete_outline,
-            title: 'Delete Workspace',
-            textColor: HermesColors.error,
-            iconColor: HermesColors.error,
-            onTap: () {},
-          ),
-          const Divider(color: HermesColors.border, height: 1),
-          _buildSettingsTile(
-            icon: Icons.download_rounded,
-            title: 'Import Workspace (.hermes)',
-            onTap: () {},
-          ),
-          _buildSettingsTile(
-            icon: Icons.upload_rounded,
-            title: 'Export Workspace (.hermes)',
-            onTap: () {},
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDataPipelineSection() {
-    return HermesCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          _buildSettingsTile(
-            icon: Icons.pan_tool_alt_rounded,
-            title: 'Manual Mode',
-            subtitle: 'You add everything manually.',
-            trailing: const Icon(Icons.check_circle_rounded, color: HermesColors.evolutioGlow, size: 20),
-            onTap: () {},
-          ),
-          const Divider(color: HermesColors.border, height: 1),
-          _buildSettingsTile(
-            icon: Icons.auto_awesome_rounded,
-            title: 'Automated Mode',
-            subtitle: 'Automatically import content based on sources.',
-            onTap: () {},
-          ),
-          _buildSettingsTile(
-            icon: Icons.rss_feed_rounded,
-            title: 'Manage Integrations',
-            subtitle: 'RSS, GitHub, Dev.to, Wikipedia...',
-            onTap: () {},
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppearanceSection() {
-    return HermesCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          _buildSettingsTile(icon: Icons.color_lens_outlined, title: 'Theme', subtitle: 'Dark', onTap: () {}),
-          _buildSettingsTile(icon: Icons.format_paint_outlined, title: 'Accent Color', subtitle: 'Green', onTap: () {}),
-          _buildSettingsTile(icon: Icons.dark_mode_outlined, title: 'OLED Mode', trailing: const Icon(Icons.toggle_off, color: HermesColors.textTertiary, size: 36), onTap: () {}),
-          _buildSettingsTile(icon: Icons.view_compact_alt_outlined, title: 'Compact Mode', trailing: const Icon(Icons.toggle_off, color: HermesColors.textTertiary, size: 36), onTap: () {}),
-          _buildSettingsTile(icon: Icons.format_size_rounded, title: 'Font Size', subtitle: 'Medium', onTap: () {}),
         ],
       ),
     );

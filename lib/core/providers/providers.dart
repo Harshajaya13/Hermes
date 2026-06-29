@@ -25,7 +25,7 @@ class CurrentWorkspaceNotifier extends Notifier<Workspace?> {
   Workspace? build() {
     final storage = ref.watch(storageEngineProvider);
     final workspaces = storage.workspaces;
-    return workspaces.isNotEmpty ? workspaces.first : null;
+    return workspaces.where((w) => w.isDefault).firstOrNull ?? (workspaces.isNotEmpty ? workspaces.first : null);
   }
 
   void updateWorkspace(Workspace? ws) {
