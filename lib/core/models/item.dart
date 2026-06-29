@@ -7,6 +7,7 @@ enum ItemType { question, article, note, quote, observation, idea }
 class Item {
   final String id;
   final String blockId;
+  final String? sourceId;
   final ItemType type;
   final String title;
   final String content; // JSON string or markdown depending on engine
@@ -21,6 +22,7 @@ class Item {
   Item({
     String? id,
     required this.blockId,
+    this.sourceId,
     required this.type,
     required this.title,
     required this.content,
@@ -38,6 +40,7 @@ class Item {
   Map<String, dynamic> toJson() => {
         'id': id,
         'blockId': blockId,
+        'sourceId': sourceId,
         'type': type.name,
         'title': title,
         'content': content,
@@ -53,6 +56,7 @@ class Item {
   factory Item.fromJson(Map<String, dynamic> json) => Item(
         id: json['id'] as String,
         blockId: json['blockId'] as String,
+        sourceId: json['sourceId'] as String?,
         type: ItemType.values.byName(json['type'] as String),
         title: json['title'] as String,
         content: json['content'] as String,
@@ -67,6 +71,7 @@ class Item {
 
   Item copyWith({
     String? blockId,
+    String? sourceId,
     ItemType? type,
     String? title,
     String? content,
@@ -80,6 +85,7 @@ class Item {
     return Item(
       id: id,
       blockId: blockId ?? this.blockId,
+      sourceId: sourceId ?? this.sourceId,
       type: type ?? this.type,
       title: title ?? this.title,
       content: content ?? this.content,

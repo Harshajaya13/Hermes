@@ -21,6 +21,9 @@ class Workspace {
   final String? ownerNickname;
   final String? lore;
   final bool isDefault;
+  final bool manualCollectionEnabled;
+  final bool communityCollectionEnabled;
+  final bool rssFeedsEnabled;
 
   Workspace({
     String? id,
@@ -41,6 +44,9 @@ class Workspace {
     this.ownerNickname,
     this.lore,
     this.isDefault = false,
+    this.manualCollectionEnabled = true,
+    this.communityCollectionEnabled = false,
+    this.rssFeedsEnabled = false,
   })  : id = id ?? _uuid.v4(),
         createdAt = createdAt ?? DateTime.now(),
         modifiedAt = modifiedAt ?? DateTime.now();
@@ -64,6 +70,9 @@ class Workspace {
         'ownerNickname': ownerNickname,
         'lore': lore,
         'isDefault': isDefault,
+        'manualCollectionEnabled': manualCollectionEnabled,
+        'communityCollectionEnabled': communityCollectionEnabled,
+        'rssFeedsEnabled': rssFeedsEnabled,
       };
 
   factory Workspace.fromJson(Map<String, dynamic> json) => Workspace(
@@ -85,6 +94,9 @@ class Workspace {
         ownerNickname: json['ownerNickname'] as String?,
         lore: json['lore'] as String?,
         isDefault: json['isDefault'] as bool? ?? false,
+        manualCollectionEnabled: json['manualCollectionEnabled'] as bool? ?? true,
+        communityCollectionEnabled: json['communityCollectionEnabled'] as bool? ?? false,
+        rssFeedsEnabled: json['rssFeedsEnabled'] as bool? ?? false,
       );
 
   Workspace copyWith({
@@ -104,6 +116,9 @@ class Workspace {
     String? ownerNickname,
     String? lore,
     bool? isDefault,
+    bool? manualCollectionEnabled,
+    bool? communityCollectionEnabled,
+    bool? rssFeedsEnabled,
   }) {
     return Workspace(
       id: id,
@@ -124,6 +139,9 @@ class Workspace {
       ownerNickname: ownerNickname ?? this.ownerNickname,
       lore: lore ?? this.lore,
       isDefault: isDefault ?? this.isDefault,
+      manualCollectionEnabled: manualCollectionEnabled ?? this.manualCollectionEnabled,
+      communityCollectionEnabled: communityCollectionEnabled ?? this.communityCollectionEnabled,
+      rssFeedsEnabled: rssFeedsEnabled ?? this.rssFeedsEnabled,
     );
   }
 }

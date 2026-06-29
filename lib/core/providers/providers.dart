@@ -63,6 +63,13 @@ final itemsByBlockProvider = Provider.family<List<Item>, String>((ref, blockId) 
   return storage.getItems(blockId);
 });
 
+final sourcesProvider = Provider<List<KnowledgeSource>>((ref) {
+  final storage = ref.watch(storageEngineProvider);
+  final currentWorkspace = ref.watch(currentWorkspaceProvider);
+  if (currentWorkspace == null) return [];
+  return storage.getSources(currentWorkspace.id);
+});
+
 // ── Evolutios ────────────────────────────────────────────────────────────────
 
 final allEvolutiosProvider = Provider<List<Evolutio>>((ref) {
@@ -105,6 +112,24 @@ class TodaySectionFormatNotifier extends Notifier<String> {
 
 final todaySectionFormatProvider = NotifierProvider<TodaySectionFormatNotifier, String>(
   TodaySectionFormatNotifier.new,
+);
+
+// ── Appearance ───────────────────────────────────────────────────────────────
+
+class AppearanceNotifier extends Notifier<AppearanceSettings> {
+  @override
+  AppearanceSettings build() {
+    return ref.watch(storageEngineProvider).appearance;
+  }
+
+  Future<void> updateAppearance(AppearanceSettings settings) async {
+    state = settings;
+    await ref.read(storageEngineProvider).saveAppearance(settings);
+  }
+}
+
+final appearanceProvider = NotifierProvider<AppearanceNotifier, AppearanceSettings>(
+  AppearanceNotifier.new,
 );
 
 class WorkspaceLockedNotifier extends Notifier<bool> {

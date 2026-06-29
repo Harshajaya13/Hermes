@@ -5,3 +5,5 @@ export 'item.dart';
 export 'reflection.dart';
 export 'evolutio.dart';
 export 'veritas.dart';
+export 'app_settings.dart';
+export 'knowledge_source.dart';

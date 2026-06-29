@@ -1,0 +1,52 @@
+[
+  {
+    "title": "Bayes' Theorem Application",
+    "content": "If a disease affects 1% of the population, and a test is 99% accurate, what is the probability you have the disease if you test positive?",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bayes%27_theorem"
+  },
+  {
+    "title": "The Monty Hall Problem",
+    "content": "You are on a game show and pick one of three doors. One has a car, two have goats. The host opens a goat door. Should you switch?",
+    "sourceUrl": ""
+  },
+  {
+    "title": "Law of Large Numbers",
+    "content": "Explain the Law of Large Numbers and how it relates to casino profitability over time.",
+    "sourceUrl": ""
+  },
+  {
+    "title": "Normal Distribution",
+    "content": "What is the 68-95-99.7 rule in statistics, and why is the normal distribution so common in nature?",
+    "sourceUrl": ""
+  },
+  {
+    "title": "Markov Chains",
+    "content": "Define a Markov Chain. Give an example of a memoryless stochastic process.",
+    "sourceUrl": "https://brilliant.org/wiki/markov-chains/"
+  },
+  {
+    "title": "Gambler's Fallacy",
+    "content": "If a fair coin lands on heads 5 times in a row, what is the probability it will land on heads the 6th time? Explain the psychological bias.",
+    "sourceUrl": ""
+  },
+  {
+    "title": "Expected Value",
+    "content": "A lottery ticket costs $2. There is a 1 in 1,000,000 chance to win $1,000,000. What is the expected value of the ticket?",
+    "sourceUrl": ""
+  },
+  {
+    "title": "Birthday Paradox",
+    "content": "How many people do you need in a room to have a 50% chance that two people share the same birthday? Explain why.",
+    "sourceUrl": ""
+  },
+  {
+    "title": "Poisson Distribution",
+    "content": "When is it appropriate to use a Poisson distribution instead of a Binomial distribution?",
+    "sourceUrl": ""
+  },
+  {
+    "title": "Standard Deviation vs Variance",
+    "content": "What is the mathematical relationship between standard deviation and variance? Why do we use standard deviation more often in reports?",
+    "sourceUrl": ""
+  }
+]

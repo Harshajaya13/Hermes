@@ -19,6 +19,9 @@ class LocalStorageEngine {
   final Map<String, Reflection> _reflections = {};
   final Map<String, Evolutio> _evolutios = {};
   final Map<String, Veritas> _veritas = {};
+  final Map<String, KnowledgeSource> _sources = {};
+  
+  AppearanceSettings _appearance = const AppearanceSettings();
 
   Future<void> initialize() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -44,8 +47,14 @@ class LocalStorageEngine {
         }
       }
     }
+    
+    // Load Appearance
+    final appearanceFile = await _getFile('appearance');
+    if (await appearanceFile.exists()) {
+      final json = jsonDecode(await appearanceFile.readAsString());
+      _appearance = AppearanceSettings.fromJson(json);
+    }
   }
-
   Future<void> seedStarterWorkspace(Workspace workspace) async {
     final engDomain = Domain(workspaceId: workspace.id, name: 'Core Disciplines', sortOrder: 0);
     await saveDomain(engDomain);
@@ -81,6 +90,7 @@ class LocalStorageEngine {
     await _loadCollection('reflections', _reflections, (json) => Reflection.fromJson(json));
     await _loadCollection('evolutios', _evolutios, (json) => Evolutio.fromJson(json));
     await _loadCollection('veritas', _veritas, (json) => Veritas.fromJson(json));
+    await _loadCollection('sources', _sources, (json) => KnowledgeSource.fromJson(json));
   }
 
   Future<void> _loadCollection<T>(
@@ -105,6 +115,16 @@ class LocalStorageEngine {
   Future<void> saveWorkspace(Workspace workspace) async {
     _workspaces[workspace.id] = workspace;
     await _saveToDisk('workspaces', _workspaces.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  // ── Appearance ──────────────────────────────────────────────────────────────
+
+  AppearanceSettings get appearance => _appearance;
+
+  Future<void> saveAppearance(AppearanceSettings settings) async {
+    _appearance = settings;
+    final file = await _getFile('appearance');
+    await file.writeAsString(jsonEncode(settings.toJson()));
   }
 
   // ── Domains ─────────────────────────────────────────────────────────────────
@@ -232,12 +252,39 @@ class LocalStorageEngine {
     await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
   }
 
+  Future<void> saveItems(List<Item> items) async {
+    for (final item in items) {
+      _items[item.id] = item;
+    }
+    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
   Future<void> deleteItem(String itemId) async {
     final item = _items[itemId];
     if (item == null) return;
     
     _items[itemId] = item.copyWith(deleted: true, archived: true);
     await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  // --- KNOWLEDGE SOURCES ---
+
+  List<KnowledgeSource> getSources(String workspaceId, {bool includeHidden = false}) {
+    return _sources.values
+        .where((s) => s.workspaceId == workspaceId && (!s.deleted) && (includeHidden || !s.archived))
+        .toList();
+  }
+
+  Future<void> saveSource(KnowledgeSource source) async {
+    _sources[source.id] = source;
+    await _saveToDisk('sources', _sources.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> deleteSource(String sourceId) async {
+    final source = _sources[sourceId];
+    if (source == null) return;
+    _sources[sourceId] = source.copyWith(deleted: true, archived: true);
+    await _saveToDisk('sources', _sources.map((k, v) => MapEntry(k, v.toJson())));
   }
 
   Future<void> restoreItem(String itemId) async {

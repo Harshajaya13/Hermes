@@ -9,6 +9,7 @@ import '../today/visibility_screen.dart';
 import '../archive/archive_screen.dart';
 import 'edit_identity_dialog.dart';
 import 'workspace_management_dialogs.dart';
+import '../pipeline/pipeline.dart';
 
 class ControlCenterScreen extends ConsumerStatefulWidget {
   const ControlCenterScreen({super.key});
@@ -48,7 +49,13 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
               _buildWorkspaceSection(context, ref, workspace, isLocked),
               const SizedBox(height: HermesSpacing.xxl),
               
-
+              _buildSectionHeader('Knowledge Sources'),
+              _buildKnowledgeSourcesSection(context, ref, workspace),
+              const SizedBox(height: HermesSpacing.xxl),
+              
+              _buildSectionHeader('Appearance'),
+              _buildAppearanceSection(context, ref),
+              const SizedBox(height: HermesSpacing.xxl),
               
               _buildSectionHeader('About'),
               _buildAboutSection(),
@@ -186,13 +193,170 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
     );
   }
 
+  Widget _buildKnowledgeSourcesSection(BuildContext context, WidgetRef ref, Workspace? ws) {
+    if (ws == null) return const SizedBox.shrink();
+
+    return HermesCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          _buildSettingsTile(
+            icon: Icons.pan_tool_alt_rounded,
+            title: 'Manual Collection',
+            subtitle: 'Import JSON, specify limits, assign to Blocks.',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ManualPipelineScreen()),
+              );
+            },
+          ),
+          _buildSettingsTile(
+            icon: Icons.group_outlined,
+            title: 'Community Collection',
+            subtitle: 'Browse and subscribe to AI/community topics.',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AutomatedPipelineScreen()),
+              );
+            },
+          ),
+          _buildSettingsTile(
+            icon: Icons.rss_feed_rounded,
+            title: 'RSS Feeds',
+            subtitle: 'Add blogs, journals, and newsletters.',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RssPipelineScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppearanceSection(BuildContext context, WidgetRef ref) {
+    final appearance = ref.watch(appearanceProvider);
+    
+    return HermesCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          _buildSettingsTile(
+            icon: Icons.format_size_rounded, 
+            title: 'Font Size', 
+            subtitle: appearance.fontSize, 
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: HermesColors.surfaceElevated,
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+                builder: (_) => _buildOptionSheet(
+                  context, ref,
+                  'Font Size',
+                  ['Small', 'Medium', 'Large'],
+                  appearance.fontSize,
+                  (val) => ref.read(appearanceProvider.notifier).updateAppearance(appearance.copyWith(fontSize: val)),
+                ),
+              );
+            }
+          ),
+          _buildSettingsTile(
+            icon: Icons.view_compact_alt_outlined, 
+            title: 'Visual Density', 
+            subtitle: appearance.visualDensity, 
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: HermesColors.surfaceElevated,
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+                builder: (_) => _buildOptionSheet(
+                  context, ref,
+                  'Visual Density',
+                  ['Comfortable', 'Compact'],
+                  appearance.visualDensity,
+                  (val) => ref.read(appearanceProvider.notifier).updateAppearance(appearance.copyWith(visualDensity: val)),
+                ),
+              );
+            }
+          ),
+          _buildSettingsTile(
+            icon: Icons.animation_rounded, 
+            title: 'Motion Preferences', 
+            subtitle: appearance.reducedMotion ? 'Reduced Motion' : 'Normal Motion', 
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: HermesColors.surfaceElevated,
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+                builder: (_) => _buildOptionSheet(
+                  context, ref,
+                  'Motion Preferences',
+                  ['Normal Motion', 'Reduced Motion'],
+                  appearance.reducedMotion ? 'Reduced Motion' : 'Normal Motion',
+                  (val) => ref.read(appearanceProvider.notifier).updateAppearance(appearance.copyWith(reducedMotion: val == 'Reduced Motion')),
+                ),
+              );
+            }
+          ),
+          _buildSettingsTile(
+            icon: Icons.dark_mode_outlined, 
+            title: 'OLED Black', 
+            trailing: Switch(
+              value: appearance.oledBlack,
+              activeColor: HermesColors.evolutioGlow,
+              onChanged: (val) {
+                ref.read(appearanceProvider.notifier).updateAppearance(appearance.copyWith(oledBlack: val));
+              },
+            ),
+            onTap: () {
+              ref.read(appearanceProvider.notifier).updateAppearance(appearance.copyWith(oledBlack: !appearance.oledBlack));
+            }
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOptionSheet(BuildContext context, WidgetRef ref, String title, List<String> options, String currentValue, Function(String) onSelect) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: HermesSpacing.lg),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.lg),
+            child: Text(title, style: HermesTypography.sectionTitle),
+          ),
+          const SizedBox(height: HermesSpacing.md),
+          ...options.map((option) {
+            final isSelected = option == currentValue;
+            return ListTile(
+              title: Text(option, style: HermesTypography.body),
+              trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: HermesColors.evolutioGlow) : null,
+              onTap: () {
+                onSelect(option);
+                Navigator.pop(context);
+              },
+            );
+          }),
+          const SizedBox(height: HermesSpacing.md),
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildAboutSection() {
     return HermesCard(
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          _buildSettingsTile(icon: Icons.info_outline, title: 'Version', subtitle: '1.0.0 (Codex)', onTap: () {}),
+          _buildSettingsTile(icon: Icons.info_outline, title: 'Version', subtitle: '1.0.0 (Foundation)', onTap: () {}),
           _buildSettingsTile(icon: Icons.gavel_rounded, title: 'License', subtitle: 'FOSS (MIT)', onTap: () {}),
           _buildSettingsTile(icon: Icons.menu_book_rounded, title: 'Hermes Codex', onTap: () {}),
           _buildSettingsTile(icon: Icons.history_rounded, title: 'Changelog', onTap: () {}),

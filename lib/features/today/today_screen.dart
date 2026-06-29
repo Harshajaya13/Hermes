@@ -238,7 +238,7 @@ class TodayScreen extends ConsumerWidget {
                             ),
                           )
                         else
-                          ...dailyItems.take(5).map((entry) {
+                          ...dailyItems.take(20).map((entry) {
                             final item = entry.value;
                             final block = entry.key;
                             return Padding(
