@@ -55,8 +55,9 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final sectionId = hiddenSections.elementAt(index);
+                    final todayFormat = ref.watch(todaySectionFormatProvider);
                     String sectionName = sectionId;
-                    if (sectionId == 'question') sectionName = "Today's Question";
+                    if (sectionId == 'question') sectionName = todayFormat == 'article' ? "Today's Article" : "Today's Question";
                     if (sectionId == 'pinned') sectionName = "Pinned Blocks";
                     if (sectionId == 'evolutios') sectionName = "Recent Evolutios";
                     if (sectionId == 'veritas') sectionName = "Veritas";
@@ -66,7 +67,49 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                       title: Text(sectionName, style: HermesTypography.body),
                       trailing: TextButton(
                         onPressed: () {
-                          ref.read(archivedSectionsProvider.notifier).restoreSection(sectionId);
+                          if (sectionId == 'question') {
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: HermesColors.surfaceElevated,
+                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+                              builder: (ctx) => SafeArea(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(HermesSpacing.lg),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Restore $sectionName', style: HermesTypography.sectionTitle),
+                                      const SizedBox(height: HermesSpacing.md),
+                                      ListTile(
+                                        leading: const Icon(Icons.help_outline_rounded, color: HermesColors.textPrimary),
+                                        title: Text('Restore as a Question', style: HermesTypography.body),
+                                        onTap: () {
+                                          ref.read(todaySectionFormatProvider.notifier).setFormat('question');
+                                          ref.read(archivedSectionsProvider.notifier).restoreSection(sectionId);
+                                          Navigator.pop(ctx);
+                                        },
+                                      ),
+                                      ListTile(
+                                        leading: const Icon(Icons.article_outlined, color: HermesColors.textPrimary),
+                                        title: Text('Change format to an Article/Reading', style: HermesTypography.body),
+                                        onTap: () {
+                                          ref.read(todaySectionFormatProvider.notifier).setFormat('article');
+                                          ref.read(archivedSectionsProvider.notifier).restoreSection(sectionId);
+                                          Navigator.pop(ctx);
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Format changed to Article/Reading')),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          } else {
+                            ref.read(archivedSectionsProvider.notifier).restoreSection(sectionId);
+                          }
                         },
                         child: Text('Restore', style: HermesTypography.bodySmall.copyWith(color: HermesColors.evolutioGlow)),
                       ),

@@ -178,25 +178,7 @@ class TodayScreen extends ConsumerWidget {
             ),
 
             // ── Morning Question ────────────────────────────────────
-            if (archivedSections.contains('question')) ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
-                  child: HermesCard(
-                    padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.md, vertical: HermesSpacing.sm),
-                    onTap: () => ref.read(archivedSectionsProvider.notifier).restoreSection('question'),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Today's Question (Archived)", style: HermesTypography.metadata),
-                        const Icon(Icons.restore_rounded, size: 16, color: HermesColors.textTertiary),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: HermesSpacing.sectionGap)),
-            ] else ...[
+            if (!archivedSections.contains('question')) ...[
               SliverToBoxAdapter(
                 child: HermesFadeIn(
                   delay: Duration.zero,
@@ -208,8 +190,8 @@ class TodayScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         HermesSectionHeader(
-                          title: "Today's Question",
-                          onLongPress: () => archiveSection('question', "Today's Question"),
+                          title: ref.watch(todaySectionFormatProvider) == 'article' ? "Today's Article" : "Today's Question",
+                          onLongPress: () => archiveSection('question', ref.read(todaySectionFormatProvider) == 'article' ? "Today's Article" : "Today's Question"),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
                         HermesCard(
@@ -270,25 +252,7 @@ class TodayScreen extends ConsumerWidget {
             ],
 
             // ── Pinned Blocks ───────────────────────────────────────
-            if (archivedSections.contains('pinned')) ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
-                  child: HermesCard(
-                    padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.md, vertical: HermesSpacing.sm),
-                    onTap: () => ref.read(archivedSectionsProvider.notifier).restoreSection('pinned'),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Pinned Blocks (Archived)", style: HermesTypography.metadata),
-                        const Icon(Icons.restore_rounded, size: 16, color: HermesColors.textTertiary),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: HermesSpacing.sectionGap)),
-            ] else ...[
+            if (!archivedSections.contains('pinned')) ...[
               SliverToBoxAdapter(
                 child: HermesFadeIn(
                   delay: Duration.zero,
@@ -334,25 +298,7 @@ class TodayScreen extends ConsumerWidget {
             ],
 
             // ── Today's Evolutios (Dynamic from storage) ─────────────
-            if (archivedSections.contains('evolutios')) ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
-                  child: HermesCard(
-                    padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.md, vertical: HermesSpacing.sm),
-                    onTap: () => ref.read(archivedSectionsProvider.notifier).restoreSection('evolutios'),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Recent Evolutios (Archived)", style: HermesTypography.metadata),
-                        const Icon(Icons.restore_rounded, size: 16, color: HermesColors.textTertiary),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: HermesSpacing.sectionGap)),
-            ] else ...[
+            if (!archivedSections.contains('evolutios')) ...[
               SliverToBoxAdapter(
                 child: HermesFadeIn(
                   delay: Duration.zero,
@@ -396,24 +342,7 @@ class TodayScreen extends ConsumerWidget {
             ],
 
             // ── Veritas ─────────────────────────────────────────────
-            if (archivedSections.contains('veritas')) ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
-                  child: HermesCard(
-                    padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.md, vertical: HermesSpacing.sm),
-                    onTap: () => ref.read(archivedSectionsProvider.notifier).restoreSection('veritas'),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Veritas (Archived)", style: HermesTypography.metadata),
-                        const Icon(Icons.restore_rounded, size: 16, color: HermesColors.textTertiary),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ] else ...[
+            if (!archivedSections.contains('veritas')) ...[
               SliverToBoxAdapter(
                 child: HermesFadeIn(
                   delay: Duration.zero,

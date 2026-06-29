@@ -90,3 +90,16 @@ final archivedSectionsProvider = NotifierProvider<ArchivedSectionsNotifier, Set<
   ArchivedSectionsNotifier.new,
 );
 
+class TodaySectionFormatNotifier extends Notifier<String> {
+  @override
+  String build() => 'question'; // 'question' or 'article'
+
+  void setFormat(String format) {
+    state = format;
+  }
+}
+
+final todaySectionFormatProvider = NotifierProvider<TodaySectionFormatNotifier, String>(
+  TodaySectionFormatNotifier.new,
+);
+
