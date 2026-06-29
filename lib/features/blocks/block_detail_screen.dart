@@ -282,10 +282,6 @@ extension ItemTypeIcon on ItemType {
         return Icons.help_outline_rounded;
       case ItemType.article:
         return Icons.article_outlined;
-      case ItemType.note:
-        return Icons.sticky_note_2_outlined;
-      case ItemType.quote:
-        return Icons.format_quote_rounded;
       case ItemType.observation:
         return Icons.visibility_outlined;
       case ItemType.idea:
@@ -299,10 +295,6 @@ extension ItemTypeIcon on ItemType {
         return HermesColors.accent;
       case ItemType.article:
         return HermesColors.accentWarm;
-      case ItemType.note:
-        return HermesColors.accentSoft;
-      case ItemType.quote:
-        return HermesColors.accentMuted;
       case ItemType.observation:
         return HermesColors.textTertiary;
       case ItemType.idea:

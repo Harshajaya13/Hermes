@@ -365,7 +365,14 @@ class TodayScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: HermesSpacing.md),
                                     Text(
-                                      item.type == ItemType.question ? 'Tap to evaluate' : 'Tap to read',
+                                      (() {
+                                        switch (item.type) {
+                                          case ItemType.question: return 'Tap to evaluate';
+                                          case ItemType.article: return 'Tap to read';
+                                          case ItemType.idea: return 'Tap to expand';
+                                          case ItemType.observation: return 'Tap to review';
+                                        }
+                                      })(),
                                       style: HermesTypography.metadata,
                                     ),
                                   ],

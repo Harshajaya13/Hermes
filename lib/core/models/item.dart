@@ -2,7 +2,7 @@ import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
 
-enum ItemType { question, article, note, quote, observation, idea }
+enum ItemType { question, article, idea, observation }
 
 class Item {
   final String id;
@@ -57,7 +57,7 @@ class Item {
         id: json['id'] as String,
         blockId: json['blockId'] as String,
         sourceId: json['sourceId'] as String?,
-        type: ItemType.values.byName(json['type'] as String),
+        type: _parseItemType(json['type'] as String),
         title: json['title'] as String,
         content: json['content'] as String,
         sourceUrl: json['sourceUrl'] as String?,
@@ -97,5 +97,17 @@ class Item {
       deleted: deleted ?? this.deleted,
       version: version ?? (this.version + 1),
     );
+  }
+
+  static ItemType _parseItemType(String typeStr) {
+    try {
+      return ItemType.values.byName(typeStr);
+    } catch (_) {
+      // Fallback for legacy note and quote types
+      if (typeStr == 'note' || typeStr == 'quote') {
+        return ItemType.observation;
+      }
+      return ItemType.observation;
+    }
   }
 }

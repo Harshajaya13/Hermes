@@ -21,6 +21,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   
   List<Item> _questionResults = [];
   List<Item> _articleResults = [];
+  List<Item> _ideaResults = [];
+  List<Item> _observationResults = [];
   List<Reflection> _reflectionResults = [];
   List<Evolutio> _evolutioResults = [];
   List<Block> _blockResults = [];
@@ -72,6 +74,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       _blockResults = blocks;
       _questionResults = items.where((i) => i.type == ItemType.question).toList();
       _articleResults = items.where((i) => i.type == ItemType.article).toList();
+      _ideaResults = items.where((i) => i.type == ItemType.idea).toList();
+      _observationResults = items.where((i) => i.type == ItemType.observation).toList();
       _reflectionResults = reflections;
       _evolutioResults = evolutios;
     });
@@ -80,6 +84,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _clearResults() {
     _questionResults.clear();
     _articleResults.clear();
+    _ideaResults.clear();
+    _observationResults.clear();
     _reflectionResults.clear();
     _evolutioResults.clear();
     _blockResults.clear();
@@ -195,6 +201,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget _buildResults() {
     final hasResults = _questionResults.isNotEmpty || 
                        _articleResults.isNotEmpty || 
+                       _ideaResults.isNotEmpty ||
+                       _observationResults.isNotEmpty ||
                        _reflectionResults.isNotEmpty || 
                        _evolutioResults.isNotEmpty || 
                        _blockResults.isNotEmpty;
@@ -234,6 +242,28 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               subtitle: 'Article',
               icon: Icons.article_outlined,
               color: HermesColors.accentWarm,
+            )),
+            const SizedBox(height: HermesSpacing.lg),
+          ],
+
+          if (_ideaResults.isNotEmpty) ...[
+            const HermesSectionHeader(title: 'Ideas'),
+            ..._ideaResults.map((i) => _ResultItem(
+              title: i.title,
+              subtitle: 'Idea',
+              icon: Icons.lightbulb_outline_rounded,
+              color: HermesColors.accentWarm,
+            )),
+            const SizedBox(height: HermesSpacing.lg),
+          ],
+
+          if (_observationResults.isNotEmpty) ...[
+            const HermesSectionHeader(title: 'Observations'),
+            ..._observationResults.map((o) => _ResultItem(
+              title: o.title,
+              subtitle: 'Observation',
+              icon: Icons.visibility_outlined,
+              color: HermesColors.textTertiary,
             )),
             const SizedBox(height: HermesSpacing.lg),
           ],

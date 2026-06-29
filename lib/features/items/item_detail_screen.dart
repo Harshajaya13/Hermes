@@ -147,14 +147,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         return _buildQuestionLayout();
       case ItemType.article:
         return _buildArticleLayout();
-      case ItemType.note:
-        return _buildNoteLayout();
       case ItemType.idea:
         return _buildIdeaLayout();
       case ItemType.observation:
         return _buildObservationLayout();
-      case ItemType.quote:
-        return _buildQuoteLayout();
       default:
         return _buildDefaultLayout();
     }
@@ -182,14 +178,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     );
   }
 
-  Widget _buildReflectionSection() {
+  Widget _buildReflectionSection(String title, String subtitle, String hint) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const HermesSectionHeader(title: 'Reflection'),
+        HermesSectionHeader(title: title),
         const SizedBox(height: HermesSpacing.sm),
         Text(
-          'What did you learn? How does this connect?',
+          subtitle,
           style: HermesTypography.metadata,
         ),
         const SizedBox(height: HermesSpacing.md),
@@ -200,7 +196,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             maxLines: 5,
             style: HermesTypography.reflection,
             decoration: InputDecoration(
-              hintText: 'Type your reflection...',
+              hintText: hint,
               hintStyle: HermesTypography.reflection.copyWith(color: HermesColors.textTertiary),
               filled: true,
               fillColor: HermesColors.surfaceElevated,
@@ -420,22 +416,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         const SizedBox(height: HermesSpacing.lg),
         _buildMarkdownContent(),
         const SizedBox(height: HermesSpacing.xxxl),
-        _buildReflectionSection(),
-      ],
-    );
-  }
-
-  Widget _buildNoteLayout() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(widget.item.title, style: HermesTypography.screenTitle),
-        const SizedBox(height: HermesSpacing.sm),
-        Text('In ${widget.block.name}', style: HermesTypography.metadata),
-        const SizedBox(height: HermesSpacing.lg),
-        _buildMarkdownContent(),
-        const SizedBox(height: HermesSpacing.xxxl),
-        _buildReflectionSection(),
+        _buildReflectionSection(
+          'Think', 
+          'What did you learn? How does this reading change your perspective?', 
+          'Type your reflection...'
+        ),
       ],
     );
   }
@@ -444,11 +429,13 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Idea: ${widget.item.title}', style: HermesTypography.screenTitle),
+        Text('Idea', style: HermesTypography.metadata),
+        const SizedBox(height: HermesSpacing.sm),
+        Text(widget.item.title, style: HermesTypography.screenTitle),
         const SizedBox(height: HermesSpacing.md),
         Wrap(
           spacing: 8.0,
-          children: ['#idea', '#${widget.block.name.toLowerCase().replaceAll(' ', '')}'].map((t) => Chip(
+          children: ['#create', '#${widget.block.name.toLowerCase().replaceAll(' ', '')}'].map((t) => Chip(
             label: Text(t, style: const TextStyle(fontSize: 12)),
             backgroundColor: HermesColors.surfaceElevated,
           )).toList(),
@@ -456,7 +443,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         const SizedBox(height: HermesSpacing.lg),
         _buildMarkdownContent(),
         const SizedBox(height: HermesSpacing.xxxl),
-        _buildReflectionSection(),
+        _buildReflectionSection(
+          'Expand & Think', 
+          'How does this idea connect to what you already know? Where does it lead?', 
+          'Elaborate on this idea...'
+        ),
       ],
     );
   }
@@ -479,29 +470,32 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           ),
           child: _buildMarkdownContent(),
         ),
-      ],
-    );
-  }
-
-  Widget _buildQuoteLayout() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
         const SizedBox(height: HermesSpacing.xxxl),
-        const Icon(Icons.format_quote_rounded, size: 48, color: HermesColors.textTertiary),
-        const SizedBox(height: HermesSpacing.lg),
-        Text(
-          widget.item.content,
-          textAlign: TextAlign.center,
-          style: HermesTypography.screenTitle.copyWith(fontStyle: FontStyle.italic),
+        _buildReflectionSection(
+          'Think', 
+          'What does this observation reveal? Should it change how you act?', 
+          'Reflect on this observation...'
         ),
-        const SizedBox(height: HermesSpacing.lg),
-        Text('- ${widget.item.title}', style: HermesTypography.metadata),
       ],
     );
   }
 
   Widget _buildDefaultLayout() {
-    return _buildNoteLayout();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(widget.item.title, style: HermesTypography.screenTitle),
+        const SizedBox(height: HermesSpacing.sm),
+        Text('In ${widget.block.name}', style: HermesTypography.metadata),
+        const SizedBox(height: HermesSpacing.lg),
+        _buildMarkdownContent(),
+        const SizedBox(height: HermesSpacing.xxxl),
+        _buildReflectionSection(
+          'Think', 
+          'What did you learn? How does this connect?', 
+          'Type your reflection...'
+        ),
+      ],
+    );
   }
 }
