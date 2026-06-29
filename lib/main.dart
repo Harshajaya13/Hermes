@@ -5,6 +5,7 @@ import 'features/today/today_screen.dart';
 import 'features/blocks/blocks_screen.dart';
 import 'features/evolution/evolution_screen.dart';
 import 'features/search/search_screen.dart';
+import 'features/today/workspace_locked_screen.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
 /// Hermes — Personal Development Operating System
@@ -70,14 +71,14 @@ class HermesApp extends StatelessWidget {
 /// One purpose per screen. Never overwhelm.
 /// ─────────────────────────────────────────────────────────────────────────────
 
-class HermesShell extends StatefulWidget {
+class HermesShell extends ConsumerStatefulWidget {
   const HermesShell({super.key});
 
   @override
-  State<HermesShell> createState() => _HermesShellState();
+  ConsumerState<HermesShell> createState() => _HermesShellState();
 }
 
-class _HermesShellState extends State<HermesShell> {
+class _HermesShellState extends ConsumerState<HermesShell> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
@@ -89,6 +90,11 @@ class _HermesShellState extends State<HermesShell> {
 
   @override
   Widget build(BuildContext context) {
+    final isLocked = ref.watch(workspaceLockedProvider);
+    if (isLocked) {
+      return const WorkspaceLockedScreen();
+    }
+
     return Scaffold(
       body: AnimatedSwitcher(
         duration: HermesDurations.normal,
@@ -128,7 +134,7 @@ class _HermesShellState extends State<HermesShell> {
               _NavItem(
                 icon: Icons.grid_view_outlined,
                 activeIcon: Icons.grid_view_rounded,
-                label: 'Blocks',
+                label: 'Domains',
                 isActive: _currentIndex == 1,
                 onTap: () => _switchTab(1),
               ),

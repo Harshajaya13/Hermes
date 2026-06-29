@@ -100,9 +100,9 @@ class LocalStorageEngine {
 
   // ── Domains ─────────────────────────────────────────────────────────────────
 
-  List<Domain> getDomains(String workspaceId) {
+  List<Domain> getDomains(String workspaceId, {bool includeHidden = false}) {
     return _domains.values
-        .where((d) => d.workspaceId == workspaceId && !d.deleted)
+        .where((d) => d.workspaceId == workspaceId && !d.deleted && (includeHidden || !d.hidden))
         .toList()..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
   }
 
@@ -139,12 +139,12 @@ class LocalStorageEngine {
 
   // ── Blocks ──────────────────────────────────────────────────────────────────
 
-  List<Block> getBlocks(String domainId) {
-    return _blocks.values.where((b) => b.domainId == domainId && !b.deleted).toList();
+  List<Block> getBlocks(String domainId, {bool includeHidden = false}) {
+    return _blocks.values.where((b) => b.domainId == domainId && !b.deleted && (includeHidden || !b.hidden)).toList();
   }
 
-  List<Block> getAllBlocks() {
-    return _blocks.values.where((b) => !b.deleted).toList();
+  List<Block> getAllBlocks({bool includeHidden = false}) {
+    return _blocks.values.where((b) => !b.deleted && (includeHidden || !b.hidden)).toList();
   }
 
   List<Block> getAllBlocksRaw() {

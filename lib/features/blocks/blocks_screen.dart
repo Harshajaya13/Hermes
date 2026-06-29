@@ -37,7 +37,7 @@ class BlocksScreen extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Blocks', style: HermesTypography.screenTitle),
+                      Text('Domains', style: HermesTypography.screenTitle),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -132,9 +132,6 @@ class BlocksScreen extends ConsumerWidget {
                               ),
                             );
                           },
-                          onLongPress: () {
-                            _showArchiveDialog(context, ref, domain.id, domain.name, true);
-                          },
                           child: Row(
                             children: [
                               Container(
@@ -156,10 +153,34 @@ class BlocksScreen extends ConsumerWidget {
                                   style: HermesTypography.itemTitle.copyWith(fontSize: 18),
                                 ),
                               ),
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                color: HermesColors.textTertiary,
-                                size: 24,
+                              PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_horiz, color: HermesColors.textTertiary, size: 24),
+                                padding: EdgeInsets.zero,
+                                color: HermesColors.surfaceElevated,
+                                onSelected: (value) async {
+                                  if (value == 'rename') {
+                                    CreateDomainSheet.show(context, domain);
+                                  } else if (value == 'archive') {
+                                    _showArchiveDialog(context, ref, domain.id, domain.name, true);
+                                  } else if (value == 'hide') {
+                                    final updatedDomain = domain.copyWith(hidden: true);
+                                    await ref.read(storageEngineProvider).saveDomain(updatedDomain);
+                                    ref.invalidate(domainsProvider);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('${domain.name} hidden.'),
+                                          backgroundColor: HermesColors.surfaceElevated,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  PopupMenuItem(value: 'rename', child: Text('Rename Domain', style: HermesTypography.bodySmall)),
+                                  PopupMenuItem(value: 'archive', child: Text('Archive Domain', style: HermesTypography.bodySmall)),
+                                  PopupMenuItem(value: 'hide', child: Text('Hide Domain', style: HermesTypography.bodySmall)),
+                                ],
                               ),
                             ],
                           ),
@@ -183,7 +204,7 @@ class BlocksScreen extends ConsumerWidget {
                   child: Center(
                     child: _AddBlockButton(
                       onTap: () {
-                        CreateBlockSheet.show(context);
+                        CreateDomainSheet.show(context);
                       },
                     ),
                   ),
@@ -285,7 +306,7 @@ class _AddBlockButton extends StatelessWidget {
               ),
               const SizedBox(width: HermesSpacing.xs),
               Text(
-                'Create Block',
+                'Create Domain',
                 style: HermesTypography.bodySmall.copyWith(
                   color: HermesColors.textTertiary,
                 ),

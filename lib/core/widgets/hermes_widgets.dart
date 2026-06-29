@@ -94,6 +94,7 @@ class HermesBlockChip extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback? onTap;
+  final Widget? trailing;
 
   const HermesBlockChip({
     super.key,
@@ -101,6 +102,7 @@ class HermesBlockChip extends StatelessWidget {
     required this.label,
     required this.color,
     this.onTap,
+    this.trailing,
   });
 
   @override
@@ -129,6 +131,10 @@ class HermesBlockChip extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              if (trailing != null) ...[
+                const SizedBox(width: HermesSpacing.xs),
+                trailing!,
+              ],
             ],
           ),
         ),

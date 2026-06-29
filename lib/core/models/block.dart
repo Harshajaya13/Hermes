@@ -14,6 +14,7 @@ class Block {
   final bool archived;
   final bool deleted;
   final bool pinned;
+  final bool hidden;
   final int version;
 
   Block({
@@ -28,6 +29,7 @@ class Block {
     this.archived = false,
     this.deleted = false,
     this.pinned = false,
+    this.hidden = false,
     this.version = 1,
   })  : id = id ?? _uuid.v4(),
         createdAt = createdAt ?? DateTime.now(),
@@ -45,6 +47,7 @@ class Block {
         'archived': archived,
         'deleted': deleted,
         'pinned': pinned,
+        'hidden': hidden,
         'version': version,
       };
 
@@ -60,6 +63,7 @@ class Block {
         archived: json['archived'] as bool? ?? false,
         deleted: json['deleted'] as bool? ?? false,
         pinned: json['pinned'] as bool? ?? false,
+        hidden: json['hidden'] as bool? ?? false,
         version: json['version'] as int? ?? 1,
       );
 
@@ -73,6 +77,7 @@ class Block {
     bool? archived,
     bool? deleted,
     bool? pinned,
+    bool? hidden,
     int? version,
   }) {
     return Block(
@@ -87,6 +92,7 @@ class Block {
       archived: archived ?? this.archived,
       deleted: deleted ?? this.deleted,
       pinned: pinned ?? this.pinned,
+      hidden: hidden ?? this.hidden,
       version: version ?? (this.version + 1),
     );
   }

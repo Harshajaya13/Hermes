@@ -12,6 +12,7 @@ class Evolutio {
   final bool archived;
   final bool deleted;
   final int version;
+  final bool hiddenFromHome;
 
   Evolutio({
     String? id,
@@ -23,6 +24,7 @@ class Evolutio {
     this.archived = false,
     this.deleted = false,
     this.version = 1,
+    this.hiddenFromHome = false,
   })  : id = id ?? _uuid.v4(),
         createdAt = createdAt ?? DateTime.now(),
         modifiedAt = modifiedAt ?? DateTime.now();
@@ -37,6 +39,7 @@ class Evolutio {
         'archived': archived,
         'deleted': deleted,
         'version': version,
+        'hiddenFromHome': hiddenFromHome,
       };
 
   factory Evolutio.fromJson(Map<String, dynamic> json) => Evolutio(
@@ -49,6 +52,7 @@ class Evolutio {
         archived: json['archived'] as bool? ?? false,
         deleted: json['deleted'] as bool? ?? false,
         version: json['version'] as int? ?? 1,
+        hiddenFromHome: json['hiddenFromHome'] as bool? ?? false,
       );
 
   Evolutio copyWith({
@@ -57,6 +61,7 @@ class Evolutio {
     bool? archived,
     bool? deleted,
     int? version,
+    bool? hiddenFromHome,
   }) {
     return Evolutio(
       id: id,
@@ -68,6 +73,7 @@ class Evolutio {
       archived: archived ?? this.archived,
       deleted: deleted ?? this.deleted,
       version: version ?? (this.version + 1),
+      hiddenFromHome: hiddenFromHome ?? this.hiddenFromHome,
     );
   }
 }

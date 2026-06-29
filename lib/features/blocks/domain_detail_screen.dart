@@ -81,9 +81,6 @@ class DomainDetailScreen extends ConsumerWidget {
                               ),
                             );
                           },
-                          onLongPress: () {
-                            _showArchiveDialog(context, ref, block.id, block.name);
-                          },
                           child: Row(
                             children: [
                               HermesIconBadge(
@@ -100,17 +97,52 @@ class DomainDetailScreen extends ConsumerWidget {
                                       style: HermesTypography.itemTitle,
                                     ),
                                     const SizedBox(height: 2),
-                                    Text(
-                                      '0 Items', // We'll hook up item count later
-                                      style: HermesTypography.metadata,
+                                    Consumer(
+                                      builder: (context, ref, child) {
+                                        final blockItems = ref.watch(itemsByBlockProvider(block.id));
+                                        return Text(
+                                          '${blockItems.length} Items',
+                                          style: HermesTypography.metadata,
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
                               ),
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                color: HermesColors.textTertiary,
-                                size: 20,
+                              PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_horiz, color: HermesColors.textTertiary, size: 24),
+                                padding: EdgeInsets.zero,
+                                color: HermesColors.surfaceElevated,
+                                onSelected: (value) async {
+                                  if (value == 'rename') {
+                                    CreateBlockSheet.show(context, block);
+                                  } else if (value == 'pin') {
+                                    final updatedBlock = block.copyWith(pinned: !block.pinned);
+                                    await ref.read(storageEngineProvider).saveBlock(updatedBlock);
+                                    ref.invalidate(blocksByDomainProvider);
+                                    ref.invalidate(allBlocksProvider);
+                                  } else if (value == 'archive') {
+                                    _showArchiveDialog(context, ref, block.id, block.name);
+                                  } else if (value == 'hide') {
+                                    final updatedBlock = block.copyWith(hidden: true);
+                                    await ref.read(storageEngineProvider).saveBlock(updatedBlock);
+                                    ref.invalidate(blocksByDomainProvider);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('${block.name} hidden.'),
+                                          backgroundColor: HermesColors.surfaceElevated,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  PopupMenuItem(value: 'rename', child: Text('Rename Block', style: HermesTypography.bodySmall)),
+                                  PopupMenuItem(value: 'pin', child: Text(block.pinned ? 'Unpin From Home' : 'Pin To Home', style: HermesTypography.bodySmall)),
+                                  PopupMenuItem(value: 'archive', child: Text('Archive Block', style: HermesTypography.bodySmall)),
+                                  PopupMenuItem(value: 'hide', child: Text('Hide Block', style: HermesTypography.bodySmall)),
+                                ],
                               ),
                             ],
                           ),

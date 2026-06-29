@@ -13,6 +13,7 @@ class Domain {
   final DateTime modifiedAt;
   final bool archived;
   final bool deleted;
+  final bool hidden;
   final int version;
 
   Domain({
@@ -26,6 +27,7 @@ class Domain {
     DateTime? modifiedAt,
     this.archived = false,
     this.deleted = false,
+    this.hidden = false,
     this.version = 1,
   })  : id = id ?? _uuid.v4(),
         createdAt = createdAt ?? DateTime.now(),
@@ -42,6 +44,7 @@ class Domain {
         'modifiedAt': modifiedAt.toIso8601String(),
         'archived': archived,
         'deleted': deleted,
+        'hidden': hidden,
         'version': version,
       };
 
@@ -56,6 +59,7 @@ class Domain {
         modifiedAt: DateTime.parse(json['modifiedAt'] as String),
         archived: json['archived'] as bool? ?? false,
         deleted: json['deleted'] as bool? ?? false,
+        hidden: json['hidden'] as bool? ?? false,
         version: json['version'] as int? ?? 1,
       );
 
@@ -68,6 +72,7 @@ class Domain {
     DateTime? modifiedAt,
     bool? archived,
     bool? deleted,
+    bool? hidden,
     int? version,
   }) {
     return Domain(
@@ -81,6 +86,7 @@ class Domain {
       modifiedAt: modifiedAt ?? DateTime.now(),
       archived: archived ?? this.archived,
       deleted: deleted ?? this.deleted,
+      hidden: hidden ?? this.hidden,
       version: version ?? (this.version + 1),
     );
   }

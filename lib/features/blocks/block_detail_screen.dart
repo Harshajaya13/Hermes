@@ -315,7 +315,7 @@ extension ItemTypeIcon on ItemType {
 // ITEM ROW — Clean, minimal, consistent
 // ═══════════════════════════════════════════════════════════════════════════════
 
-class _ItemRow extends StatelessWidget {
+class _ItemRow extends ConsumerWidget {
   final Item item;
   final Block block;
 
@@ -325,7 +325,7 @@ class _ItemRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -371,6 +371,31 @@ class _ItemRow extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_horiz, color: HermesColors.textTertiary, size: 24),
+                padding: EdgeInsets.zero,
+                color: HermesColors.surfaceElevated,
+                onSelected: (value) async {
+                  if (value == 'rename') {
+                    CreateItemSheet.show(context, existingItem: item, block: block);
+                  } else if (value == 'archive') {
+                    await ref.read(storageEngineProvider).deleteItem(item.id);
+                    ref.invalidate(itemsByBlockProvider);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Item archived.'),
+                          backgroundColor: HermesColors.surfaceElevated,
+                        ),
+                      );
+                    }
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(value: 'rename', child: Text('Rename Item', style: HermesTypography.bodySmall)),
+                  PopupMenuItem(value: 'archive', child: Text('Archive Item', style: HermesTypography.bodySmall)),
+                ],
               ),
             ],
           ),
