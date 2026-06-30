@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -53,6 +55,39 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     _scrollController.dispose();
     _reflectionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _exportAsMarkdown() async {
+    try {
+      final String? path = await FilePicker.platform.saveFile(
+        dialogTitle: 'Export Markdown',
+        fileName: '${widget.item.title.replaceAll(' ', '_')}.md',
+        type: FileType.custom,
+        allowedExtensions: ['md'],
+      );
+
+      if (path != null) {
+        final file = File(path);
+        await file.writeAsString(widget.item.content);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Exported successfully to $path'),
+              backgroundColor: HermesColors.evolutioGlow,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: HermesColors.veritasColor,
+          ),
+        );
+      }
+    }
   }
 
   void _recordEvolutio(bool didChange, {String? customText}) async {
@@ -165,6 +200,11 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                       ),
                       Row(
                         children: [
+                          IconButton(
+                            icon: const Icon(Icons.share_outlined, color: HermesColors.textTertiary, size: 20),
+                            onPressed: _exportAsMarkdown,
+                            tooltip: 'Export as .md',
+                          ),
                           IconButton(
                             icon: const Icon(Icons.search_rounded, color: HermesColors.textTertiary, size: 20),
                             onPressed: () {

@@ -9,6 +9,7 @@ These eight laws dictate all architectural, feature, and design decisions. Any p
 ### ⚖️ Law 1: Intentionality
 > **Nothing enters Hermes accidentally. Every item is intentionally chosen.**
 > * No feeds, no auto-generated recommendations, and no auto-imported lists. The user must manually and deliberately curate their workspace.
+> * **Importing knowledge should be as intentional as creating it.** Hermes should never assume the user wants everything inside a bundle. Users remain in complete control of what enters their workspace.
 
 ### 🔇 Law 2: Attention Respect
 > **Hermes never manipulates attention.**

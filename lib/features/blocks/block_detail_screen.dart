@@ -67,6 +67,34 @@ class _BlockDetailScreenState extends ConsumerState<BlockDetailScreen> {
                     ),
                     const Spacer(),
                     IconButton(
+                      onPressed: () async {
+                        try {
+                          final itemsToExport = ref.read(itemsByBlockProvider(widget.block.id));
+                          if (itemsToExport.isEmpty) return;
+                          
+                          final engine = ref.read(exchangeEngineProvider);
+                          final path = await engine.exportItems(itemsToExport);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Block items exported to $path'), backgroundColor: HermesColors.evolutioGlow),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Export failed: $e'), backgroundColor: HermesColors.veritasColor),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(
+                        Icons.share_outlined,
+                        color: HermesColors.textSecondary,
+                        size: 20,
+                      ),
+                      tooltip: 'Share Block Items (.hitem)',
+                    ),
+                    IconButton(
                       onPressed: () {
                         CreateBlockSheet.show(context, widget.block);
                       },
@@ -379,6 +407,22 @@ class _ItemRow extends ConsumerWidget {
                 onSelected: (value) async {
                   if (value == 'rename') {
                     CreateItemSheet.show(context, existingItem: item, block: block);
+                  } else if (value == 'share') {
+                    try {
+                      final engine = ref.read(exchangeEngineProvider);
+                      final path = await engine.exportItems([item]);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Exported to $path'), backgroundColor: HermesColors.evolutioGlow),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Export failed: $e'), backgroundColor: HermesColors.veritasColor),
+                        );
+                      }
+                    }
                   } else if (value == 'archive') {
                     await ref.read(storageEngineProvider).deleteItem(item.id);
                     ref.invalidate(itemsByBlockProvider);
@@ -394,6 +438,7 @@ class _ItemRow extends ConsumerWidget {
                 },
                 itemBuilder: (context) => [
                   PopupMenuItem(value: 'rename', child: Text('Rename Item', style: HermesTypography.bodySmall)),
+                  PopupMenuItem(value: 'share', child: Text('Share as .hitem', style: HermesTypography.bodySmall)),
                   PopupMenuItem(value: 'archive', child: Text('Archive Item', style: HermesTypography.bodySmall)),
                 ],
               ),

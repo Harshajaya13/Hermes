@@ -93,6 +93,35 @@ class ExchangeEngine {
     return exportPath;
   }
 
+  /// Exports one or more items into a .hitem package.
+  Future<String> exportItems(List<Item> items) async {
+    final manifest = {
+      'Hermes Version': '3.0.0',
+      'Package Version': '1.0',
+      'Type': 'hitem',
+      'Item Count': items.length,
+      'Package UUID': const Uuid().v4(),
+      'Created Date': DateTime.now().toIso8601String(),
+    };
+
+    final archive = Archive();
+    _addJsonFile(archive, 'manifest.json', manifest);
+    _addJsonFile(archive, 'items.json', items.map((e) => e.toJson()).toList());
+
+    final zipEncoder = ZipEncoder();
+    final zipData = zipEncoder.encode(archive);
+    
+    if (zipData == null) throw Exception('Failed to encode ZIP data');
+
+    final dir = await getApplicationDocumentsDirectory();
+    final name = items.length == 1 ? items.first.title.replaceAll(' ', '_') : 'Shared_${items.length}_Items';
+    final exportPath = '${dir.path}/${name}_${DateTime.now().millisecondsSinceEpoch}.hitem';
+    final file = File(exportPath);
+    await file.writeAsBytes(zipData);
+
+    return exportPath;
+  }
+
   void _addJsonFile(Archive archive, String name, dynamic data) {
     final bytes = utf8.encode(jsonEncode(data));
     archive.addFile(ArchiveFile(name, bytes.length, bytes));

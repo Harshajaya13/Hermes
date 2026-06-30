@@ -457,6 +457,22 @@ class TodayScreen extends ConsumerWidget {
                                               Navigator.push(context, MaterialPageRoute(
                                                 builder: (context) => BlockDetailScreen(block: block),
                                               ));
+                                            } else if (value == 'share') {
+                                              try {
+                                                final engine = ref.read(exchangeEngineProvider);
+                                                final path = await engine.exportItems([item]);
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(content: Text('Exported to $path'), backgroundColor: HermesColors.evolutioGlow),
+                                                  );
+                                                }
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(content: Text('Export failed: $e'), backgroundColor: HermesColors.veritasColor),
+                                                  );
+                                                }
+                                              }
                                             }
                                           },
                                           itemBuilder: (context) => [
@@ -467,6 +483,10 @@ class TodayScreen extends ConsumerWidget {
                                             PopupMenuItem(
                                               value: 'open',
                                               child: Text('Open Original Block', style: HermesTypography.bodySmall),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'share',
+                                              child: Text('Share as .hitem', style: HermesTypography.bodySmall),
                                             ),
                                           ],
                                         ),

@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
@@ -33,6 +35,46 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     setState(() {
       _showEvolutioPrompt = true;
     });
+  }
+
+  @override
+  void dispose() {
+    _reflectionController.dispose();
+    _evaluateController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _exportAsMarkdown() async {
+    try {
+      final String? path = await FilePicker.platform.saveFile(
+        dialogTitle: 'Export Markdown',
+        fileName: '${widget.item.title.replaceAll(' ', '_')}.md',
+        type: FileType.custom,
+        allowedExtensions: ['md'],
+      );
+
+      if (path != null) {
+        final file = File(path);
+        await file.writeAsString(widget.item.content);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Exported successfully to $path'),
+              backgroundColor: HermesColors.evolutioGlow,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: HermesColors.veritasColor,
+          ),
+        );
+      }
+    }
   }
 
   void _recordEvolutio(bool didChange, {String? customText}) async {
@@ -117,10 +159,16 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            icon: const Icon(Icons.share_outlined, color: HermesColors.textSecondary, size: 20),
+            onPressed: _exportAsMarkdown,
+            tooltip: 'Export as .md',
+          ),
+          IconButton(
             icon: const Icon(Icons.edit_outlined, color: HermesColors.textSecondary, size: 20),
             onPressed: () {
               CreateItemSheet.show(context, block: widget.block, existingItem: widget.item);
             },
+            tooltip: 'Edit Item',
           ),
           const SizedBox(width: HermesSpacing.sm),
         ],
