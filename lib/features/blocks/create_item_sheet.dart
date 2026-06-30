@@ -75,6 +75,21 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
       _isFetching = true;
     });
 
+    final storage = ref.read(storageEngineProvider);
+    final allItems = storage.getAllItemsRaw().where((i) => !i.deleted).toList();
+    if (widget.existingItem == null || widget.existingItem!.title != title) {
+      if (allItems.any((i) => i.title.toLowerCase() == title.toLowerCase() && i.blockId == _selectedBlock?.id)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('An item with this title already exists in this block', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
+            backgroundColor: HermesColors.surfaceElevated,
+          ));
+        }
+        setState(() => _isFetching = false);
+        return;
+      }
+    }
+
     if (widget.isDailyGoal && widget.existingItem == null) {
       final allItems = ref.read(storageEngineProvider).getAllItemsRaw();
       final dailyGoalCount = allItems.where((i) => i.metadata?['isDailyGoal'] == true && i.metadata?['isSolved'] != true).length;

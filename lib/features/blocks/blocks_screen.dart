@@ -151,11 +151,8 @@ class BlocksScreen extends ConsumerWidget {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    domain.name.substring(0, 1).toUpperCase(),
-                                    style: HermesTypography.blockTitle.copyWith(
-                                      color: HermesColors.accent,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    domain.icon,
+                                    style: const TextStyle(fontSize: 20),
                                   ),
                                 ),
                               ),

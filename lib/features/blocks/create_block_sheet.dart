@@ -61,6 +61,20 @@ class _CreateBlockSheetState extends ConsumerState<CreateBlockSheet> {
     final name = _nameController.text.trim();
     if (name.isEmpty || _selectedDomainId.isEmpty) return;
 
+    final storage = ref.read(storageEngineProvider);
+    final allBlocks = ref.read(allBlocksProvider);
+    if (widget.existingBlock == null || widget.existingBlock!.name != name) {
+      if (allBlocks.any((b) => b.name.toLowerCase() == name.toLowerCase())) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('A block with this name already exists', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
+            backgroundColor: HermesColors.surfaceElevated,
+          ));
+        }
+        return;
+      }
+    }
+
     final newBlock = widget.existingBlock != null
         ? widget.existingBlock!.copyWith(
             domainId: _selectedDomainId,

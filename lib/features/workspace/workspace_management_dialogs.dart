@@ -228,6 +228,12 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
     if (name.isEmpty) return;
     
     final storage = ref.read(storageEngineProvider);
+    final existingNames = storage.workspaces.where((w) => !w.deleted).map((w) => w.name.toLowerCase()).toSet();
+    if (existingNames.contains(name.toLowerCase())) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A workspace with this name already exists')));
+      return;
+    }
+
     final ws = Workspace(name: name);
     await storage.saveWorkspace(ws);
     

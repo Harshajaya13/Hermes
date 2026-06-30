@@ -33,12 +33,14 @@ class CreateDomainSheet extends ConsumerStatefulWidget {
 
 class _CreateDomainSheetState extends ConsumerState<CreateDomainSheet> {
   final _nameController = TextEditingController();
+  final _emojiController = TextEditingController(text: '📁');
 
   @override
   void initState() {
     super.initState();
     if (widget.existingDomain != null) {
       _nameController.text = widget.existingDomain!.name;
+      _emojiController.text = widget.existingDomain!.icon;
     }
   }
 
@@ -49,11 +51,28 @@ class _CreateDomainSheetState extends ConsumerState<CreateDomainSheet> {
     final workspace = ref.read(currentWorkspaceProvider);
     if (workspace == null) return;
 
+    final allDomains = ref.read(domainsProvider);
+    if (widget.existingDomain == null || widget.existingDomain!.name != name) {
+      if (allDomains.any((d) => d.name.toLowerCase() == name.toLowerCase())) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('A domain with this name already exists', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
+            backgroundColor: HermesColors.surfaceElevated,
+          ));
+        }
+        return;
+      }
+    }
+
     final newDomain = widget.existingDomain != null
-        ? widget.existingDomain!.copyWith(name: name)
+        ? widget.existingDomain!.copyWith(
+            name: name,
+            icon: _emojiController.text.trim().isEmpty ? '📁' : _emojiController.text.trim(),
+          )
         : Domain(
             workspaceId: workspace.id,
             name: name,
+            icon: _emojiController.text.trim().isEmpty ? '📁' : _emojiController.text.trim(),
           );
 
     await ref.read(storageEngineProvider).saveDomain(newDomain);
@@ -79,23 +98,50 @@ class _CreateDomainSheetState extends ConsumerState<CreateDomainSheet> {
             ),
             const SizedBox(height: HermesSpacing.xl),
             
-            TextField(
-              controller: _nameController,
-              autofocus: true,
-              style: HermesTypography.body,
-              decoration: InputDecoration(
-                hintText: 'Domain Name',
-                hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
-                border: UnderlineInputBorder(
-                  borderSide: BorderSide(color: HermesColors.border),
+            Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: HermesColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(HermesRadius.md),
+                    border: Border.all(color: HermesColors.border),
+                  ),
+                  alignment: Alignment.center,
+                  child: TextField(
+                    controller: _emojiController,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 24),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      counterText: '',
+                    ),
+                    maxLength: 1,
+                  ),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: HermesColors.border),
+                const SizedBox(width: HermesSpacing.md),
+                Expanded(
+                  child: TextField(
+                    controller: _nameController,
+                    autofocus: true,
+                    style: HermesTypography.body,
+                    decoration: InputDecoration(
+                      hintText: 'Domain Name',
+                      hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: HermesColors.border),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: HermesColors.border),
+                      ),
+                      focusedBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: HermesColors.accent),
+                      ),
+                    ),
+                  ),
                 ),
-                focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: HermesColors.accent),
-                ),
-              ),
+              ],
             ),
             const SizedBox(height: HermesSpacing.xxxl),
             

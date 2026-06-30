@@ -51,10 +51,10 @@ class LocalStorageEngine {
   }
   Future<void> seedStarterWorkspace(Workspace workspace) async {
     // ── DOMAINS ─────────────────────────────────────────
-    final engineeringDomain = Domain(workspaceId: workspace.id, name: 'Engineering', sortOrder: 0, pinned: true);
-    final startupDomain = Domain(workspaceId: workspace.id, name: 'Startup', sortOrder: 1, pinned: true);
-    final thinkingDomain = Domain(workspaceId: workspace.id, name: 'Thinking', sortOrder: 2, pinned: true);
-    final lifeDomain = Domain(workspaceId: workspace.id, name: 'Life', sortOrder: 3, pinned: true);
+    final engineeringDomain = Domain(workspaceId: workspace.id, name: 'Engineering', sortOrder: 0, pinned: true, icon: '🔧');
+    final startupDomain = Domain(workspaceId: workspace.id, name: 'Startup', sortOrder: 1, pinned: true, icon: '🚀');
+    final thinkingDomain = Domain(workspaceId: workspace.id, name: 'Thinking', sortOrder: 2, pinned: true, icon: '💭');
+    final lifeDomain = Domain(workspaceId: workspace.id, name: 'Life', sortOrder: 3, pinned: true, icon: '🌱');
     
     await saveDomain(engineeringDomain);
     await saveDomain(startupDomain);
