@@ -6,6 +6,7 @@ import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
 import 'veritas_sheet.dart';
 import '../today/workspace_security_dialogs.dart';
+import 'day_interaction_sheet.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
 /// EVOLUTION SCREEN (Dynamic & Redesigned)
@@ -427,6 +428,7 @@ class _ContributionGraph extends StatelessWidget {
           // Grid
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            reverse: true,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,11 +489,16 @@ class _ContributionGraph extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           child: GestureDetector(
                             onTap: () {
-                              if (evoCount == 0 && !hasVeritas) {
-                                VeritasSheet.show(context, dateMissed: date);
-                              } else {
-                                onDateSelected(date);
-                              }
+                              final dateStr = date.toString().substring(0, 10);
+                              final dayEvolutios = evolutios.where((e) => e.createdAt.toString().substring(0, 10) == dateStr).toList();
+                              
+                              DayInteractionSheet.show(
+                                context,
+                                date: date,
+                                evolutios: dayEvolutios,
+                                hasVeritas: hasVeritas,
+                                onFilterTimeline: () => onDateSelected(date),
+                              );
                             },
                             child: Container(
                               width: 14,

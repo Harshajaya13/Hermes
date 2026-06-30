@@ -286,6 +286,10 @@ extension ItemTypeIcon on ItemType {
         return Icons.visibility_outlined;
       case ItemType.idea:
         return Icons.lightbulb_outline_rounded;
+      case ItemType.reflection:
+        return Icons.psychology_outlined;
+      case ItemType.note:
+        return Icons.notes_outlined;
     }
   }
 
@@ -299,6 +303,10 @@ extension ItemTypeIcon on ItemType {
         return HermesColors.textTertiary;
       case ItemType.idea:
         return HermesColors.accentWarm;
+      case ItemType.reflection:
+        return HermesColors.reflectionColor;
+      case ItemType.note:
+        return HermesColors.textSecondary;
     }
   }
 }

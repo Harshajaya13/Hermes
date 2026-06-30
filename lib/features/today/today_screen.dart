@@ -131,11 +131,11 @@ class TodayScreen extends ConsumerWidget {
                           Navigator.pop(ctx);
                           final blockToUse = allBlocks.isNotEmpty ? allBlocks.first : null;
                           if (blockToUse != null) {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => CreateItemSheet(initialBlock: blockToUse, initialType: ItemType.question, isDailyGoal: true),
+                            CreateItemSheet.show(
+                              context,
+                              block: blockToUse,
+                              initialType: ItemType.question,
+                              isDailyGoal: true,
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please create a block first.')));
@@ -371,6 +371,8 @@ class TodayScreen extends ConsumerWidget {
                                           case ItemType.article: return 'Tap to read';
                                           case ItemType.idea: return 'Tap to expand';
                                           case ItemType.observation: return 'Tap to review';
+                                          case ItemType.reflection: return 'Tap to reflect';
+                                          case ItemType.note: return 'Tap to view note';
                                         }
                                       })(),
                                       style: HermesTypography.metadata,
@@ -662,58 +664,6 @@ class TodayScreen extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: HermesSpacing.sm),
-                        
-                        ...sortedVeritas.take(3).map((v) => Padding(
-                          padding: const EdgeInsets.only(bottom: HermesSpacing.sm),
-                          child: HermesCard(
-                            onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const VeritasTimelineScreen()));
-                            },
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: const BoxDecoration(
-                                        color: HermesColors.veritasColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: HermesSpacing.sm),
-                                    Text(
-                                      DateFormat('EEEE, MMMM d').format(v.dateMissed),
-                                      style: HermesTypography.metadata.copyWith(
-                                        color: HermesColors.veritasColor.withValues(alpha: 0.8),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: HermesSpacing.xs),
-                                Text(
-                                  v.reason,
-                                  style: HermesTypography.reflection.copyWith(
-                                    color: HermesColors.textPrimary.withValues(alpha: 0.9),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )),
-                        
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const VeritasTimelineScreen()));
-                            },
-                            icon: const Icon(Icons.history_rounded, size: 16, color: HermesColors.textSecondary),
-                            label: const Text('View Timeline', style: TextStyle(color: HermesColors.textSecondary)),
-                          ),
-                        ),
                       ],
                     ),
                   ),

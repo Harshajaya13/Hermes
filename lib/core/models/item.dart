@@ -2,7 +2,7 @@ import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
 
-enum ItemType { question, article, idea, observation }
+enum ItemType { question, article, idea, observation, reflection, note }
 
 class Item {
   final String id;
@@ -103,8 +103,8 @@ class Item {
     try {
       return ItemType.values.byName(typeStr);
     } catch (_) {
-      // Fallback for legacy note and quote types
-      if (typeStr == 'note' || typeStr == 'quote') {
+      // Fallback for legacy quote types
+      if (typeStr == 'quote') {
         return ItemType.observation;
       }
       return ItemType.observation;

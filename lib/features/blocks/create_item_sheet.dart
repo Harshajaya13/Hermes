@@ -26,7 +26,9 @@ class CreateItemSheet extends ConsumerStatefulWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: CreateItemSheet(initialBlock: block, existingItem: existingItem, initialType: initialType, isDailyGoal: isDailyGoal),
+        child: SingleChildScrollView(
+          child: CreateItemSheet(initialBlock: block, existingItem: existingItem, initialType: initialType, isDailyGoal: isDailyGoal),
+        ),
       ),
     );
   }
@@ -187,6 +189,8 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
               autofocus: true,
               style: HermesTypography.body,
               decoration: InputDecoration(
+                filled: true,
+                fillColor: HermesColors.surfaceElevated,
                 hintText: 'Title (e.g., Expected Value Formula)',
                 hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
                 border: UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.border)),
@@ -202,6 +206,8 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
               style: HermesTypography.body,
               maxLines: 3,
               decoration: InputDecoration(
+                filled: true,
+                fillColor: HermesColors.surfaceElevated,
                 hintText: _selectedType == ItemType.article ? 'Custom notes (optional if fetching URL)...' : 'Content or prompt...',
                 hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
                 border: UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.border)),
@@ -216,6 +222,8 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
                 controller: _urlController,
                 style: HermesTypography.body,
                 decoration: InputDecoration(
+                  filled: true,
+                  fillColor: HermesColors.surfaceElevated,
                   hintText: 'Article URL (will fetch and clean automatically)',
                   hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
                   border: UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.border)),
