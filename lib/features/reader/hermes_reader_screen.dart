@@ -1300,15 +1300,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
 
         _buildConnectionsSection(),
 
-        _buildWorkflowAction('Convert to Reflection', Icons.auto_awesome_rounded, color: HermesColors.evolutioGlow, onTap: () async {
-          final updatedItem = widget.item.copyWith(type: ItemType.reflection);
-          await ref.read(storageEngineProvider).saveItems([updatedItem]);
-          ref.invalidate(itemsByBlockProvider(widget.block.id));
-          if (mounted) {
-            HermesToast.show(context, 'Converted to Reflection.');
-            Navigator.pop(context);
-          }
-        }),
+        _buildWorkflowAction('Convert to Reflection', Icons.auto_awesome_rounded, color: HermesColors.evolutioGlow, onTap: () => _handleWorkflowAction('Convert to Reflection')),
         _buildWorkflowAction('Convert to Idea', Icons.lightbulb_outline_rounded, color: HermesColors.accent, onTap: () => _handleWorkflowAction('Convert to Idea')),
         
         _buildRevertSection(),
