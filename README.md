@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="Hermes Logo" width="250"/>
+  <img src="icon.png" alt="Hermes Logo" width="250"/>
 </p>
 
 # Hermes: A Founding Document

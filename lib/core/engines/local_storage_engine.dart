@@ -287,10 +287,16 @@ Without reflection, experience is just a series of events. With reflection, expe
       _evolutios.remove(e.id);
     }
     
+    final veritasToRemove = getVeritas(workspaceId);
+    for (var v in veritasToRemove) {
+      _veritas.remove(v.id);
+    }
+    
     await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
     await _saveToDisk('blocks', _blocks.map((k, v) => MapEntry(k, v.toJson())));
     await _saveToDisk('domains', _domains.map((k, v) => MapEntry(k, v.toJson())));
     await _saveToDisk('evolutios', _evolutios.map((k, v) => MapEntry(k, v.toJson())));
+    await _saveToDisk('veritas', _veritas.map((k, v) => MapEntry(k, v.toJson())));
     
     final workspace = _workspaces[workspaceId];
     if (workspace != null) {

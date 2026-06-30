@@ -611,8 +611,19 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     );
   }
 
-  void _handleWorkflowAction(String action) {
-    final terminalActions = ['Archive', 'Save Reflection', 'Complete', 'Convert to Idea', 'Convert to Reflection', 'Promote to Project'];
+  void _handleWorkflowAction(String action) async {
+    final terminalActions = ['Save Reflection', 'Complete', 'Convert to Idea', 'Convert to Reflection', 'Promote to Project'];
+    
+    if (action == 'Archive') {
+      await ref.read(storageEngineProvider).deleteItem(widget.item.id);
+      if (mounted) {
+        ref.invalidate(itemsByBlockProvider(widget.block.id));
+        Navigator.pop(context);
+        HermesToast.show(context, 'Item archived.');
+      }
+      return;
+    }
+
     if (terminalActions.contains(action)) {
       _recordEvolutio(false, customText: 'Completed via: $action');
     } else if (action == 'Create Evolutio') {
