@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="Hermes Logo" width="250"/>
+</p>
+
 # Hermes
 
 Hermes exists to answer a single, fundamental question: what happens to the knowledge we consume? 
