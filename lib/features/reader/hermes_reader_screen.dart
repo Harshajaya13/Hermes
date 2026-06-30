@@ -280,7 +280,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                           const SizedBox(height: HermesSpacing.xxxl),
                           _buildMarkdownContent(),
                           const SizedBox(height: HermesSpacing.xxxl * 2),
-                          if (!isGuide) _buildReflectionSection(),
+                          _buildPostReadingWorkflow(isGuide),
                           const SizedBox(height: 120),
                         ],
                       ),
@@ -466,7 +466,26 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     );
   }
 
-  Widget _buildReflectionSection() {
+  Widget _buildPostReadingWorkflow(bool isGuide) {
+    if (isGuide) return const SizedBox.shrink();
+
+    switch (widget.item.type) {
+      case ItemType.article:
+        return _buildArticleWorkflow();
+      case ItemType.note:
+        return _buildNoteWorkflow();
+      case ItemType.idea:
+        return _buildIdeaWorkflow();
+      case ItemType.observation:
+        return _buildObservationWorkflow();
+      case ItemType.reflection:
+        return _buildReflectionWorkflow();
+      case ItemType.question:
+        return _buildQuestionWorkflow();
+    }
+  }
+
+  Widget _buildWorkflowHeader(String title) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -478,15 +497,47 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             margin: const EdgeInsets.symmetric(vertical: HermesSpacing.xl),
           ),
         ),
-        
-        Text('Reflection', style: HermesTypography.itemTitle.copyWith(fontSize: 24, fontWeight: FontWeight.w600)),
+        Text(title, style: HermesTypography.itemTitle.copyWith(fontSize: 24, fontWeight: FontWeight.w600)),
         const SizedBox(height: HermesSpacing.md),
-        
-        Text('• What changed?', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6)),
+      ],
+    );
+  }
+
+  Widget _buildWorkflowAction(String label, IconData icon, {Color? color, VoidCallback? onTap}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: HermesSpacing.sm),
+      child: InkWell(
+        onTap: onTap ?? () {},
+        borderRadius: BorderRadius.circular(HermesRadius.md),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: HermesSpacing.md, horizontal: HermesSpacing.md),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111111),
+            borderRadius: BorderRadius.circular(HermesRadius.md),
+            border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: color ?? HermesColors.textSecondary),
+              const SizedBox(width: HermesSpacing.md),
+              Expanded(
+                child: Text(label, style: HermesTypography.body.copyWith(color: color ?? HermesColors.textSecondary)),
+              ),
+              Icon(Icons.chevron_right_rounded, size: 20, color: HermesColors.textTertiary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildArticleWorkflow() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildWorkflowHeader('Reflection'),
         Text('• What challenged your thinking?', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6)),
-        Text('• What surprised you?', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6)),
         Text('• What will you remember?', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6)),
-        
         const SizedBox(height: HermesSpacing.xl),
         
         if (!_showEvolutioPrompt) ...[
@@ -499,7 +550,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
               hintText: 'Write your thoughts...',
               hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary, fontSize: 18),
               filled: true,
-              fillColor: const Color(0xFF111111), // Subtle surface
+              fillColor: const Color(0xFF111111),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(HermesRadius.md),
                 borderSide: BorderSide.none,
@@ -508,7 +559,6 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             ),
           ),
           const SizedBox(height: HermesSpacing.lg),
-          
           Align(
             alignment: Alignment.centerRight,
             child: InkWell(
@@ -566,6 +616,74 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             ),
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildNoteWorkflow() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildWorkflowHeader('Connections'),
+        _buildWorkflowAction('Related Notes', Icons.account_tree_outlined),
+        _buildWorkflowAction('Keywords', Icons.tag_rounded),
+        _buildWorkflowAction('Backlinks', Icons.link_rounded),
+        _buildWorkflowAction('Last Edited', Icons.history_rounded),
+        _buildWorkflowAction('History', Icons.manage_history_rounded),
+      ],
+    );
+  }
+
+  Widget _buildIdeaWorkflow() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildWorkflowHeader('Evolution'),
+        _buildWorkflowAction('Expand this idea', Icons.open_in_full_rounded, color: HermesColors.accent),
+        _buildWorkflowAction('Potential applications', Icons.api_rounded),
+        _buildWorkflowAction('Connect to another Block', Icons.link_rounded),
+        _buildWorkflowAction('Promote to Project', Icons.rocket_launch_outlined, color: HermesColors.evolutioGlow),
+        _buildWorkflowAction('Archive', Icons.archive_outlined),
+      ],
+    );
+  }
+
+  Widget _buildObservationWorkflow() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildWorkflowHeader('Synthesis'),
+        _buildWorkflowAction('Why was this worth recording?', Icons.help_outline_rounded),
+        _buildWorkflowAction('Did this observation lead to a pattern?', Icons.pattern_rounded),
+        _buildWorkflowAction('Convert to Reflection', Icons.edit_note_rounded, color: HermesColors.reflectionColor),
+        _buildWorkflowAction('Convert to Idea', Icons.lightbulb_outline_rounded, color: HermesColors.accent),
+      ],
+    );
+  }
+
+  Widget _buildReflectionWorkflow() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildWorkflowHeader('Evolutio'),
+        Text('Does this represent a fundamental shift in your thinking?', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6)),
+        const SizedBox(height: HermesSpacing.lg),
+        _buildWorkflowAction('Create Evolutio', Icons.auto_awesome_rounded, color: HermesColors.evolutioGlow),
+        _buildWorkflowAction('Save Reflection', Icons.save_rounded),
+      ],
+    );
+  }
+
+  Widget _buildQuestionWorkflow() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildWorkflowHeader('Resolution'),
+        _buildWorkflowAction('Reveal Answer', Icons.visibility_outlined, color: HermesColors.accent),
+        _buildWorkflowAction('Compare', Icons.compare_arrows_rounded),
+        _buildWorkflowAction('Self Score', Icons.score_rounded),
+        _buildWorkflowAction('Reflection', Icons.edit_note_rounded),
+        _buildWorkflowAction('Complete', Icons.check_circle_outline_rounded, color: HermesColors.veritasColor),
       ],
     );
   }
