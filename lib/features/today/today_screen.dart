@@ -6,7 +6,7 @@ import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
-import '../items/item_detail_screen.dart';
+import '../reader/hermes_reader_screen.dart';
 import '../archive/archive_screen.dart';
 import '../evolution/veritas_timeline_screen.dart';
 import '../evolution/veritas_sheet.dart';
@@ -412,7 +412,7 @@ class TodayScreen extends ConsumerWidget {
                               child: HermesCard(
                                 onTap: () {
                                   Navigator.push(context, MaterialPageRoute(
-                                    builder: (context) => ItemDetailScreen(item: item, block: block),
+                                    builder: (context) => HermesReaderScreen(item: item, block: block),
                                   ));
                                 },
                                 child: Column(
@@ -712,7 +712,7 @@ class TodayScreen extends ConsumerWidget {
                                     final item = allItems.where((i) => i.id == reflection.itemId).firstOrNull;
                                     if (item != null && block != null) {
                                       Navigator.push(context, MaterialPageRoute(
-                                        builder: (context) => ItemDetailScreen(item: item, block: block),
+                                        builder: (context) => HermesReaderScreen(item: item, block: block),
                                       ));
                                     }
                                   }

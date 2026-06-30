@@ -7,6 +7,9 @@ import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
+import '../../core/widgets/hermes_widgets.dart';
+import '../../core/constants/knowledge_guide.dart';
+import '../reader/hermes_reader_screen.dart';
 import 'create_manual_source_screen.dart';
 
 class ManualPipelineScreen extends ConsumerWidget {
@@ -44,13 +47,42 @@ class ManualPipelineScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Knowledge Sources', style: HermesTypography.sectionTitle),
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateManualSourceScreen()));
-                    },
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('Add Source'),
-                    style: TextButton.styleFrom(foregroundColor: HermesColors.evolutioGlow),
+                  Row(
+                    children: [
+                      TextButton.icon(
+                        onPressed: () {
+                          final guideItem = Item(
+                            id: 'hermes_guide_001',
+                            blockId: 'system_guide',
+                            sourceId: 'system',
+                            type: ItemType.article,
+                            title: 'The Knowledge Pipeline',
+                            content: knowledgeGuideMarkdown,
+                            createdAt: DateTime.now(),
+                          );
+                          final guideBlock = Block(
+                            id: 'system_guide',
+                            domainId: 'system',
+                            name: 'Hermes Codex',
+                            icon: '📚',
+                            createdAt: DateTime.now(),
+                          );
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => HermesReaderScreen(item: guideItem, block: guideBlock)));
+                        },
+                        icon: const Icon(Icons.menu_book_rounded, size: 18),
+                        label: const Text('Guide'),
+                        style: TextButton.styleFrom(foregroundColor: HermesColors.textSecondary),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateManualSourceScreen()));
+                        },
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: const Text('Add Source'),
+                        style: TextButton.styleFrom(foregroundColor: HermesColors.evolutioGlow),
+                      ),
+                    ],
                   ),
                 ],
               ),

@@ -18,7 +18,7 @@ import '../../core/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
-import '../items/item_detail_screen.dart';
+import '../reader/hermes_reader_screen.dart';
 import 'create_item_sheet.dart';
 import 'create_block_sheet.dart';
 
@@ -358,7 +358,7 @@ class _ItemRow extends ConsumerWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ItemDetailScreen(item: item, block: block),
+              builder: (context) => HermesReaderScreen(item: item, block: block),
             ),
           );
         },

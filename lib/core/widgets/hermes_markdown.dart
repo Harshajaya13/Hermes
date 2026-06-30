@@ -6,50 +6,76 @@ import '../theme/hermes_theme.dart';
 
 class HermesMarkdown extends StatelessWidget {
   final String data;
+  final double fontSizeMultiplier;
+  final double lineHeightMultiplier;
   
-  const HermesMarkdown({super.key, required this.data});
+  const HermesMarkdown({
+    super.key, 
+    required this.data,
+    this.fontSizeMultiplier = 1.0,
+    this.lineHeightMultiplier = 1.0,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final Color headingColor = const Color(0xFFECECEC);
+    final Color bodyColor = const Color(0xFFC8CCD1);
+    final Color secondaryColor = const Color(0xFF8E9399);
+    final Color metadataColor = const Color(0xFF6F747A);
+
     return MarkdownBody(
       data: data,
       selectable: true,
       styleSheet: MarkdownStyleSheet(
         p: HermesTypography.body.copyWith(
-          height: 1.8, 
-          fontSize: 18, 
-          color: HermesColors.textPrimary.withValues(alpha: 0.95),
-          fontWeight: FontWeight.w400,
+          height: 1.9 * lineHeightMultiplier, 
+          fontSize: 19 * fontSizeMultiplier, 
+          color: bodyColor,
+          fontWeight: FontWeight.w400, // Slightly stronger than w300 since it's gray now
+          letterSpacing: 0.3,
         ),
-        h1: HermesTypography.itemTitle.copyWith(fontSize: 32, height: 1.4, fontWeight: FontWeight.w700),
-        h2: HermesTypography.itemTitle.copyWith(fontSize: 26, height: 1.4, fontWeight: FontWeight.w600),
-        h3: HermesTypography.itemTitle.copyWith(fontSize: 22, height: 1.4, fontWeight: FontWeight.w600),
-        h4: HermesTypography.itemTitle.copyWith(fontSize: 18, height: 1.4, fontWeight: FontWeight.w600),
-        h5: HermesTypography.itemTitle.copyWith(fontSize: 16, height: 1.4, fontWeight: FontWeight.w600),
-        h6: HermesTypography.itemTitle.copyWith(fontSize: 14, height: 1.4, fontWeight: FontWeight.w600),
+        pPadding: const EdgeInsets.only(bottom: 28),
+        
+        h1: HermesTypography.itemTitle.copyWith(color: headingColor, fontSize: 34 * fontSizeMultiplier, height: 1.3, fontWeight: FontWeight.w600, letterSpacing: -0.5),
+        h1Padding: const EdgeInsets.only(top: 48, bottom: 24),
+        
+        h2: HermesTypography.itemTitle.copyWith(color: headingColor, fontSize: 28 * fontSizeMultiplier, height: 1.4, fontWeight: FontWeight.w500, letterSpacing: -0.3),
+        h2Padding: const EdgeInsets.only(top: 40, bottom: 20),
+        
+        h3: HermesTypography.itemTitle.copyWith(color: headingColor, fontSize: 24 * fontSizeMultiplier, height: 1.4, fontWeight: FontWeight.w500),
+        h3Padding: const EdgeInsets.only(top: 32, bottom: 16),
+        
+        h4: HermesTypography.itemTitle.copyWith(color: headingColor, fontSize: 20 * fontSizeMultiplier, height: 1.4, fontWeight: FontWeight.w500),
+        h4Padding: const EdgeInsets.only(top: 24, bottom: 12),
+        
+        h5: HermesTypography.itemTitle.copyWith(color: headingColor, fontSize: 18 * fontSizeMultiplier, height: 1.4, fontWeight: FontWeight.w500),
+        h6: HermesTypography.itemTitle.copyWith(color: headingColor, fontSize: 16 * fontSizeMultiplier, height: 1.4, fontWeight: FontWeight.w500),
         
         listBullet: HermesTypography.body.copyWith(
-          color: HermesColors.textSecondary,
-          fontSize: 18,
-          height: 1.8,
+          color: secondaryColor,
+          fontSize: 19 * fontSizeMultiplier,
+          height: 1.9 * lineHeightMultiplier,
+          fontWeight: FontWeight.w400,
         ),
+        listBulletPadding: const EdgeInsets.only(right: 12),
         
         blockquote: HermesTypography.body.copyWith(
-          color: HermesColors.textSecondary,
+          color: secondaryColor,
           fontStyle: FontStyle.italic,
-          fontSize: 20,
-          height: 1.6,
+          fontSize: 21 * fontSizeMultiplier,
+          height: 1.7 * lineHeightMultiplier,
+          fontWeight: FontWeight.w400,
         ),
         blockquoteDecoration: BoxDecoration(
-          border: Border(left: BorderSide(color: HermesColors.accent.withValues(alpha: 0.5), width: 3)),
+          border: Border(left: BorderSide(color: secondaryColor.withValues(alpha: 0.5), width: 3)),
         ),
-        blockquotePadding: const EdgeInsets.only(left: HermesSpacing.xl, top: HermesSpacing.sm, bottom: HermesSpacing.sm),
+        blockquotePadding: const EdgeInsets.only(left: 24, top: 16, bottom: 16),
         
         code: HermesTypography.metadata.copyWith(
           fontFamily: 'monospace',
-          backgroundColor: const Color(0xFF1A1A1A),
+          backgroundColor: const Color(0xFF161616),
           color: HermesColors.accent,
-          fontSize: 14,
+          fontSize: 15 * fontSizeMultiplier,
         ),
         codeblockPadding: EdgeInsets.zero,
         codeblockDecoration: const BoxDecoration(
@@ -57,11 +83,11 @@ class HermesMarkdown extends StatelessWidget {
         ),
         
         horizontalRuleDecoration: BoxDecoration(
-          border: Border(top: BorderSide(color: HermesColors.border.withValues(alpha: 0.3), width: 1)),
+          border: Border(top: BorderSide(color: HermesColors.border.withValues(alpha: 0.2), width: 1)),
         ),
         
-        tableBorder: TableBorder.all(color: HermesColors.border.withValues(alpha: 0.2)),
-        tableCellsPadding: const EdgeInsets.all(HermesSpacing.md),
+        tableBorder: TableBorder.all(color: HermesColors.border.withValues(alpha: 0.15), width: 1),
+        tableCellsPadding: const EdgeInsets.all(HermesSpacing.lg),
       ),
       builders: {
         'code': _CodeElementBuilder(),

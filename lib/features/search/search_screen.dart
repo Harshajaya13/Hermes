@@ -4,7 +4,7 @@ import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
-import '../items/item_detail_screen.dart';
+import '../reader/hermes_reader_screen.dart';
 import '../blocks/block_detail_screen.dart';
 import '../blocks/domain_detail_screen.dart';
 

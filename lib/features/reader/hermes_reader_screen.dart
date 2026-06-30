@@ -28,6 +28,11 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   double _progress = 0.0;
   bool _showEvolutioPrompt = false;
   bool _isScrolled = false;
+  
+  double _fontSizeMultiplier = 1.0;
+  double _lineHeightMultiplier = 1.0;
+  double _readingWidth = 680.0;
+  double _focusLevel = 0; // 0: Off, 1: Low, 2: Medium, 3: High
 
   @override
   void initState() {
@@ -105,6 +110,99 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     );
   }
 
+  void _showReadingSettings() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: HermesColors.surfaceElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(HermesSpacing.lg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Reading Settings', style: HermesTypography.sectionTitle),
+                  const SizedBox(height: HermesSpacing.lg),
+                  
+                  // Font Size
+                  Text('Font Size', style: HermesTypography.metadata),
+                  Slider(
+                    value: _fontSizeMultiplier,
+                    min: 0.8,
+                    max: 1.5,
+                    activeColor: HermesColors.evolutioGlow,
+                    inactiveColor: HermesColors.border.withValues(alpha: 0.3),
+                    onChanged: (val) {
+                      setModalState(() => _fontSizeMultiplier = val);
+                      setState(() => _fontSizeMultiplier = val);
+                    },
+                  ),
+                  
+                  // Line Height
+                  Text('Line Height', style: HermesTypography.metadata),
+                  Slider(
+                    value: _lineHeightMultiplier,
+                    min: 0.9,
+                    max: 1.6,
+                    activeColor: HermesColors.evolutioGlow,
+                    inactiveColor: HermesColors.border.withValues(alpha: 0.3),
+                    onChanged: (val) {
+                      setModalState(() => _lineHeightMultiplier = val);
+                      setState(() => _lineHeightMultiplier = val);
+                    },
+                  ),
+                  
+                  // Reading Width
+                  Text('Reading Width', style: HermesTypography.metadata),
+                  Slider(
+                    value: _readingWidth,
+                    min: 500,
+                    max: 1000,
+                    activeColor: HermesColors.evolutioGlow,
+                    inactiveColor: HermesColors.border.withValues(alpha: 0.3),
+                    onChanged: (val) {
+                      setModalState(() => _readingWidth = val);
+                      setState(() => _readingWidth = val);
+                    },
+                  ),
+                  
+                  // Focus Intensity
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Focus Intensity', style: HermesTypography.metadata),
+                      Text(
+                        _focusLevel == 0 ? 'Off' : _focusLevel == 1 ? 'Low' : _focusLevel == 2 ? 'Medium' : 'High', 
+                        style: HermesTypography.metadata.copyWith(color: HermesColors.evolutioGlow)
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: _focusLevel,
+                    min: 0,
+                    max: 3,
+                    divisions: 3,
+                    activeColor: HermesColors.evolutioGlow,
+                    inactiveColor: HermesColors.border.withValues(alpha: 0.3),
+                    onChanged: (val) {
+                      setModalState(() => _focusLevel = val);
+                      setState(() => _focusLevel = val);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      ),
+    );
+  }
+
   void _recordEvolutio(bool didChange, {String? customText}) async {
     final storage = ref.read(storageEngineProvider);
     
@@ -152,6 +250,9 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     // OLED-first: Use pure black background for reading.
     final bgColor = Colors.black;
     final surfaceColor = const Color(0xFF111111);
+    
+    final isGuide = widget.item.id.startsWith('hermes_guide');
+    final isEditable = [ItemType.note, ItemType.idea, ItemType.observation].contains(widget.item.type) && !isGuide;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -161,27 +262,58 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
           SafeArea(
             bottom: false,
             child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 680), // Optimal reading width
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HermesSpacing.xl,
-                    vertical: 80, // Padding for header
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildArticleHeader(),
-                      const SizedBox(height: HermesSpacing.xxxl),
-                      _buildMarkdownContent(),
-                      const SizedBox(height: HermesSpacing.xxxl * 2),
-                      _buildReflectionSection(),
-                      const SizedBox(height: 120),
-                    ],
-                  ),
-                ),
+              child: Builder(
+                builder: (context) {
+                  final Widget scrollContent = ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: _readingWidth), // Optimal reading width
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: HermesSpacing.xl,
+                        vertical: 80, // Padding for header
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildArticleHeader(),
+                          const SizedBox(height: HermesSpacing.xxxl),
+                          _buildMarkdownContent(),
+                          const SizedBox(height: HermesSpacing.xxxl * 2),
+                          if (!isGuide) _buildReflectionSection(),
+                          const SizedBox(height: 120),
+                        ],
+                      ),
+                    ),
+                  );
+                  
+                  if (_focusLevel == 0) return scrollContent;
+                  
+                  double edgeOpacity = 1.0;
+                  double midOpacity = 1.0;
+                  if (_focusLevel == 1) { edgeOpacity = 0.7; midOpacity = 0.85; }
+                  else if (_focusLevel == 2) { edgeOpacity = 0.4; midOpacity = 0.7; }
+                  else if (_focusLevel == 3) { edgeOpacity = 0.15; midOpacity = 0.6; }
+
+                  return ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withOpacity(edgeOpacity),
+                          Colors.white.withOpacity(midOpacity),
+                          Colors.white, // Center focus
+                          Colors.white.withOpacity(midOpacity),
+                          Colors.white.withOpacity(edgeOpacity),
+                        ],
+                        stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: scrollContent,
+                  );
+                }
               ),
             ),
           ),
@@ -216,6 +348,20 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                       Row(
                         children: [
                           IconButton(
+                            icon: const Icon(Icons.copy_outlined, color: HermesColors.textTertiary, size: 20),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: widget.item.content));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Copied entire text to clipboard.', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
+                                  backgroundColor: HermesColors.surfaceElevated,
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                            tooltip: 'Copy All Text',
+                          ),
+                          IconButton(
                             icon: const Icon(Icons.share_outlined, color: HermesColors.textTertiary, size: 20),
                             onPressed: _showShareOptions,
                             tooltip: 'Share',
@@ -227,20 +373,20 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                             },
                             tooltip: 'Search',
                           ),
+
                           IconButton(
-                            icon: const Icon(Icons.format_size_rounded, color: HermesColors.textTertiary, size: 20),
-                            onPressed: () {
-                              // Text size controls
-                            },
-                            tooltip: 'Text Size',
+                            icon: const Icon(Icons.font_download_outlined, color: HermesColors.textTertiary, size: 20),
+                            onPressed: _showReadingSettings,
+                            tooltip: 'Reading Settings',
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined, color: HermesColors.textTertiary, size: 20),
-                            onPressed: () {
-                              CreateItemSheet.show(context, block: widget.block, existingItem: widget.item);
-                            },
-                            tooltip: 'Edit Article',
-                          ),
+                          if (isEditable)
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, color: HermesColors.textTertiary, size: 20),
+                              onPressed: () {
+                                CreateItemSheet.show(context, block: widget.block, existingItem: widget.item);
+                              },
+                              tooltip: 'Edit Document',
+                            ),
                         ],
                       ),
                     ],
@@ -319,7 +465,11 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     if (mdData.trimLeft().startsWith(titlePattern)) {
       mdData = mdData.trimLeft().substring(titlePattern.length).trimLeft();
     }
-    return HermesMarkdown(data: mdData);
+    return HermesMarkdown(
+      data: mdData,
+      fontSizeMultiplier: _fontSizeMultiplier,
+      lineHeightMultiplier: _lineHeightMultiplier,
+    );
   }
 
   Widget _buildReflectionSection() {
