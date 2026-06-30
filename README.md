@@ -104,7 +104,7 @@ You are moving from a passive consumer to an active curator of your own mind.
 
 ## The Interface as a Philosophy
 
-We spent days designing the interface, not just the backend. Why?
+I spent days designing the interface, not just the backend. Why?
 
 Because the interface *is* the philosophy.
 
