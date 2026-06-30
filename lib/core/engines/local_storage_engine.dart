@@ -226,45 +226,49 @@ Without reflection, experience is just a series of events. With reflection, expe
     );
     await saveItem(refNote);
 
-    // ── EVOLUTIOS (Real Shifts in Thinking) ────────────────
+    // ── EVOLUTIOS AND VERITAS (Timeline Demonstration) ────────────────
 
-    final evo1Ref = Reflection(itemId: noteToday.id, content: 'Dummy', createdAt: DateTime.now());
+    // Day 1: Today (Evolutio Only)
+    final day1 = DateTime.now();
+    final evo1Ref = Reflection(itemId: noteToday.id, content: 'Dummy', createdAt: day1);
     await saveReflection(evo1Ref);
     final evo1 = Evolutio(
       reflectionId: evo1Ref.id,
-      blockId: decisionBlock.id,
-      content: 'Expected value finally changed how I evaluate risk in my daily life. It\'s not about avoiding failure, it\'s about ensuring the upside justifies the downside.',
-      createdAt: DateTime.now(),
+      blockId: mathBlock.id,
+      content: 'Expected Value changed how I evaluate risk.',
+      createdAt: day1,
     );
     await saveEvolutio(evo1);
 
-    final evo2Ref = Reflection(itemId: articleToday.id, content: 'Dummy', createdAt: DateTime.now().subtract(const Duration(hours: 2)));
+    // Day 2: Today - 3 Days (Evolutio + Veritas)
+    final day2 = DateTime.now().subtract(const Duration(days: 3));
+    final evo2Ref = Reflection(itemId: articleToday.id, content: 'I realized that focused work matters more than the number of hours.', createdAt: day2);
     await saveReflection(evo2Ref);
     final evo2 = Evolutio(
       reflectionId: evo2Ref.id,
-      blockId: stoicismBlock.id,
-      content: 'I realized consistency compounds significantly faster than motivation. Motivation is a spike; consistency is a baseline.',
-      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+      blockId: modelsBlock.id,
+      content: 'Reading Deep Work changed how I study.',
+      createdAt: day2,
     );
     await saveEvolutio(evo2);
 
-    final evo3Ref = Reflection(itemId: qItem.id, content: 'Dummy', createdAt: DateTime.now().subtract(const Duration(hours: 4)));
-    await saveReflection(evo3Ref);
-    final evo3 = Evolutio(
-      reflectionId: evo3Ref.id,
-      blockId: modelsBlock.id,
-      content: 'Understanding first principles simplified every future problem. I no longer rely on analogies.',
-      createdAt: DateTime.now().subtract(const Duration(hours: 4)),
-    );
-    await saveEvolutio(evo3);
-
-    // ── VERITAS ─────────────────────────────────────────
-    final veritas = Veritas(
+    final veritas2 = Veritas(
       workspaceId: workspace.id,
-      reason: 'Today I couldn\'t study because of semester examinations.\n\nI chose to rest and return tomorrow.\n\n(This week I spent time with family. Progress wasn\'t visible inside Hermes, but life still mattered.)',
-      dateMissed: DateTime.now(),
+      reason: 'I was mentally tired after college, but I still finished one article.',
+      dateMissed: day2,
+      createdAt: day2,
     );
-    await saveVeritas(veritas);
+    await saveVeritas(veritas2);
+
+    // Day 3: Today - 8 Days (Veritas Only)
+    final day3 = DateTime.now().subtract(const Duration(days: 8));
+    final veritas3 = Veritas(
+      workspaceId: workspace.id,
+      reason: 'Semester exams took all of my attention this week. I\'ll continue once they\'re over.',
+      dateMissed: day3,
+      createdAt: day3,
+    );
+    await saveVeritas(veritas3);
   }
   Future<File> _getFile(String collection) async {
     final dir = await getApplicationDocumentsDirectory();
