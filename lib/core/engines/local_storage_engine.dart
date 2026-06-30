@@ -56,21 +56,215 @@ class LocalStorageEngine {
     }
   }
   Future<void> seedStarterWorkspace(Workspace workspace) async {
-    final engDomain = Domain(workspaceId: workspace.id, name: 'Core Disciplines', sortOrder: 0);
-    await saveDomain(engDomain);
+    // ── DOMAINS ─────────────────────────────────────────
+    final engineeringDomain = Domain(workspaceId: workspace.id, name: 'Engineering', sortOrder: 0, pinned: true);
+    final startupDomain = Domain(workspaceId: workspace.id, name: 'Startup', sortOrder: 1, pinned: true);
+    final thinkingDomain = Domain(workspaceId: workspace.id, name: 'Thinking', sortOrder: 2, pinned: true);
+    final lifeDomain = Domain(workspaceId: workspace.id, name: 'Life', sortOrder: 3, pinned: true);
     
-    final mathBlock = Block(domainId: engDomain.id, name: 'Mathematics', icon: '📐', colorHex: '#7C9EBC', pinned: true);
-    final aiBlock = Block(domainId: engDomain.id, name: 'AI', icon: '🧠', colorHex: '#A08EB4', pinned: true);
+    await saveDomain(engineeringDomain);
+    await saveDomain(startupDomain);
+    await saveDomain(thinkingDomain);
+    await saveDomain(lifeDomain);
+    
+    // ── BLOCKS ──────────────────────────────────────────
+    final mathBlock = Block(domainId: engineeringDomain.id, name: 'Mathematics', icon: '📐', colorHex: '#7C9EBC', pinned: true);
+    final pythonBlock = Block(domainId: engineeringDomain.id, name: 'Python', icon: '🐍', colorHex: '#8BAA8E', pinned: true);
+    
+    final designBlock = Block(domainId: startupDomain.id, name: 'Product Design', icon: '🎨', colorHex: '#BFA07A', pinned: true);
+    
+    final modelsBlock = Block(domainId: thinkingDomain.id, name: 'Mental Models', icon: '🧠', colorHex: '#6B6B6B', pinned: true);
+    final decisionBlock = Block(domainId: thinkingDomain.id, name: 'Decision Making', icon: '⚖️', colorHex: '#A08EB4', pinned: true);
+
+    final stoicismBlock = Block(domainId: lifeDomain.id, name: 'Stoicism', icon: '🏛️', colorHex: '#D3A37C', pinned: true);
+
     await saveBlock(mathBlock);
-    await saveBlock(aiBlock);
+    await saveBlock(pythonBlock);
+    await saveBlock(designBlock);
+    await saveBlock(modelsBlock);
+    await saveBlock(decisionBlock);
+    await saveBlock(stoicismBlock);
+
+    // ── TODAY'S PURSUIT ITEMS (Living Showroom) ────────────────
     
+    final dailyMeta = {'isDailyGoal': true, 'isManualDailyGoal': true};
+
+    // 1. Question (Serious)
     final qItem = Item(
-      blockId: mathBlock.id, 
-      type: ItemType.question, 
-      title: 'Starter Mathematics Question', 
-      content: 'Solve a basic probability question from your curriculum.'
+      blockId: modelsBlock.id,
+      type: ItemType.question,
+      title: 'How do I apply First Principles Thinking to software architecture?',
+      content: 'Most systems are built by analogy (copying what others do). I want to break down my next project into absolute fundamental truths before writing any code.',
+      metadata: dailyMeta,
     );
     await saveItem(qItem);
+
+    // 2. Article (Long-form)
+    final articleToday = Item(
+      blockId: modelsBlock.id,
+      type: ItemType.article,
+      title: 'The Psychology of Deep Work',
+      content: '''# The Psychology of Deep Work
+
+Deep work is the ability to focus without distraction on a cognitively demanding task. It's a skill that allows you to quickly master complicated information and produce better results in less time.
+
+![Deep Work Space](https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=800&q=80)
+
+## The Attention Economy
+
+We live in a world where distraction is the default. Notifications, endless feeds, and shallow work consume our cognitive resources.
+
+> "To produce at your peak level you need to work for extended periods with full concentration on a single task free from distraction."
+> — Cal Newport
+
+## Attention Residue
+
+When you switch from Task A to Task B, your attention doesn't immediately follow. A residue of your attention remains stuck thinking about the original task. This is why checking email for "just one minute" during a coding session destroys your productivity for the next twenty minutes.
+
+### The Rules of Deep Work
+
+1. **Work Deeply**: Institutionalize the habit. Build a physical and temporal space where focus is sacred.
+2. **Embrace Boredom**: If you train your brain to seek novel stimuli whenever you're bored (e.g., waiting in line and pulling out your phone), you lose the ability to sustain focus when work gets hard.
+3. **Quit Social Media**: Evaluate tools based on whether they substantially help you achieve your core goals.
+4. **Drain the Shallows**: Schedule every minute of your day to ruthlessly eliminate shallow, low-value work.
+
+## Conclusion
+
+Deep work is not a luxury; it is a necessity for anyone looking to build meaningful things in the modern economy. It requires deliberate practice and a rejection of the superficial.
+''',
+      metadata: dailyMeta,
+    );
+    await saveItem(articleToday);
+
+    // 3. Meaningful Note
+    final noteToday = Item(
+      blockId: mathBlock.id,
+      type: ItemType.note,
+      title: 'Mathematics Is a Language',
+      content: '''# Mathematics Is a Language
+
+We often treat mathematics as a series of computations to be executed. This is fundamentally wrong. Mathematics is a language designed to describe truth with absolute precision.
+
+## The Problem with Memorization
+
+When you memorize a formula, you are memorizing a sentence without understanding its grammar. 
+
+Take Expected Value, for example. The formula is:
+
+```latex
+E(X) = \\sum x P(x)
+```
+
+If you memorize this, it's just symbols. But if you understand the language, it translates to: *"The average outcome of a situation is the sum of every possible event multiplied by how likely that event is to occur."*
+
+This is the exact same logic we use to cross the street. We subconsciously weigh the magnitude of an event (getting hit by a car) against its probability.
+
+![Math Notebook](https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=800&q=80)
+
+## Application in Code
+
+Understanding this language makes programming much more powerful. 
+
+```python
+# Calculating Expected Value
+outcomes = [(100, 0.2), (-10, 0.8)]
+expected_value = sum(magnitude * probability for magnitude, probability in outcomes)
+
+if expected_value > 0:
+    print("This is a positive expected value bet.")
+```
+
+When you stop treating math as computation and start treating it as language, the world becomes much easier to read.
+''',
+      metadata: dailyMeta,
+    );
+    await saveItem(noteToday);
+
+    // 4. Observation
+    final obsToday = Item(
+      blockId: stoicismBlock.id,
+      type: ItemType.observation,
+      title: 'The cost of comparison',
+      content: 'I noticed that whenever I browse social media before working, my baseline level of satisfaction drops and my work feels less meaningful. Comparison isn\'t just the thief of joy; it\'s the thief of focus.',
+      metadata: dailyMeta,
+    );
+    await saveItem(obsToday);
+
+    // 5. Idea
+    final ideaToday = Item(
+      blockId: designBlock.id,
+      type: ItemType.idea,
+      title: 'Products That Last',
+      content: 'Most apps try to keep you inside them for as long as possible. What if we designed a tool that actively tries to get you to close it and return to reality as quickly as possible?',
+      metadata: dailyMeta,
+    );
+    await saveItem(ideaToday);
+
+    // ── GENERAL CAPABILITY DEMOS (Museum Pieces) ────────────────
+
+    // Note: Building Knowledge Through Reflection
+    final refNote = Item(
+      blockId: modelsBlock.id,
+      type: ItemType.note,
+      title: 'Building Knowledge Through Reflection',
+      content: '''# Building Knowledge Through Reflection
+
+Information consumption is passive. Knowledge generation is active. 
+
+Most people consume hundreds of hours of podcasts and books but retain almost nothing because they never stop to synthesize.
+
+## The Synthesis Loop
+
+1. **Capture**: Store raw insights.
+2. **Distill**: Write it down in your own words.
+3. **Reflect**: Connect the new insight to an existing mental model.
+
+> "We do not learn from experience... we learn from reflecting on experience." — John Dewey
+
+Without reflection, experience is just a series of events. With reflection, experience becomes wisdom.
+''',
+    );
+    await saveItem(refNote);
+
+    // ── EVOLUTIOS (Real Shifts in Thinking) ────────────────
+
+    final evo1Ref = Reflection(itemId: noteToday.id, content: 'Dummy', createdAt: DateTime.now());
+    await saveReflection(evo1Ref);
+    final evo1 = Evolutio(
+      reflectionId: evo1Ref.id,
+      blockId: decisionBlock.id,
+      content: 'Expected value finally changed how I evaluate risk in my daily life. It\'s not about avoiding failure, it\'s about ensuring the upside justifies the downside.',
+      createdAt: DateTime.now(),
+    );
+    await saveEvolutio(evo1);
+
+    final evo2Ref = Reflection(itemId: articleToday.id, content: 'Dummy', createdAt: DateTime.now().subtract(const Duration(hours: 2)));
+    await saveReflection(evo2Ref);
+    final evo2 = Evolutio(
+      reflectionId: evo2Ref.id,
+      blockId: stoicismBlock.id,
+      content: 'I realized consistency compounds significantly faster than motivation. Motivation is a spike; consistency is a baseline.',
+      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+    );
+    await saveEvolutio(evo2);
+
+    final evo3Ref = Reflection(itemId: qItem.id, content: 'Dummy', createdAt: DateTime.now().subtract(const Duration(hours: 4)));
+    await saveReflection(evo3Ref);
+    final evo3 = Evolutio(
+      reflectionId: evo3Ref.id,
+      blockId: modelsBlock.id,
+      content: 'Understanding first principles simplified every future problem. I no longer rely on analogies.',
+      createdAt: DateTime.now().subtract(const Duration(hours: 4)),
+    );
+    await saveEvolutio(evo3);
+
+    // ── VERITAS ─────────────────────────────────────────
+    final veritas = Veritas(
+      workspaceId: workspace.id,
+      reason: 'Today I couldn\'t study because of semester examinations.\n\nI chose to rest and return tomorrow.\n\n(This week I spent time with family. Progress wasn\'t visible inside Hermes, but life still mattered.)',
+      dateMissed: DateTime.now(),
+    );
+    await saveVeritas(veritas);
   }
   Future<File> _getFile(String collection) async {
     final dir = await getApplicationDocumentsDirectory();

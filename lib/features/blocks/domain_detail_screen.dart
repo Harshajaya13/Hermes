@@ -23,10 +23,10 @@ class DomainDetailScreen extends ConsumerWidget {
         backgroundColor: HermesColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: HermesColors.textPrimary),
+          icon: const Icon(Icons.arrow_back_rounded, color: HermesColors.textSecondary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(domain.name, style: HermesTypography.screenTitle.copyWith(fontSize: 20)),
+        title: Text(domain.name, style: HermesTypography.screenTitle.copyWith(fontSize: 20, color: HermesColors.textSecondary)),
         centerTitle: true,
         actions: [
           IconButton(
@@ -86,6 +86,7 @@ class DomainDetailScreen extends ConsumerWidget {
                               HermesIconBadge(
                                 emoji: block.icon,
                                 color: HermesColors.accent,
+                                size: 36,
                               ),
                               const SizedBox(width: HermesSpacing.md),
                               Expanded(
@@ -94,7 +95,10 @@ class DomainDetailScreen extends ConsumerWidget {
                                   children: [
                                     Text(
                                       block.name,
-                                      style: HermesTypography.itemTitle,
+                                      style: HermesTypography.itemTitle.copyWith(
+                                        color: HermesColors.textSecondary,
+                                        fontSize: 16,
+                                      ),
                                     ),
                                     const SizedBox(height: 2),
                                     Consumer(
@@ -117,6 +121,19 @@ class DomainDetailScreen extends ConsumerWidget {
                                   if (value == 'rename') {
                                     CreateBlockSheet.show(context, block);
                                   } else if (value == 'pin') {
+                                    if (!block.pinned) {
+                                      final allBlocks = ref.read(allBlocksProvider);
+                                      final pinnedCount = allBlocks.where((b) => b.pinned).length;
+                                      if (pinnedCount >= 12) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Maximum 12 Blocks can be pinned. Unpin one to make space.', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
+                                            backgroundColor: HermesColors.surfaceElevated,
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                    }
                                     final updatedBlock = block.copyWith(pinned: !block.pinned);
                                     await ref.read(storageEngineProvider).saveBlock(updatedBlock);
                                     ref.invalidate(blocksByDomainProvider);

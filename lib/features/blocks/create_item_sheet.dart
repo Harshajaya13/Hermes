@@ -67,6 +67,23 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
       _isFetching = true;
     });
 
+    if (widget.isDailyGoal && widget.existingItem == null) {
+      final allItems = ref.read(storageEngineProvider).getAllItemsRaw();
+      final dailyGoalCount = allItems.where((i) => i.metadata?['isDailyGoal'] == true && i.metadata?['isSolved'] != true).length;
+      if (dailyGoalCount >= 20) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Maximum 20 goals can be pinned to Home. Please solve or remove existing goals.', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
+              backgroundColor: HermesColors.surfaceElevated,
+            ),
+          );
+        }
+        setState(() => _isFetching = false);
+        return;
+      }
+    }
+
     String finalContent = _contentController.text.trim();
     String? sourceUrl;
 

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/models/models.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import '../../core/widgets/hermes_markdown.dart';
 import '../blocks/create_item_sheet.dart';
 import '../../core/providers/providers.dart';
 import '../reader/hermes_reader_screen.dart';
@@ -126,16 +126,24 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(HermesSpacing.screenHorizontal),
-                physics: const BouncingScrollPhysics(),
-                child: _buildLayout(),
-              ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: HermesSpacing.screenHorizontal,
+                      vertical: HermesSpacing.xl,
+                    ),
+                    physics: const BouncingScrollPhysics(),
+                    child: _buildLayout(),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -157,25 +165,12 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   Widget _buildMarkdownContent() {
-    return MarkdownBody(
-      data: widget.item.content,
-      selectable: true,
-      styleSheet: MarkdownStyleSheet(
-        p: HermesTypography.body.copyWith(height: 1.6),
-        h1: HermesTypography.itemTitle.copyWith(fontSize: 24),
-        h2: HermesTypography.itemTitle.copyWith(fontSize: 20),
-        h3: HermesTypography.itemTitle.copyWith(fontSize: 18),
-        blockquote: HermesTypography.body.copyWith(
-          color: HermesColors.textSecondary,
-          fontStyle: FontStyle.italic,
-        ),
-        blockquoteDecoration: BoxDecoration(
-          color: HermesColors.surfaceElevated.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(4),
-          border: const Border(left: BorderSide(color: HermesColors.accent, width: 4)),
-        ),
-      ),
-    );
+    String mdData = widget.item.content;
+    final titlePattern = '# ${widget.item.title}';
+    if (mdData.trimLeft().startsWith(titlePattern)) {
+      mdData = mdData.trimLeft().substring(titlePattern.length).trimLeft();
+    }
+    return HermesMarkdown(data: mdData);
   }
 
   Widget _buildReflectionSection(String title, String subtitle, String hint) {
@@ -284,8 +279,15 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       children: [
         Text('Topic: ${widget.block.name}', style: HermesTypography.metadata),
         const SizedBox(height: HermesSpacing.sm),
-        Text(widget.item.title, style: HermesTypography.screenTitle),
-        const SizedBox(height: HermesSpacing.lg),
+        Text(
+          widget.item.title, 
+          style: HermesTypography.screenTitle.copyWith(
+            fontSize: 40, 
+            height: 1.1,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: HermesSpacing.xl),
         _buildMarkdownContent(),
         const SizedBox(height: HermesSpacing.xxxl),
         const HermesSectionHeader(title: 'Evaluate'),
@@ -412,8 +414,15 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       children: [
         Text('Article', style: HermesTypography.metadata),
         const SizedBox(height: HermesSpacing.sm),
-        Text(widget.item.title, style: HermesTypography.screenTitle),
-        const SizedBox(height: HermesSpacing.lg),
+        Text(
+          widget.item.title, 
+          style: HermesTypography.screenTitle.copyWith(
+            fontSize: 40, 
+            height: 1.1,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: HermesSpacing.xl),
         _buildMarkdownContent(),
         const SizedBox(height: HermesSpacing.xxxl),
         _buildReflectionSection(
@@ -431,7 +440,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       children: [
         Text('Idea', style: HermesTypography.metadata),
         const SizedBox(height: HermesSpacing.sm),
-        Text(widget.item.title, style: HermesTypography.screenTitle),
+        Text(
+          widget.item.title, 
+          style: HermesTypography.screenTitle.copyWith(
+            fontSize: 40, 
+            height: 1.1,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         const SizedBox(height: HermesSpacing.md),
         Wrap(
           spacing: 8.0,
@@ -458,8 +474,15 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       children: [
         Text(widget.item.createdAt.toString().substring(0, 10), style: HermesTypography.metadata),
         const SizedBox(height: HermesSpacing.sm),
-        Text(widget.item.title, style: HermesTypography.screenTitle),
-        const SizedBox(height: HermesSpacing.lg),
+        Text(
+          widget.item.title, 
+          style: HermesTypography.screenTitle.copyWith(
+            fontSize: 40, 
+            height: 1.1,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: HermesSpacing.xl),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(HermesSpacing.md),
@@ -484,10 +507,17 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.item.title, style: HermesTypography.screenTitle),
+        Text(
+          widget.item.title, 
+          style: HermesTypography.screenTitle.copyWith(
+            fontSize: 40, 
+            height: 1.1,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         const SizedBox(height: HermesSpacing.sm),
         Text('In ${widget.block.name}', style: HermesTypography.metadata),
-        const SizedBox(height: HermesSpacing.lg),
+        const SizedBox(height: HermesSpacing.xl),
         _buildMarkdownContent(),
         const SizedBox(height: HermesSpacing.xxxl),
         _buildReflectionSection(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/providers/providers.dart';
@@ -16,8 +17,118 @@ import 'workspace_security_dialogs.dart';
 import 'visibility_screen.dart';
 import 'package:intl/intl.dart';
 
+class StarterWelcomeBanner extends StatefulWidget {
+  const StarterWelcomeBanner({super.key});
+
+  @override
+  State<StarterWelcomeBanner> createState() => _StarterWelcomeBannerState();
+}
+
+class _StarterWelcomeBannerState extends State<StarterWelcomeBanner> {
+  bool _isVisible = true;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkVisibility();
+  }
+
+  Future<void> _checkVisibility() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _isVisible = prefs.getBool('welcome_dismissed') != true;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _dismiss() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('welcome_dismissed', true);
+    if (mounted) {
+      setState(() {
+        _isVisible = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading || !_isVisible) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+    return SliverToBoxAdapter(
+      child: Column(
+        children: [
+          HermesFadeIn(
+            delay: const Duration(milliseconds: 100),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
+              child: Container(
+                padding: const EdgeInsets.all(HermesSpacing.lg),
+                decoration: BoxDecoration(
+                  color: HermesColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(HermesRadius.md),
+                  border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Welcome to Hermes.', style: HermesTypography.body.copyWith(color: HermesColors.textPrimary)),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 20, color: HermesColors.textTertiary),
+                          onPressed: _dismiss,
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: HermesSpacing.sm),
+                    Text(
+                      'This workspace exists to demonstrate what Hermes can do.\n\nExplore it.\nModify it.\nDelete it.\nOr archive it when you\'re ready to begin your own journey.\n\nYour journey starts when you create your own workspace.',
+                      style: HermesTypography.metadata.copyWith(height: 1.6),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: HermesSpacing.sectionGap),
+        ],
+      ),
+    );
+  }
+}
+
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
+
+  String _getItemTypeBadge(ItemType type) {
+    switch (type) {
+      case ItemType.article: return '📖 Article';
+      case ItemType.question: return '❓ Question';
+      case ItemType.idea: return '💡 Idea';
+      case ItemType.note: return '📝 Note';
+      case ItemType.observation: return '👀 Observation';
+      case ItemType.reflection: return '💭 Reflection';
+    }
+  }
+
+  String _getPreviewText(String content) {
+    // Remove markdown headers, code blocks, bold, italic
+    String preview = content
+      .replaceAll(RegExp(r'```.*?```', dotAll: true), '[Code Block]')
+      .replaceAll(RegExp(r'#+\s'), '')
+      .replaceAll(RegExp(r'[*_`~]'), '')
+      .replaceAll(RegExp(r'!\[.*?\]\(.*?\)'), '[Image]')
+      .replaceAll(RegExp(r'\[.*?\]\(.*?\)'), '[Link]')
+      .trim();
+    return preview;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -260,6 +371,9 @@ class TodayScreen extends ConsumerWidget {
               child: SizedBox(height: HermesSpacing.sectionGap),
             ),
 
+            if (workspace?.name == 'Starter') 
+              const StarterWelcomeBanner(),
+
             // ── Morning Question ────────────────────────────────────
             if (!archivedSections.contains('question')) ...[
               SliverToBoxAdapter(
@@ -316,7 +430,7 @@ class TodayScreen extends ConsumerWidget {
                                         const SizedBox(width: HermesSpacing.xs),
                                         Expanded(
                                           child: Text(
-                                            item.title, // Just show item title!
+                                            '${_getItemTypeBadge(item.type)}  •  ${item.title}',
                                             style: HermesTypography.metadata.copyWith(
                                               color: item.type.color,
                                               fontWeight: FontWeight.bold,
@@ -360,8 +474,14 @@ class TodayScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: HermesSpacing.sm),
                                     Text(
-                                      item.content,
-                                      style: HermesTypography.itemTitle.copyWith(height: 1.5),
+                                      _getPreviewText(item.content),
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: HermesTypography.body.copyWith(
+                                        color: HermesColors.textSecondary, 
+                                        height: 1.5,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                     const SizedBox(height: HermesSpacing.md),
                                     Text(

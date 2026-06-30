@@ -37,7 +37,14 @@ class BlocksScreen extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Domains', style: HermesTypography.screenTitle),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Domains', style: HermesTypography.screenTitle),
+                          const SizedBox(height: HermesSpacing.xxs),
+                          Text('Your environments for growth', style: HermesTypography.metadata),
+                        ],
+                      ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -134,23 +141,19 @@ class BlocksScreen extends ConsumerWidget {
                           },
                           child: Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(HermesSpacing.md),
-                                decoration: BoxDecoration(
-                                  color: HermesColors.surfaceElevated,
-                                  borderRadius: BorderRadius.circular(HermesRadius.md),
-                                ),
-                                child: const Icon(
-                                  Icons.folder_outlined,
-                                  color: HermesColors.accent,
-                                  size: 24,
-                                ),
+                              HermesIconBadge(
+                                emoji: '📁',
+                                color: HermesColors.accent,
+                                size: 36,
                               ),
                               const SizedBox(width: HermesSpacing.md),
                               Expanded(
                                 child: Text(
                                   domain.name,
-                                  style: HermesTypography.itemTitle.copyWith(fontSize: 18),
+                                  style: HermesTypography.itemTitle.copyWith(
+                                    color: HermesColors.textSecondary,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
                               PopupMenuButton<String>(
@@ -161,6 +164,18 @@ class BlocksScreen extends ConsumerWidget {
                                   if (value == 'rename') {
                                     CreateDomainSheet.show(context, domain);
                                   } else if (value == 'pin') {
+                                    if (!domain.pinned) {
+                                      final pinnedCount = domains.where((d) => d.pinned).length;
+                                      if (pinnedCount >= 8) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Maximum 8 Domains can be pinned. Unpin one to make space.', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
+                                            backgroundColor: HermesColors.surfaceElevated,
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                    }
                                     final updatedDomain = domain.copyWith(pinned: !domain.pinned);
                                     await ref.read(storageEngineProvider).saveDomain(updatedDomain);
                                     ref.invalidate(domainsProvider);

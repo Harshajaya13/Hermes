@@ -359,7 +359,7 @@ class _ItemRow extends ConsumerWidget {
                   children: [
                     Text(
                       item.title,
-                      style: HermesTypography.itemTitle,
+                      style: HermesTypography.itemTitle.copyWith(color: HermesColors.textSecondary),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
