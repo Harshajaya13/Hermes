@@ -90,7 +90,7 @@ class _VisibilityScreenState extends ConsumerState<VisibilityScreen> {
                   (context, index) {
                     final domain = hiddenDomains[index];
                     return ListTile(
-                      leading: const Icon(Icons.folder, color: HermesColors.textTertiary),
+                      leading: Container(width: 10, height: 10, decoration: const BoxDecoration(color: HermesColors.textTertiary, shape: BoxShape.circle)),
                       title: Text(domain.name, style: HermesTypography.body),
                       trailing: TextButton(
                         onPressed: () async {

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/providers/providers.dart';
-import 'block_detail_screen.dart';
+
 import 'create_block_sheet.dart';
 import 'create_domain_sheet.dart';
 import 'domain_detail_screen.dart';
@@ -141,10 +141,23 @@ class BlocksScreen extends ConsumerWidget {
                           },
                           child: Row(
                             children: [
-                              HermesIconBadge(
-                                emoji: '📁',
-                                color: HermesColors.accent,
-                                size: 36,
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: HermesColors.surfaceOverlay,
+                                  borderRadius: BorderRadius.circular(HermesRadius.sm),
+                                  border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    domain.name.substring(0, 1).toUpperCase(),
+                                    style: HermesTypography.blockTitle.copyWith(
+                                      color: HermesColors.accent,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
                               ),
                               const SizedBox(width: HermesSpacing.md),
                               Expanded(
@@ -241,9 +254,7 @@ class BlocksScreen extends ConsumerWidget {
     );
   }
 
-  Color _parseColor(String hex) {
-    return Color(int.parse(hex.replaceFirst('#', '0xFF')));
-  }
+
 
   void _showArchiveDialog(BuildContext context, WidgetRef ref, String id, String name, bool isDomain) {
     showDialog(

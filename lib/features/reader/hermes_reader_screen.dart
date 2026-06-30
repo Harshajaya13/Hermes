@@ -1,10 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/widgets/hermes_markdown.dart';
@@ -81,56 +78,12 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   void dispose() {
     _scrollController.dispose();
     _reflectionController.dispose();
+    _answerController.dispose();
+    _questionReflectionController.dispose();
     super.dispose();
   }
 
-  void _showShareOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: HermesColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl)),
-      ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: HermesSpacing.md),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.text_snippet_outlined, color: HermesColors.textSecondary),
-                title: const Text('Share Text Content'),
-                subtitle: const Text('Best for sharing with non-Hermes users', style: TextStyle(color: HermesColors.textTertiary, fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Share.share(widget.item.content, subject: widget.item.title);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.archive_outlined, color: HermesColors.textSecondary),
-                title: const Text('Export as .hitem'),
-                subtitle: const Text('Best for sending to another Hermes workspace', style: TextStyle(color: HermesColors.textTertiary, fontSize: 12)),
-                onTap: () async {
-                  Navigator.pop(context);
-                  try {
-                    final engine = ref.read(exchangeEngineProvider);
-                    final path = await engine.exportItems([widget.item]);
-                    await Share.shareXFiles([XFile(path)], subject: '${widget.item.title} (Hermes)');
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Export failed: $e'), backgroundColor: HermesColors.veritasColor),
-                      );
-                    }
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
   void _showReadingSettings() {
     showModalBottomSheet(
@@ -317,11 +270,11 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.white.withOpacity(edgeOpacity),
-                          Colors.white.withOpacity(midOpacity),
+                          Colors.white.withValues(alpha: edgeOpacity),
+                          Colors.white.withValues(alpha: midOpacity),
                           Colors.white, // Center focus
-                          Colors.white.withOpacity(midOpacity),
-                          Colors.white.withOpacity(edgeOpacity),
+                          Colors.white.withValues(alpha: midOpacity),
+                          Colors.white.withValues(alpha: edgeOpacity),
                         ],
                         stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
                       ).createShader(bounds);
@@ -377,10 +330,37 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                             },
                             tooltip: 'Copy All Text',
                           ),
-                          IconButton(
+                          PopupMenuButton<String>(
                             icon: const Icon(Icons.share_outlined, color: HermesColors.textTertiary, size: 20),
-                            onPressed: _showShareOptions,
-                            tooltip: 'Share',
+                            tooltip: 'Share Options',
+                            color: HermesColors.surfaceElevated,
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'share_text',
+                                child: Text('Share Text Content', style: HermesTypography.bodySmall),
+                              ),
+                              PopupMenuItem(
+                                value: 'export_hitem',
+                                child: Text('Export as .hitem', style: HermesTypography.bodySmall),
+                              ),
+                            ],
+                            onSelected: (value) async {
+                              if (value == 'share_text') {
+                                Share.share(widget.item.content, subject: widget.item.title);
+                              } else if (value == 'export_hitem') {
+                                try {
+                                  final engine = ref.read(exchangeEngineProvider);
+                                  final path = await engine.exportItems([widget.item]);
+                                  await Share.shareXFiles([XFile(path)], subject: '${widget.item.title} (Hermes)');
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Export failed: $e'), backgroundColor: HermesColors.veritasColor),
+                                    );
+                                  }
+                                }
+                              }
+                            },
                           ),
 
 
@@ -547,24 +527,50 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     );
   }
 
+  // ── Article Workflow State ──────────────────────────────────────
+  int _articleStep = 0; // 0: Read, 1: Post-Read
+
   Widget _buildArticleWorkflow() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildWorkflowHeader('Reflection'),
-        Text('• What challenged your thinking?', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6)),
-        Text('• What will you remember?', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6)),
-        const SizedBox(height: HermesSpacing.xl),
+        _buildWorkflowHeader('Article Completion'),
         
-        if (!_showEvolutioPrompt) ...[
+        if (_articleStep == 0) ...[
+          Text('Have you finished reading?', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6)),
+          const SizedBox(height: HermesSpacing.lg),
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () {
+                setState(() => _articleStep = 1);
+              },
+              borderRadius: BorderRadius.circular(HermesRadius.md),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: HermesSpacing.sm, horizontal: HermesSpacing.lg),
+                decoration: BoxDecoration(
+                  color: HermesColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(HermesRadius.md),
+                  border: Border.all(color: HermesColors.border.withValues(alpha: 0.2)),
+                ),
+                child: Text('Mark Read', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
+              ),
+            ),
+          ),
+        ] else ...[
+          Text('Reflection (optional)', style: HermesTypography.itemTitle.copyWith(fontSize: 18)),
+          const SizedBox(height: HermesSpacing.sm),
+          Text('What challenged your thinking? What will you remember?', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6)),
+          const SizedBox(height: HermesSpacing.xl),
+          
           TextField(
             controller: _reflectionController,
             maxLines: null,
             minLines: 4,
-            style: HermesTypography.body.copyWith(fontSize: 18, height: 1.6),
+            style: HermesTypography.body.copyWith(fontSize: 16, height: 1.6),
             decoration: InputDecoration(
               hintText: 'Write your thoughts...',
-              hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary, fontSize: 18),
+              hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary, fontSize: 16),
               filled: true,
               fillColor: const Color(0xFF111111),
               border: OutlineInputBorder(
@@ -574,63 +580,55 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
               contentPadding: const EdgeInsets.all(HermesSpacing.lg),
             ),
           ),
-          const SizedBox(height: HermesSpacing.lg),
-          Align(
-            alignment: Alignment.centerRight,
-            child: InkWell(
-              onTap: () {
-                if (_reflectionController.text.trim().isNotEmpty) {
-                  setState(() => _showEvolutioPrompt = true);
-                } else {
-                  _recordEvolutio(true, customText: 'Read ${widget.item.type.name}.');
-                }
-              },
-              borderRadius: BorderRadius.circular(HermesRadius.md),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: HermesSpacing.sm, horizontal: HermesSpacing.md),
-                child: Text('Complete Reading', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
-              ),
-            ),
-          ),
-        ] else ...[
+          const SizedBox(height: HermesSpacing.xl),
+
+          // Auto Evolutio — always created, always editable
           Container(
             padding: const EdgeInsets.all(HermesSpacing.xl),
             decoration: BoxDecoration(
               color: const Color(0xFF111111),
               borderRadius: BorderRadius.circular(HermesRadius.lg),
-              border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
+              border: Border.all(color: HermesColors.evolutioGlow.withValues(alpha: 0.15)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Did this genuinely change how you think or understand something?',
-                  style: HermesTypography.itemTitle.copyWith(color: HermesColors.evolutioGlow, fontSize: 20),
+                  'Auto Evolutio',
+                  style: HermesTypography.itemTitle.copyWith(color: HermesColors.evolutioGlow, fontSize: 18),
+                ),
+                const SizedBox(height: HermesSpacing.sm),
+                Text(
+                  'An Evolutio will be generated for this reading.',
+                  style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary, height: 1.5),
                 ),
                 const SizedBox(height: HermesSpacing.xl),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(
-                      onPressed: () => _recordEvolutio(false),
-                      child: Text('No, just save', style: TextStyle(color: HermesColors.textSecondary)),
-                    ),
-                    const SizedBox(width: HermesSpacing.lg),
-                    ElevatedButton(
-                      onPressed: () => _recordEvolutio(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: HermesColors.evolutioGlow,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HermesRadius.md)),
+                    InkWell(
+                      onTap: () {
+                        final text = _reflectionController.text.trim();
+                        _recordEvolutio(true, customText: text.isNotEmpty ? text : 'Read: ${widget.item.title}');
+                      },
+                      borderRadius: BorderRadius.circular(HermesRadius.md),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: HermesSpacing.sm, horizontal: HermesSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: HermesColors.surfaceElevated,
+                          borderRadius: BorderRadius.circular(HermesRadius.md),
+                          border: Border.all(color: HermesColors.border.withValues(alpha: 0.2)),
+                        ),
+                        child: Text('Edit Evolutio', style: HermesTypography.body.copyWith(color: HermesColors.evolutioGlow)),
                       ),
-                      child: const Text('Record Evolutio', style: TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ),
               ],
             ),
           ),
+          const SizedBox(height: HermesSpacing.lg),
+          _buildWorkflowAction('Archive', Icons.archive_outlined, onTap: () => _handleWorkflowAction('Archive')),
         ],
       ],
     );
@@ -648,30 +646,430 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   }
 
   Widget _buildNoteWorkflow() {
+    final keywords = (widget.item.metadata?['keywords'] as List?)?.cast<String>() ?? [];
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildWorkflowHeader('Connections'),
-        _buildWorkflowAction('Related Notes', Icons.account_tree_outlined, onTap: () => _handleWorkflowAction('Related Notes')),
-        _buildWorkflowAction('Keywords', Icons.tag_rounded, onTap: () => _handleWorkflowAction('Keywords')),
-        _buildWorkflowAction('Backlinks', Icons.link_rounded, onTap: () => _handleWorkflowAction('Backlinks')),
-        _buildWorkflowAction('Last Edited', Icons.history_rounded, onTap: () => _handleWorkflowAction('Last Edited')),
-        _buildWorkflowAction('History', Icons.manage_history_rounded, onTap: () => _handleWorkflowAction('History')),
+        
+        // Related Notes (bidirectional linking)
+        _buildWorkflowAction('Related Notes', Icons.link_rounded, color: HermesColors.accent, onTap: () {
+          _showConnectionSheet();
+        }),
+        
+        // Keywords
+        _buildWorkflowAction(
+          keywords.isEmpty ? 'Add Keywords' : 'Keywords: ${keywords.join(", ")}',
+          Icons.label_outline_rounded,
+          onTap: () {
+            _showKeywordsSheet();
+          },
+        ),
+        
+        // Last Edited
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: HermesSpacing.sm, horizontal: HermesSpacing.md),
+          child: Text(
+            'Last edited: ${widget.item.modifiedAt.toString().substring(0, 16)}',
+            style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary),
+          ),
+        ),
       ],
+    );
+  }
+  
+  void _showKeywordsSheet() {
+    final kwController = TextEditingController();
+    final existingKw = (widget.item.metadata?['keywords'] as List?)?.cast<String>() ?? [];
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: HermesColors.surfaceElevated,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            left: HermesSpacing.lg, right: HermesSpacing.lg,
+            top: HermesSpacing.lg, bottom: MediaQuery.of(ctx).viewInsets.bottom + HermesSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Keywords', style: HermesTypography.sectionTitle),
+              const SizedBox(height: HermesSpacing.md),
+              if (existingKw.isNotEmpty) ...[
+                Wrap(
+                  spacing: HermesSpacing.xs,
+                  runSpacing: HermesSpacing.xs,
+                  children: existingKw.map((kw) => Chip(
+                    label: Text(kw, style: HermesTypography.bodySmall),
+                    backgroundColor: HermesColors.surface,
+                    deleteIcon: const Icon(Icons.close, size: 14),
+                    onDeleted: () async {
+                      existingKw.remove(kw);
+                      final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                      updatedMeta['keywords'] = existingKw;
+                      await ref.read(storageEngineProvider).saveItems([widget.item.copyWith(metadata: updatedMeta)]);
+                      ref.invalidate(itemsByBlockProvider(widget.block.id));
+                      setSheetState(() {});
+                    },
+                  )).toList(),
+                ),
+                const SizedBox(height: HermesSpacing.sm),
+              ],
+              TextField(
+                controller: kwController,
+                autofocus: true,
+                style: HermesTypography.body.copyWith(fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: 'Add a keyword and press Enter...',
+                  hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+                  filled: true, fillColor: HermesColors.surface,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
+                ),
+                onSubmitted: (val) async {
+                  if (val.trim().isEmpty) return;
+                  existingKw.add(val.trim().toLowerCase());
+                  final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                  updatedMeta['keywords'] = existingKw;
+                  await ref.read(storageEngineProvider).saveItems([widget.item.copyWith(metadata: updatedMeta)]);
+                  ref.invalidate(itemsByBlockProvider(widget.block.id));
+                  kwController.clear();
+                  setSheetState(() {});
+                },
+              ),
+              const SizedBox(height: HermesSpacing.md),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildIdeaWorkflow() {
+    final isProject = widget.item.metadata?['isProject'] == true;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildWorkflowHeader('Evolution'),
-        _buildWorkflowAction('Expand this idea', Icons.open_in_full_rounded, color: HermesColors.accent, onTap: () => _handleWorkflowAction('Expand this idea')),
-        _buildWorkflowAction('Potential applications', Icons.api_rounded, onTap: () => _handleWorkflowAction('Potential applications')),
-        _buildWorkflowAction('Connect to another Block', Icons.link_rounded, onTap: () => _handleWorkflowAction('Connect to another Block')),
-        _buildWorkflowAction('Promote to Project', Icons.rocket_launch_outlined, color: HermesColors.evolutioGlow, onTap: () => _handleWorkflowAction('Promote to Project')),
+        
+        // Expand Idea — original stays visible, write beneath
+        _buildWorkflowAction('Expand Idea', Icons.expand_more_rounded, onTap: () {
+          _showExpandIdeaSheet();
+        }),
+        
+        // Potential Applications — stored separately
+        _buildWorkflowAction('Potential Applications', Icons.apps_rounded, onTap: () {
+          _showApplicationsSheet();
+        }),
+        
+        // Connect To Another Item
+        _buildWorkflowAction('Connect', Icons.link_rounded, color: HermesColors.accent, onTap: () {
+          _showConnectionSheet();
+        }),
+        
+        // Promote To Project
+        _buildWorkflowAction(
+          isProject ? 'Already a Project ✦' : 'Promote to Project',
+          Icons.rocket_launch_outlined,
+          color: isProject ? HermesColors.veritasColor : HermesColors.evolutioGlow,
+          onTap: isProject ? null : () async {
+            final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+            updatedMeta['isProject'] = true;
+            final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+            await ref.read(storageEngineProvider).saveItems([updatedItem]);
+            ref.invalidate(itemsByBlockProvider(widget.block.id));
+            if (mounted) {
+              HermesToast.show(context, 'Promoted to Project.');
+            }
+          },
+        ),
+        
+        // Archive
         _buildWorkflowAction('Archive', Icons.archive_outlined, onTap: () => _handleWorkflowAction('Archive')),
       ],
+    );
+  }
+  
+  void _showExpandIdeaSheet() {
+    final expansionController = TextEditingController(
+      text: widget.item.metadata?['expansion'] as String? ?? '',
+    );
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: HermesColors.surfaceElevated,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: HermesSpacing.lg, right: HermesSpacing.lg,
+          top: HermesSpacing.lg, bottom: MediaQuery.of(ctx).viewInsets.bottom + HermesSpacing.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Expand Idea', style: HermesTypography.sectionTitle),
+            const SizedBox(height: HermesSpacing.md),
+            // Original idea visible as context
+            Container(
+              padding: const EdgeInsets.all(HermesSpacing.md),
+              decoration: BoxDecoration(
+                color: HermesColors.surface,
+                borderRadius: BorderRadius.circular(HermesRadius.sm),
+                border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
+              ),
+              child: Text(widget.item.content, style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary), maxLines: 5, overflow: TextOverflow.ellipsis),
+            ),
+            const SizedBox(height: HermesSpacing.md),
+            TextField(
+              controller: expansionController,
+              maxLines: null,
+              minLines: 4,
+              autofocus: true,
+              style: HermesTypography.body.copyWith(fontSize: 15),
+              decoration: InputDecoration(
+                hintText: 'Continue developing this idea...',
+                hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+                filled: true, fillColor: HermesColors.surface,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: HermesSpacing.md),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () async {
+                  final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                  updatedMeta['expansion'] = expansionController.text.trim();
+                  final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+                  await ref.read(storageEngineProvider).saveItems([updatedItem]);
+                  ref.invalidate(itemsByBlockProvider(widget.block.id));
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (mounted) HermesToast.show(context, 'Idea expanded.');
+                },
+                child: Text('Save', style: TextStyle(color: HermesColors.evolutioGlow)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  void _showApplicationsSheet() {
+    final appController = TextEditingController();
+    final existingApps = (widget.item.metadata?['applications'] as List?)?.cast<String>() ?? [];
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: HermesColors.surfaceElevated,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            left: HermesSpacing.lg, right: HermesSpacing.lg,
+            top: HermesSpacing.lg, bottom: MediaQuery.of(ctx).viewInsets.bottom + HermesSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Potential Applications', style: HermesTypography.sectionTitle),
+              const SizedBox(height: HermesSpacing.md),
+              ...existingApps.map((app) => Padding(
+                padding: const EdgeInsets.only(bottom: HermesSpacing.xs),
+                child: Row(
+                  children: [
+                    const Icon(Icons.circle, size: 6, color: HermesColors.textTertiary),
+                    const SizedBox(width: HermesSpacing.sm),
+                    Expanded(child: Text(app, style: HermesTypography.bodySmall)),
+                  ],
+                ),
+              )),
+              const SizedBox(height: HermesSpacing.sm),
+              TextField(
+                controller: appController,
+                autofocus: true,
+                style: HermesTypography.body.copyWith(fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: 'Add a potential application...',
+                  hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+                  filled: true, fillColor: HermesColors.surface,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
+                ),
+                onSubmitted: (val) async {
+                  if (val.trim().isEmpty) return;
+                  existingApps.add(val.trim());
+                  final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                  updatedMeta['applications'] = existingApps;
+                  final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+                  await ref.read(storageEngineProvider).saveItems([updatedItem]);
+                  ref.invalidate(itemsByBlockProvider(widget.block.id));
+                  appController.clear();
+                  setSheetState(() {});
+                },
+              ),
+              const SizedBox(height: HermesSpacing.md),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  void _showConnectionSheet() {
+    final storage = ref.read(storageEngineProvider);
+    final workspace = ref.read(currentWorkspaceProvider);
+    if (workspace == null) return;
+    
+    final domains = storage.getDomains(workspace.id);
+    String? selectedDomainId;
+    String? selectedBlockId;
+    String? selectedItemId;
+    final noteController = TextEditingController();
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: HermesColors.surfaceElevated,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          final blocks = selectedDomainId != null ? storage.getBlocks(selectedDomainId!) : <Block>[];
+          final items = selectedBlockId != null
+              ? storage.getItems(selectedBlockId!).where((i) => i.id != widget.item.id).toList()
+              : <Item>[];
+          
+          return Padding(
+            padding: EdgeInsets.only(
+              left: HermesSpacing.lg, right: HermesSpacing.lg,
+              top: HermesSpacing.lg, bottom: MediaQuery.of(ctx).viewInsets.bottom + HermesSpacing.lg,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Connect', style: HermesTypography.sectionTitle),
+                const SizedBox(height: HermesSpacing.lg),
+                
+                // Step 1: Choose Domain
+                Text('Choose Domain', style: HermesTypography.metadata),
+                const SizedBox(height: HermesSpacing.xs),
+                Wrap(
+                  spacing: HermesSpacing.xs,
+                  children: domains.map((d) => ChoiceChip(
+                    label: Text(d.name, style: HermesTypography.bodySmall),
+                    selected: selectedDomainId == d.id,
+                    selectedColor: HermesColors.accent.withValues(alpha: 0.2),
+                    backgroundColor: HermesColors.surface,
+                    onSelected: (_) => setSheetState(() {
+                      selectedDomainId = d.id;
+                      selectedBlockId = null;
+                      selectedItemId = null;
+                    }),
+                  )).toList(),
+                ),
+                
+                // Step 2: Choose Block
+                if (selectedDomainId != null && blocks.isNotEmpty) ...[
+                  const SizedBox(height: HermesSpacing.md),
+                  Text('Choose Block', style: HermesTypography.metadata),
+                  const SizedBox(height: HermesSpacing.xs),
+                  Wrap(
+                    spacing: HermesSpacing.xs,
+                    children: blocks.map((b) => ChoiceChip(
+                      label: Text(b.name, style: HermesTypography.bodySmall),
+                      selected: selectedBlockId == b.id,
+                      selectedColor: HermesColors.accent.withValues(alpha: 0.2),
+                      backgroundColor: HermesColors.surface,
+                      onSelected: (_) => setSheetState(() {
+                        selectedBlockId = b.id;
+                        selectedItemId = null;
+                      }),
+                    )).toList(),
+                  ),
+                ],
+                
+                // Step 3: Choose Item
+                if (selectedBlockId != null && items.isNotEmpty) ...[
+                  const SizedBox(height: HermesSpacing.md),
+                  Text('Choose Item', style: HermesTypography.metadata),
+                  const SizedBox(height: HermesSpacing.xs),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 150),
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: items.map((i) => ListTile(
+                        dense: true,
+                        title: Text(i.title, style: HermesTypography.bodySmall.copyWith(
+                          color: selectedItemId == i.id ? HermesColors.accent : HermesColors.textSecondary,
+                        )),
+                        trailing: selectedItemId == i.id ? const Icon(Icons.check, size: 16, color: HermesColors.accent) : null,
+                        onTap: () => setSheetState(() => selectedItemId = i.id),
+                      )).toList(),
+                    ),
+                  ),
+                ],
+                
+                // Step 4: Optional connection note
+                if (selectedItemId != null) ...[
+                  const SizedBox(height: HermesSpacing.md),
+                  TextField(
+                    controller: noteController,
+                    style: HermesTypography.body.copyWith(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Optional connection note...',
+                      hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary, fontSize: 14),
+                      filled: true, fillColor: HermesColors.surface,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: HermesSpacing.md),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () async {
+                        // Bidirectional connection
+                        final note = noteController.text.trim();
+                        final connection = {'itemId': selectedItemId, 'note': note, 'createdAt': DateTime.now().toIso8601String()};
+                        final reverseConnection = {'itemId': widget.item.id, 'note': note, 'createdAt': DateTime.now().toIso8601String()};
+                        
+                        // Add to current item
+                        final meta1 = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                        final connections1 = (meta1['connections'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+                        connections1.add(Map<String, dynamic>.from(connection));
+                        meta1['connections'] = connections1;
+                        await storage.saveItems([widget.item.copyWith(metadata: meta1)]);
+                        
+                        // Add to target item (bidirectional)
+                        final targetItem = storage.getItemById(selectedItemId!);
+                        if (targetItem != null) {
+                          final meta2 = Map<String, dynamic>.from(targetItem.metadata ?? {});
+                          final connections2 = (meta2['connections'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+                          connections2.add(Map<String, dynamic>.from(reverseConnection));
+                          meta2['connections'] = connections2;
+                          await storage.saveItems([targetItem.copyWith(metadata: meta2)]);
+                        }
+                        
+                        ref.invalidate(itemsByBlockProvider(widget.block.id));
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (mounted) HermesToast.show(context, 'Connection saved.');
+                      },
+                      child: Text('Save Connection', style: TextStyle(color: HermesColors.evolutioGlow)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -680,11 +1078,148 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildWorkflowHeader('Synthesis'),
-        _buildWorkflowAction('Why was this worth recording?', Icons.help_outline_rounded, onTap: () => _handleWorkflowAction('Why was this worth recording?')),
-        _buildWorkflowAction('Did this observation lead to a pattern?', Icons.pattern_rounded, onTap: () => _handleWorkflowAction('Did this observation lead to a pattern?')),
-        _buildWorkflowAction('Convert to Reflection', Icons.edit_note_rounded, color: HermesColors.reflectionColor, onTap: () => _handleWorkflowAction('Convert to Reflection')),
+        
+        // Why worth recording
+        _buildWorkflowAction('Why worth recording', Icons.help_outline_rounded, onTap: () {
+          _showObservationReasoningSheet();
+        }),
+
+        // Pattern
+        _buildWorkflowAction('Pattern', Icons.pattern_rounded, onTap: () {
+          _showObservationPatternSheet();
+        }),
+
+        _buildWorkflowAction('Convert to Reflection', Icons.auto_awesome_rounded, color: HermesColors.evolutioGlow, onTap: () => _handleWorkflowAction('Convert to Reflection')),
         _buildWorkflowAction('Convert to Idea', Icons.lightbulb_outline_rounded, color: HermesColors.accent, onTap: () => _handleWorkflowAction('Convert to Idea')),
       ],
+    );
+  }
+  
+  void _showObservationReasoningSheet() {
+    final reasonController = TextEditingController(
+      text: widget.item.metadata?['reasoning'] as String? ?? '',
+    );
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: HermesColors.surfaceElevated,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: HermesSpacing.lg, right: HermesSpacing.lg,
+          top: HermesSpacing.lg, bottom: MediaQuery.of(ctx).viewInsets.bottom + HermesSpacing.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Why worth recording', style: HermesTypography.sectionTitle),
+            const SizedBox(height: HermesSpacing.md),
+            // Original observation visible as context
+            Container(
+              padding: const EdgeInsets.all(HermesSpacing.md),
+              decoration: BoxDecoration(
+                color: HermesColors.surface,
+                borderRadius: BorderRadius.circular(HermesRadius.sm),
+                border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
+              ),
+              child: Text(widget.item.content, style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary), maxLines: 5, overflow: TextOverflow.ellipsis),
+            ),
+            const SizedBox(height: HermesSpacing.md),
+            TextField(
+              controller: reasonController,
+              maxLines: null,
+              minLines: 4,
+              autofocus: true,
+              style: HermesTypography.body.copyWith(fontSize: 15),
+              decoration: InputDecoration(
+                hintText: 'Continue writing below the observation...',
+                hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+                filled: true, fillColor: HermesColors.surface,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: HermesSpacing.md),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () async {
+                  final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                  updatedMeta['reasoning'] = reasonController.text.trim();
+                  final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+                  await ref.read(storageEngineProvider).saveItems([updatedItem]);
+                  ref.invalidate(itemsByBlockProvider(widget.block.id));
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (mounted) HermesToast.show(context, 'Reasoning added.');
+                },
+                child: Text('Save', style: TextStyle(color: HermesColors.evolutioGlow)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showObservationPatternSheet() {
+    final patternController = TextEditingController();
+    final existingPatterns = (widget.item.metadata?['patterns'] as List?)?.cast<String>() ?? [];
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: HermesColors.surfaceElevated,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            left: HermesSpacing.lg, right: HermesSpacing.lg,
+            top: HermesSpacing.lg, bottom: MediaQuery.of(ctx).viewInsets.bottom + HermesSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Pattern', style: HermesTypography.sectionTitle),
+              const SizedBox(height: HermesSpacing.md),
+              ...existingPatterns.map((app) => Padding(
+                padding: const EdgeInsets.only(bottom: HermesSpacing.xs),
+                child: Row(
+                  children: [
+                    const Icon(Icons.circle, size: 6, color: HermesColors.textTertiary),
+                    const SizedBox(width: HermesSpacing.sm),
+                    Expanded(child: Text(app, style: HermesTypography.bodySmall)),
+                  ],
+                ),
+              )),
+              const SizedBox(height: HermesSpacing.sm),
+              TextField(
+                controller: patternController,
+                autofocus: true,
+                style: HermesTypography.body.copyWith(fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: 'Record recurring patterns...',
+                  hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+                  filled: true, fillColor: HermesColors.surface,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
+                ),
+                onSubmitted: (val) async {
+                  if (val.trim().isEmpty) return;
+                  existingPatterns.add(val.trim());
+                  final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                  updatedMeta['patterns'] = existingPatterns;
+                  final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+                  await ref.read(storageEngineProvider).saveItems([updatedItem]);
+                  ref.invalidate(itemsByBlockProvider(widget.block.id));
+                  patternController.clear();
+                  setSheetState(() {});
+                },
+              ),
+              const SizedBox(height: HermesSpacing.md),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -701,16 +1236,243 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     );
   }
 
+  // ── Question Workflow State ──────────────────────────────────────
+  int _questionStep = 0; // 0: Write, 1: Validate, 2: Solution, 3: Reflection, 4: Done
+  final _answerController = TextEditingController();
+  final _questionReflectionController = TextEditingController();
+  bool _solutionRevealed = false;
+
   Widget _buildQuestionWorkflow() {
+    final officialSolution = widget.item.metadata?['officialSolution'] as String? ?? '';
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildWorkflowHeader('Resolution'),
-        _buildWorkflowAction('Reveal Answer', Icons.visibility_outlined, color: HermesColors.accent, onTap: () => _handleWorkflowAction('Reveal Answer')),
-        _buildWorkflowAction('Compare', Icons.compare_arrows_rounded, onTap: () => _handleWorkflowAction('Compare')),
-        _buildWorkflowAction('Self Score', Icons.score_rounded, onTap: () => _handleWorkflowAction('Self Score')),
-        _buildWorkflowAction('Reflection', Icons.edit_note_rounded, onTap: () => _handleWorkflowAction('Reflection')),
-        _buildWorkflowAction('Complete', Icons.check_circle_outline_rounded, color: HermesColors.veritasColor, onTap: () => _handleWorkflowAction('Complete')),
+        
+        // Step 0: Write your answer
+        if (_questionStep == 0) ...[
+          Text(
+            'Write your answer before seeing the solution.',
+            style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6),
+          ),
+          const SizedBox(height: HermesSpacing.lg),
+          TextField(
+            controller: _answerController,
+            maxLines: null,
+            minLines: 5,
+            style: HermesTypography.body.copyWith(fontSize: 16, height: 1.6),
+            decoration: InputDecoration(
+              hintText: 'Think through it. Write your reasoning...',
+              hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary, fontSize: 16),
+              filled: true,
+              fillColor: const Color(0xFF111111),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(HermesRadius.md),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.all(HermesSpacing.lg),
+            ),
+          ),
+          const SizedBox(height: HermesSpacing.lg),
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () {
+                if (_answerController.text.trim().isNotEmpty) {
+                  setState(() => _questionStep = 1);
+                }
+              },
+              borderRadius: BorderRadius.circular(HermesRadius.md),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: HermesSpacing.sm, horizontal: HermesSpacing.lg),
+                decoration: BoxDecoration(
+                  color: HermesColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(HermesRadius.md),
+                  border: Border.all(color: HermesColors.border.withValues(alpha: 0.2)),
+                ),
+                child: Text('Validate Answer', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
+              ),
+            ),
+          ),
+        ],
+        
+        // Step 1: Validate — confirm you're ready to see the solution
+        if (_questionStep == 1) ...[
+          Container(
+            padding: const EdgeInsets.all(HermesSpacing.lg),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111111),
+              borderRadius: BorderRadius.circular(HermesRadius.md),
+              border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Your Answer', style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
+                const SizedBox(height: HermesSpacing.sm),
+                Text(_answerController.text.trim(), style: HermesTypography.body.copyWith(height: 1.6)),
+              ],
+            ),
+          ),
+          const SizedBox(height: HermesSpacing.xl),
+          Text(
+            'Are you satisfied with your reasoning?',
+            style: HermesTypography.body.copyWith(color: HermesColors.textSecondary),
+          ),
+          const SizedBox(height: HermesSpacing.lg),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => setState(() => _questionStep = 0),
+                child: Text('Revise', style: TextStyle(color: HermesColors.textTertiary)),
+              ),
+              const SizedBox(width: HermesSpacing.md),
+              InkWell(
+                onTap: () => setState(() => _questionStep = 2),
+                borderRadius: BorderRadius.circular(HermesRadius.md),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: HermesSpacing.sm, horizontal: HermesSpacing.lg),
+                  decoration: BoxDecoration(
+                    color: HermesColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(HermesRadius.md),
+                    border: Border.all(color: HermesColors.border.withValues(alpha: 0.2)),
+                  ),
+                  child: Text('Reveal Solution', style: HermesTypography.body.copyWith(color: HermesColors.accent)),
+                ),
+              ),
+            ],
+          ),
+        ],
+        
+        // Step 2: Reveal Official Solution
+        if (_questionStep == 2) ...[
+          Container(
+            padding: const EdgeInsets.all(HermesSpacing.lg),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111111),
+              borderRadius: BorderRadius.circular(HermesRadius.md),
+              border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Your Answer', style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
+                const SizedBox(height: HermesSpacing.sm),
+                Text(_answerController.text.trim(), style: HermesTypography.body.copyWith(height: 1.6)),
+              ],
+            ),
+          ),
+          const SizedBox(height: HermesSpacing.xl),
+          if (officialSolution.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(HermesSpacing.lg),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117),
+                borderRadius: BorderRadius.circular(HermesRadius.md),
+                border: Border.all(color: HermesColors.accent.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Official Solution', style: HermesTypography.metadata.copyWith(color: HermesColors.accent)),
+                  const SizedBox(height: HermesSpacing.sm),
+                  Text(officialSolution, style: HermesTypography.body.copyWith(height: 1.6)),
+                ],
+              ),
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(HermesSpacing.lg),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117),
+                borderRadius: BorderRadius.circular(HermesRadius.md),
+                border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
+              ),
+              child: Text(
+                'No official solution was provided for this question. Reflect on your own answer.',
+                style: HermesTypography.body.copyWith(color: HermesColors.textTertiary, height: 1.6),
+              ),
+            ),
+          ],
+          const SizedBox(height: HermesSpacing.xl),
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () => setState(() => _questionStep = 3),
+              borderRadius: BorderRadius.circular(HermesRadius.md),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: HermesSpacing.sm, horizontal: HermesSpacing.lg),
+                decoration: BoxDecoration(
+                  color: HermesColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(HermesRadius.md),
+                  border: Border.all(color: HermesColors.border.withValues(alpha: 0.2)),
+                ),
+                child: Text('Continue', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
+              ),
+            ),
+          ),
+        ],
+        
+        // Step 3: Reflection (optional) → Complete
+        if (_questionStep == 3) ...[
+          Text(
+            'Reflection (optional)',
+            style: HermesTypography.itemTitle.copyWith(fontSize: 18),
+          ),
+          const SizedBox(height: HermesSpacing.sm),
+          Text(
+            'What did you learn? Where was your reasoning wrong?',
+            style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6),
+          ),
+          const SizedBox(height: HermesSpacing.lg),
+          TextField(
+            controller: _questionReflectionController,
+            maxLines: null,
+            minLines: 3,
+            style: HermesTypography.body.copyWith(fontSize: 16, height: 1.6),
+            decoration: InputDecoration(
+              hintText: 'Optional: capture what changed in your understanding...',
+              hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary, fontSize: 16),
+              filled: true,
+              fillColor: const Color(0xFF111111),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(HermesRadius.md),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.all(HermesSpacing.lg),
+            ),
+          ),
+          const SizedBox(height: HermesSpacing.xl),
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () {
+                final reflectionText = _questionReflectionController.text.trim();
+                final hasReflection = reflectionText.isNotEmpty;
+                
+                // Save the user's answer into the item metadata
+                final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                updatedMeta['userAnswer'] = _answerController.text.trim();
+                updatedMeta['isSolved'] = true;
+                if (hasReflection) updatedMeta['questionReflection'] = reflectionText;
+                
+                _recordEvolutio(hasReflection, customText: hasReflection ? reflectionText : 'Solved: ${widget.item.title}');
+              },
+              borderRadius: BorderRadius.circular(HermesRadius.md),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: HermesSpacing.sm, horizontal: HermesSpacing.lg),
+                decoration: BoxDecoration(
+                  color: HermesColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(HermesRadius.md),
+                  border: Border.all(color: HermesColors.border.withValues(alpha: 0.2)),
+                ),
+                child: Text('Complete', style: HermesTypography.body.copyWith(color: HermesColors.evolutioGlow)),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

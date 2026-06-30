@@ -335,30 +335,32 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
   }
 
   Widget _buildOptionSheet(BuildContext context, WidgetRef ref, String title, List<String> options, String currentValue, Function(String) onSelect) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: HermesSpacing.lg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.lg),
-            child: Text(title, style: HermesTypography.sectionTitle),
-          ),
-          const SizedBox(height: HermesSpacing.md),
-          ...options.map((option) {
-            final isSelected = option == currentValue;
-            return ListTile(
-              title: Text(option, style: HermesTypography.body),
-              trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: HermesColors.evolutioGlow) : null,
-              onTap: () {
-                onSelect(option);
-                Navigator.pop(context);
-              },
-            );
-          }),
-          const SizedBox(height: HermesSpacing.md),
-        ],
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: HermesSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.lg),
+              child: Text(title, style: HermesTypography.sectionTitle),
+            ),
+            const SizedBox(height: HermesSpacing.md),
+            ...options.map((option) {
+              final isSelected = option == currentValue;
+              return ListTile(
+                title: Text(option, style: HermesTypography.body),
+                trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: HermesColors.evolutioGlow) : null,
+                onTap: () {
+                  onSelect(option);
+                  Navigator.pop(context);
+                },
+              );
+            }),
+            const SizedBox(height: HermesSpacing.md),
+          ],
+        ),
       ),
     );
   }

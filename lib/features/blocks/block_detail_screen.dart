@@ -37,7 +37,15 @@ class BlockDetailScreen extends ConsumerStatefulWidget {
 class _BlockDetailScreenState extends ConsumerState<BlockDetailScreen> {
   @override
   Widget build(BuildContext context) {
-    final items = ref.watch(itemsByBlockProvider(widget.block.id));
+    final itemsList = ref.watch(itemsByBlockProvider(widget.block.id)).toList();
+    itemsList.sort((a, b) {
+      final aProj = a.metadata?['isProject'] == true;
+      final bProj = b.metadata?['isProject'] == true;
+      if (aProj && !bProj) return -1;
+      if (!aProj && bProj) return 1;
+      return b.createdAt.compareTo(a.createdAt);
+    });
+    final items = itemsList;
     final evolutiosCount = ref.read(storageEngineProvider).getEvolutiosForBlock(widget.block.id).length;
     final color = Color(int.parse(widget.block.colorHex.replaceFirst('#', '0xFF')));
 
@@ -384,7 +392,9 @@ class _ItemRow extends ConsumerWidget {
                   children: [
                     Text(
                       item.title,
-                      style: HermesTypography.itemTitle.copyWith(color: HermesColors.textSecondary),
+                      style: HermesTypography.itemTitle.copyWith(
+                        color: item.metadata?['isProject'] == true ? HermesColors.evolutioGlow : HermesColors.textSecondary,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -392,6 +402,18 @@ class _ItemRow extends ConsumerWidget {
                     Row(
                       children: [
                         Text(item.type.name.toUpperCase(), style: HermesTypography.metadata),
+                        if (item.metadata?['isProject'] == true) ...[
+                          const SizedBox(width: HermesSpacing.sm),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: HermesColors.evolutioGlow.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: HermesColors.evolutioGlow.withValues(alpha: 0.3)),
+                            ),
+                            child: Text('PROJECT ✦', style: HermesTypography.metadata.copyWith(color: HermesColors.evolutioGlow, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
                       ],
                     ),
                   ],

@@ -5,7 +5,6 @@ import '../../core/widgets/hermes_widgets.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import 'block_detail_screen.dart';
-import 'block_detail_screen.dart';
 import 'create_block_sheet.dart';
 import 'create_domain_sheet.dart';
 class DomainDetailScreen extends ConsumerWidget {

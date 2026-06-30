@@ -31,7 +31,12 @@ class LocalStorageEngine {
       // Create a default workspace if empty
       final defaultWorkspace = Workspace(name: 'Starter', isDefault: true, icon: '⭐');
       await saveWorkspace(defaultWorkspace);
-      await seedStarterWorkspace(defaultWorkspace);
+      try {
+        await seedStarterWorkspace(defaultWorkspace);
+      } catch (e, stack) {
+        print('Starter workspace seed failed: $e');
+        print(stack);
+      }
     } else {
       await _loadAllFromDisk(hermesDir);
       
@@ -43,7 +48,12 @@ class LocalStorageEngine {
         } else {
           final defaultWorkspace = Workspace(name: 'Starter', isDefault: true, icon: '⭐');
           await saveWorkspace(defaultWorkspace);
-          await seedStarterWorkspace(defaultWorkspace);
+          try {
+            await seedStarterWorkspace(defaultWorkspace);
+          } catch (e, stack) {
+            print('Starter workspace seed failed: $e');
+            print(stack);
+          }
         }
       }
     }
@@ -89,15 +99,55 @@ class LocalStorageEngine {
     
     final dailyMeta = {'isDailyGoal': true, 'isManualDailyGoal': true};
 
-    // 1. Question (Serious)
-    final qItem = Item(
-      blockId: modelsBlock.id,
+    // 1. Question (Probability - Monty Hall)
+    final qProb1 = Item(
+      blockId: mathBlock.id,
       type: ItemType.question,
-      title: 'How do I apply First Principles Thinking to software architecture?',
-      content: 'Most systems are built by analogy (copying what others do). I want to break down my next project into absolute fundamental truths before writing any code.',
+      title: 'The Monty Hall Problem (N doors variant)',
+      content: 'If there are N doors, and you pick 1, and Monty opens N-2 doors with goats, what is the exact probability of winning if you switch? How does the math scale as N approaches infinity?',
       metadata: dailyMeta,
     );
-    await saveItem(qItem);
+    await saveItem(qProb1);
+
+    // Question (Probability - Boy or Girl Paradox)
+    final qProb2 = Item(
+      blockId: mathBlock.id,
+      type: ItemType.question,
+      title: 'The Boy or Girl Paradox',
+      content: 'A family has two children. You are told that at least one of them is a boy. What is the probability that both children are boys? Why is the answer 1/3 and not 1/2, and how does the sample space change if you are told the *older* child is a boy?',
+      metadata: dailyMeta,
+    );
+    await saveItem(qProb2);
+
+    // Question (Probability - Base Rate Fallacy)
+    final qProb3 = Item(
+      blockId: mathBlock.id,
+      type: ItemType.question,
+      title: 'Base Rate Fallacy in Medical Testing',
+      content: 'A disease affects 1 in 10,000 people. A test for it is 99% accurate (1% false positive, 1% false negative). If you test positive, what is the actual probability you have the disease? How do I use Bayes\' Theorem to build an intuition for this?',
+      metadata: dailyMeta,
+    );
+    await saveItem(qProb3);
+
+    // Question (Probability - Birthday Paradox)
+    final qProb4 = Item(
+      blockId: mathBlock.id,
+      type: ItemType.question,
+      title: 'The Birthday Paradox',
+      content: 'How many people do you need in a room to have a 50% chance that two of them share the same birthday? Why does the human brain so dramatically underestimate this probability, and what is the mathematical formula to calculate it?',
+      metadata: dailyMeta,
+    );
+    await saveItem(qProb4);
+
+    // Question (Probability - St. Petersburg Paradox)
+    final qProb5 = Item(
+      blockId: mathBlock.id,
+      type: ItemType.question,
+      title: 'The St. Petersburg Paradox',
+      content: 'A casino offers a game: a fair coin is tossed at each stage. The pot starts at \$2 and is doubled every time a head appears. The first time a tail appears, the game ends and you win whatever is in the pot. The expected value of this game is infinite. So how much should a rational person pay to play it?',
+      metadata: dailyMeta,
+    );
+    await saveItem(qProb5);
 
     // 2. Article (Long-form)
     final articleToday = Item(
@@ -314,6 +364,19 @@ Without reflection, experience is just a series of events. With reflection, expe
   Future<void> saveWorkspace(Workspace workspace) async {
     _workspaces[workspace.id] = workspace;
     await _saveToDisk('workspaces', _workspaces.map((k, v) => MapEntry(k, v.toJson())));
+    
+    // Safety check: if there are no active workspaces left, recreate Starter Workspace
+    if (_workspaces.values.where((w) => !w.deleted).isEmpty) {
+      final defaultWorkspace = Workspace(name: 'Starter', isDefault: true, icon: '⭐');
+      _workspaces[defaultWorkspace.id] = defaultWorkspace;
+      await _saveToDisk('workspaces', _workspaces.map((k, v) => MapEntry(k, v.toJson())));
+      try {
+        await seedStarterWorkspace(defaultWorkspace);
+      } catch (e, stack) {
+        print('Starter workspace seed failed: $e');
+        print(stack);
+      }
+    }
   }
 
   // ── Appearance ──────────────────────────────────────────────────────────────

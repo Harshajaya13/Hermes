@@ -8,15 +8,12 @@ import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
 import '../reader/hermes_reader_screen.dart';
 import '../archive/archive_screen.dart';
-import '../evolution/veritas_timeline_screen.dart';
 import '../evolution/veritas_sheet.dart';
 import '../blocks/block_detail_screen.dart';
 import '../blocks/domain_detail_screen.dart';
-import 'package:file_picker/file_picker.dart';
 import '../blocks/create_item_sheet.dart';
 import 'workspace_security_dialogs.dart';
 import 'visibility_screen.dart';
-import 'package:intl/intl.dart';
 
 class StarterWelcomeBanner extends StatefulWidget {
   const StarterWelcomeBanner({super.key});
@@ -93,6 +90,11 @@ class _StarterWelcomeBannerState extends State<StarterWelcomeBanner> {
                       'This workspace exists to demonstrate what Hermes can do.\n\nExplore it.\nModify it.\nDelete it.\nOr archive it when you\'re ready to begin your own journey.\n\nYour journey starts when you create your own workspace.',
                       style: HermesTypography.metadata.copyWith(height: 1.6),
                     ),
+                    const SizedBox(height: HermesSpacing.sm),
+                    Text(
+                      '> Tip: Long press section titles to discover additional actions.',
+                      style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary, fontSize: 11),
+                    ),
                   ],
                 ),
               ),
@@ -143,9 +145,6 @@ class TodayScreen extends ConsumerWidget {
     
     final storage = ref.watch(storageEngineProvider);
     final veritasList = workspace != null ? storage.getVeritas(workspace.id) : <Veritas>[];
-    // Create a mutable copy to sort
-    final sortedVeritas = List<Veritas>.from(veritasList)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     
     final allDomains = ref.watch(domainsProvider);
     final pinnedDomains = allDomains.where((d) => d.pinned && !d.deleted && !d.archived).toList();
@@ -154,7 +153,6 @@ class TodayScreen extends ConsumerWidget {
     var pinnedBlocks = allBlocks.where((b) => b.pinned && !b.deleted && !b.archived).toList();
 
     // Dynamic daily item calculation based on selected format
-    final todayFormatStr = ref.watch(todaySectionFormatProvider);
     final List<MapEntry<Block, Item>> dailyItems = [];
     final sources = ref.watch(sourcesProvider);
     final Map<String, KnowledgeSource> sourceMap = { for (var s in sources) s.id: s };
@@ -278,8 +276,11 @@ class TodayScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: HermesColors.background,
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
           slivers: [
             const SliverToBoxAdapter(
               child: SizedBox(height: HermesSpacing.xl),
@@ -819,6 +820,8 @@ class TodayScreen extends ConsumerWidget {
             ),
           ],
         ),
+          ),
+        ),
       ),
     );
   }
@@ -1074,6 +1077,7 @@ class TodayScreen extends ConsumerWidget {
                             Navigator.pop(bottomSheetContext);
                           },
                         ),
+                        const SizedBox(height: 90), // Extra padding above gesture bar
                       ],
                     );
                   },

@@ -262,7 +262,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                             (context, index) {
                               final domain = archivedDomains[index];
                               return ListTile(
-                                leading: const Icon(Icons.folder, color: HermesColors.textTertiary),
+                                leading: Container(width: 10, height: 10, decoration: const BoxDecoration(color: HermesColors.textTertiary, shape: BoxShape.circle)),
                                 title: Text(domain.name, style: HermesTypography.body),
                                 trailing: IconButton(
                                   icon: const Icon(Icons.more_vert, color: HermesColors.textTertiary),
