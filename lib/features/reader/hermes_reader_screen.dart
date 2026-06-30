@@ -1288,15 +1288,53 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   }
 
   Widget _buildObservationWorkflow() {
+    final storage = ref.read(storageEngineProvider);
+    final currentItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final reasoning = currentItem.metadata?['reasoning'] as String?;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildWorkflowHeader('Synthesis'),
         
-        // Why worth recording
-        _buildWorkflowAction('Why worth recording', Icons.help_outline_rounded, onTap: () {
-          _showObservationReasoningSheet();
-        }),
+        if (reasoning != null && reasoning.isNotEmpty) ...[
+          InkWell(
+            onTap: _showObservationReasoningSheet,
+            borderRadius: BorderRadius.circular(HermesRadius.md),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(HermesSpacing.md),
+              decoration: BoxDecoration(
+                color: HermesColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(HermesRadius.md),
+                border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.help_outline_rounded, size: 16, color: HermesColors.textTertiary),
+                      const SizedBox(width: HermesSpacing.sm),
+                      Text('Reasoning', style: HermesTypography.metadata),
+                    ],
+                  ),
+                  const SizedBox(height: HermesSpacing.sm),
+                  Text(
+                    reasoning,
+                    style: HermesTypography.bodySmall.copyWith(color: HermesColors.textSecondary),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: HermesSpacing.md),
+        ] else
+          _buildWorkflowAction('Why worth recording', Icons.help_outline_rounded, onTap: () {
+            _showObservationReasoningSheet();
+          }),
 
         _buildConnectionsSection(),
 
@@ -1651,7 +1689,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
           ),
           const SizedBox(height: HermesSpacing.sm),
           Text(
-            'What did you learn? Where was your reasoning wrong?',
+            'What did you learn from this? How can you apply it?',
             style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6),
           ),
           const SizedBox(height: HermesSpacing.lg),

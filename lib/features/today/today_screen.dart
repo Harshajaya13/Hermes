@@ -149,10 +149,10 @@ class TodayScreen extends ConsumerWidget {
     final veritasList = workspace != null ? storage.getVeritas(workspace.id) : <Veritas>[];
     
     final allDomains = ref.watch(domainsProvider);
-    final pinnedDomains = allDomains.where((d) => d.pinned && !d.deleted && !d.archived).toList();
+    final pinnedDomains = allDomains.where((d) => d.pinned && !d.deleted && !d.archived).take(2).toList();
     
     final allBlocks = ref.watch(allBlocksProvider);
-    var pinnedBlocks = allBlocks.where((b) => b.pinned && !b.deleted && !b.archived).toList();
+    var pinnedBlocks = allBlocks.where((b) => b.pinned && !b.deleted && !b.archived).take(4).toList();
 
     // Dynamic daily item calculation based on selected format
     final List<MapEntry<Block, Item>> dailyItems = [];
