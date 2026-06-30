@@ -16,32 +16,44 @@ import '../theme/hermes_theme.dart';
 class HermesSectionHeader extends StatelessWidget {
   final String title;
   final Widget? trailing;
-  final VoidCallback? onLongPress;
+  final VoidCallback? onAction;
 
   const HermesSectionHeader({
     super.key,
     required this.title,
     this.trailing,
-    this.onLongPress,
+    this.onAction,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: HermesSpacing.sm),
-      child: GestureDetector(
-        onLongPress: onLongPress,
-        behavior: HitTestBehavior.opaque,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title.toUpperCase(),
-              style: HermesTypography.sectionTitle,
-            ),
-            if (trailing != null) trailing!,
-          ],
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title.toUpperCase(),
+                style: HermesTypography.sectionTitle,
+              ),
+              if (onAction != null) ...[
+                const SizedBox(width: HermesSpacing.xs),
+                InkWell(
+                  onTap: onAction,
+                  borderRadius: BorderRadius.circular(HermesRadius.sm),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Icon(Icons.more_vert_rounded, size: 16, color: HermesColors.textTertiary),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (trailing != null) trailing!,
+        ],
       ),
     );
   }

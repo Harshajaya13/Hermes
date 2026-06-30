@@ -93,7 +93,7 @@ class _StarterWelcomeBannerState extends State<StarterWelcomeBanner> {
                     ),
                     const SizedBox(height: HermesSpacing.sm),
                     Text(
-                      '> Tip: Long press section titles to discover additional actions.',
+                      '> Tip: Tap the ⋮ menu on section titles to discover additional actions.',
                       style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary, fontSize: 11),
                     ),
                   ],
@@ -391,7 +391,7 @@ class TodayScreen extends ConsumerWidget {
                       children: [
                         HermesSectionHeader(
                           title: "Today's Pursuit",
-                          onLongPress: () {
+                          onAction: () {
                             showSectionOptions('question', "Today's Pursuit");
                           },
                         ),
@@ -402,7 +402,7 @@ class TodayScreen extends ConsumerWidget {
                             onTap: () {},
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: HermesSpacing.lg),
-                              child: Center(child: Text('No goals for today.\nLong press section title to add one.', textAlign: TextAlign.center, style: HermesTypography.metadata)),
+                              child: Center(child: Text('No goals for today.\nTap the ⋮ menu on the section title to add one.', textAlign: TextAlign.center, style: HermesTypography.metadata)),
                             ),
                           )
                         else
@@ -553,7 +553,7 @@ class TodayScreen extends ConsumerWidget {
                       children: [
                         HermesSectionHeader(
                           title: 'Pinned Domains',
-                          onLongPress: () => showSectionOptions('pinned_domains', 'Pinned Domains'),
+                          onAction: () => showSectionOptions('pinned_domains', 'Pinned Domains'),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
                         Wrap(
@@ -619,7 +619,7 @@ class TodayScreen extends ConsumerWidget {
                       children: [
                         HermesSectionHeader(
                           title: 'Pinned Blocks',
-                          onLongPress: () => showSectionOptions('pinned', 'Pinned Blocks'),
+                          onAction: () => showSectionOptions('pinned', 'Pinned Blocks'),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
                         Wrap(
@@ -685,7 +685,7 @@ class TodayScreen extends ConsumerWidget {
                       children: [
                         HermesSectionHeader(
                           title: "Recent Evolutios",
-                          onLongPress: () => showSectionOptions('evolutios', "Recent Evolutios"),
+                          onAction: () => showSectionOptions('evolutios', "Recent Evolutios"),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
                         if (recentEvolutios.isEmpty)
@@ -776,7 +776,7 @@ class TodayScreen extends ConsumerWidget {
                       children: [
                         HermesSectionHeader(
                           title: 'Veritas',
-                          onLongPress: () => showSectionOptions('veritas', 'Veritas'),
+                          onAction: () => showSectionOptions('veritas', 'Veritas'),
                         ),
                         const SizedBox(height: HermesSpacing.xs),
                         HermesCard(
