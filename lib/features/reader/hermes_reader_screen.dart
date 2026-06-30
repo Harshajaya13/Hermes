@@ -33,11 +33,33 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   double _lineHeightMultiplier = 1.0;
   double _readingWidth = 680.0;
   double _focusLevel = 0; // 0: Off, 1: Low, 2: Medium, 3: High
+  String? _reflectionId;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final storage = ref.read(storageEngineProvider);
+      final existing = storage.getAllReflections().where((r) => r.itemId == widget.item.id).firstOrNull;
+      if (existing != null) {
+        _reflectionId = existing.id;
+        _reflectionController.text = existing.content;
+      }
+      _reflectionController.addListener(_autoSaveReflection);
+    });
+  }
+
+  void _autoSaveReflection() {
+    final storage = ref.read(storageEngineProvider);
+    final reflection = Reflection(
+      id: _reflectionId,
+      itemId: widget.item.id,
+      content: _reflectionController.text.trim(),
+    );
+    _reflectionId = reflection.id;
+    storage.saveReflection(reflection);
   }
 
   void _onScroll() {
@@ -206,10 +228,13 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   void _recordEvolutio(bool didChange, {String? customText}) async {
     final storage = ref.read(storageEngineProvider);
     
+    final content = customText ?? _reflectionController.text.trim();
     final reflection = Reflection(
+      id: _reflectionId,
       itemId: widget.item.id,
-      content: customText ?? _reflectionController.text.trim(),
+      content: content,
     );
+    _reflectionId = reflection.id;
     await storage.saveReflection(reflection);
 
     if (didChange) {
@@ -611,16 +636,27 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     );
   }
 
+  void _handleWorkflowAction(String action) {
+    final terminalActions = ['Archive', 'Save Reflection', 'Complete', 'Convert to Idea', 'Convert to Reflection', 'Promote to Project'];
+    if (terminalActions.contains(action)) {
+      _recordEvolutio(false, customText: 'Completed via: $action');
+    } else if (action == 'Create Evolutio') {
+      _recordEvolutio(true, customText: 'Fundamental cognitive shift recorded.');
+    } else {
+      HermesToast.show(context, '$action workflow opens in next update.');
+    }
+  }
+
   Widget _buildNoteWorkflow() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildWorkflowHeader('Connections'),
-        _buildWorkflowAction('Related Notes', Icons.account_tree_outlined),
-        _buildWorkflowAction('Keywords', Icons.tag_rounded),
-        _buildWorkflowAction('Backlinks', Icons.link_rounded),
-        _buildWorkflowAction('Last Edited', Icons.history_rounded),
-        _buildWorkflowAction('History', Icons.manage_history_rounded),
+        _buildWorkflowAction('Related Notes', Icons.account_tree_outlined, onTap: () => _handleWorkflowAction('Related Notes')),
+        _buildWorkflowAction('Keywords', Icons.tag_rounded, onTap: () => _handleWorkflowAction('Keywords')),
+        _buildWorkflowAction('Backlinks', Icons.link_rounded, onTap: () => _handleWorkflowAction('Backlinks')),
+        _buildWorkflowAction('Last Edited', Icons.history_rounded, onTap: () => _handleWorkflowAction('Last Edited')),
+        _buildWorkflowAction('History', Icons.manage_history_rounded, onTap: () => _handleWorkflowAction('History')),
       ],
     );
   }
@@ -630,11 +666,11 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildWorkflowHeader('Evolution'),
-        _buildWorkflowAction('Expand this idea', Icons.open_in_full_rounded, color: HermesColors.accent),
-        _buildWorkflowAction('Potential applications', Icons.api_rounded),
-        _buildWorkflowAction('Connect to another Block', Icons.link_rounded),
-        _buildWorkflowAction('Promote to Project', Icons.rocket_launch_outlined, color: HermesColors.evolutioGlow),
-        _buildWorkflowAction('Archive', Icons.archive_outlined),
+        _buildWorkflowAction('Expand this idea', Icons.open_in_full_rounded, color: HermesColors.accent, onTap: () => _handleWorkflowAction('Expand this idea')),
+        _buildWorkflowAction('Potential applications', Icons.api_rounded, onTap: () => _handleWorkflowAction('Potential applications')),
+        _buildWorkflowAction('Connect to another Block', Icons.link_rounded, onTap: () => _handleWorkflowAction('Connect to another Block')),
+        _buildWorkflowAction('Promote to Project', Icons.rocket_launch_outlined, color: HermesColors.evolutioGlow, onTap: () => _handleWorkflowAction('Promote to Project')),
+        _buildWorkflowAction('Archive', Icons.archive_outlined, onTap: () => _handleWorkflowAction('Archive')),
       ],
     );
   }
@@ -644,10 +680,10 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildWorkflowHeader('Synthesis'),
-        _buildWorkflowAction('Why was this worth recording?', Icons.help_outline_rounded),
-        _buildWorkflowAction('Did this observation lead to a pattern?', Icons.pattern_rounded),
-        _buildWorkflowAction('Convert to Reflection', Icons.edit_note_rounded, color: HermesColors.reflectionColor),
-        _buildWorkflowAction('Convert to Idea', Icons.lightbulb_outline_rounded, color: HermesColors.accent),
+        _buildWorkflowAction('Why was this worth recording?', Icons.help_outline_rounded, onTap: () => _handleWorkflowAction('Why was this worth recording?')),
+        _buildWorkflowAction('Did this observation lead to a pattern?', Icons.pattern_rounded, onTap: () => _handleWorkflowAction('Did this observation lead to a pattern?')),
+        _buildWorkflowAction('Convert to Reflection', Icons.edit_note_rounded, color: HermesColors.reflectionColor, onTap: () => _handleWorkflowAction('Convert to Reflection')),
+        _buildWorkflowAction('Convert to Idea', Icons.lightbulb_outline_rounded, color: HermesColors.accent, onTap: () => _handleWorkflowAction('Convert to Idea')),
       ],
     );
   }
@@ -659,8 +695,8 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
         _buildWorkflowHeader('Evolutio'),
         Text('Does this represent a fundamental shift in your thinking?', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6)),
         const SizedBox(height: HermesSpacing.lg),
-        _buildWorkflowAction('Create Evolutio', Icons.auto_awesome_rounded, color: HermesColors.evolutioGlow),
-        _buildWorkflowAction('Save Reflection', Icons.save_rounded),
+        _buildWorkflowAction('Create Evolutio', Icons.auto_awesome_rounded, color: HermesColors.evolutioGlow, onTap: () => _handleWorkflowAction('Create Evolutio')),
+        _buildWorkflowAction('Save Reflection', Icons.save_rounded, onTap: () => _handleWorkflowAction('Save Reflection')),
       ],
     );
   }
@@ -670,11 +706,11 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildWorkflowHeader('Resolution'),
-        _buildWorkflowAction('Reveal Answer', Icons.visibility_outlined, color: HermesColors.accent),
-        _buildWorkflowAction('Compare', Icons.compare_arrows_rounded),
-        _buildWorkflowAction('Self Score', Icons.score_rounded),
-        _buildWorkflowAction('Reflection', Icons.edit_note_rounded),
-        _buildWorkflowAction('Complete', Icons.check_circle_outline_rounded, color: HermesColors.veritasColor),
+        _buildWorkflowAction('Reveal Answer', Icons.visibility_outlined, color: HermesColors.accent, onTap: () => _handleWorkflowAction('Reveal Answer')),
+        _buildWorkflowAction('Compare', Icons.compare_arrows_rounded, onTap: () => _handleWorkflowAction('Compare')),
+        _buildWorkflowAction('Self Score', Icons.score_rounded, onTap: () => _handleWorkflowAction('Self Score')),
+        _buildWorkflowAction('Reflection', Icons.edit_note_rounded, onTap: () => _handleWorkflowAction('Reflection')),
+        _buildWorkflowAction('Complete', Icons.check_circle_outline_rounded, color: HermesColors.veritasColor, onTap: () => _handleWorkflowAction('Complete')),
       ],
     );
   }
