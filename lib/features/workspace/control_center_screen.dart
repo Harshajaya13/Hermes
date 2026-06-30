@@ -369,47 +369,61 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
       child: Column(
         children: [
           _buildSettingsTile(
-            icon: Icons.info_outline, 
-            title: 'Version', 
-            subtitle: '3.0.0 (Constellation)', 
+            icon: Icons.rocket_launch_outlined, 
+            title: 'About Hermes', 
+            subtitle: 'The philosophy and purpose', 
             onTap: () {
               showDialog(
                 context: context,
                 builder: (_) => AlertDialog(
                   backgroundColor: HermesColors.surfaceElevated,
-                  title: Text('Hermes Version', style: HermesTypography.sectionTitle),
-                  content: Text('Version 3.0.0 (Constellation)\n\nA Personal Development Operating System built for deliberate growth.', style: HermesTypography.body),
-                ),
-              );
-            }
-          ),
-          _buildSettingsTile(
-            icon: Icons.gavel_rounded, 
-            title: 'License', 
-            subtitle: 'FOSS (MIT)', 
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  backgroundColor: HermesColors.surfaceElevated,
-                  title: Text('MIT License', style: HermesTypography.sectionTitle),
+                  title: Text('About Hermes', style: HermesTypography.sectionTitle),
                   content: SingleChildScrollView(
-                    child: Text('Copyright (c) 2026 Hermes\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software...', style: HermesTypography.bodySmall),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('What is Hermes?', style: HermesTypography.itemTitle),
+                        const SizedBox(height: 4),
+                        Text('A Personal Development Operating System built for deliberate growth.', style: HermesTypography.bodySmall),
+                        const SizedBox(height: 16),
+                        
+                        Text('Why it exists', style: HermesTypography.itemTitle),
+                        const SizedBox(height: 4),
+                        Text('Because completion is not understanding. Hermes exists to preserve the moments in which knowledge changes the person who possesses it.', style: HermesTypography.bodySmall),
+                        const SizedBox(height: 16),
+                        
+                        Text('The Growth Model', style: HermesTypography.itemTitle),
+                        const SizedBox(height: 4),
+                        Text('Experience → Reflection → Insight → Evolutio → Evolution', style: HermesTypography.bodySmall.copyWith(color: HermesColors.evolutioGlow, fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 16),
+                        
+                        Text('Veritas', style: HermesTypography.itemTitle),
+                        const SizedBox(height: 4),
+                        Text('The Latin word for truth. Guilt-driven productivity fails. Veritas is the mechanism for recording reality without judgment when life interrupts your pursuits.', style: HermesTypography.bodySmall),
+                        const SizedBox(height: 16),
+                        
+                        Text('Evolutio', style: HermesTypography.itemTitle),
+                        const SizedBox(height: 4),
+                        Text('The atomic unit of growth. A documented, permanent cognitive shift. We measure changed thinking, not completed tasks.', style: HermesTypography.bodySmall),
+                        const SizedBox(height: 16),
+                        
+                        Text('Offline-First Philosophy', style: HermesTypography.itemTitle),
+                        const SizedBox(height: 4),
+                        Text('Personal knowledge is the most intimate data you possess. Hermes uses local databases and plain Markdown so you physically own your thinking forever.', style: HermesTypography.bodySmall),
+                        const SizedBox(height: 16),
+                        
+                        Text('The Architect & Code', style: HermesTypography.itemTitle),
+                        const SizedBox(height: 4),
+                        Text('Built intentionally by Harshajaya13.\ngithub.com/Harshajaya13/Hermes', style: HermesTypography.bodySmall),
+                        const SizedBox(height: 16),
+                        
+                        Text('Version & License', style: HermesTypography.itemTitle),
+                        const SizedBox(height: 4),
+                        Text('v3.0.0 (Constellation) | MIT License FOSS', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary)),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }
-          ),
-          _buildSettingsTile(
-            icon: Icons.menu_book_rounded, 
-            title: 'Hermes Codex', 
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  backgroundColor: HermesColors.surfaceElevated,
-                  title: Text('The Codex', style: HermesTypography.sectionTitle),
-                  content: Text('1. Intentionality\n2. Attention Respect\n3. Local Sovereignty\n4. Non-Judgmental Ownership\n5. Anti-Guilt Reflection\n6. Performance as a Feature\n7. Friction Reduction\n8. Evolution Over Completion', style: HermesTypography.body),
                 ),
               );
             }
@@ -423,21 +437,7 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
                 builder: (_) => AlertDialog(
                   backgroundColor: HermesColors.surfaceElevated,
                   title: Text('v3.0 Constellation', style: HermesTypography.sectionTitle),
-                  content: Text('• Introduced Native .hitem OS Sharing\n• Refined Hermes Reader Engine\n• Rewritten permanent Manifesto\n• Upgraded codebase to modern standards', style: HermesTypography.body),
-                ),
-              );
-            }
-          ),
-          _buildSettingsTile(
-            icon: Icons.group_outlined, 
-            title: 'Contributors', 
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  backgroundColor: HermesColors.surfaceElevated,
-                  title: Text('The Architects', style: HermesTypography.sectionTitle),
-                  content: Text('Built with deep intention by the Hermes Community.', style: HermesTypography.body),
+                  content: Text('• Native .hitem OS Sharing\n• Finalized Reader Engine\n• Rewritten Founding Manifesto\n• Upgraded to OLED Themes', style: HermesTypography.body),
                 ),
               );
             }

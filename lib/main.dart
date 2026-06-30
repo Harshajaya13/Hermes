@@ -59,6 +59,16 @@ class HermesApp extends ConsumerWidget {
       title: 'Hermes',
       debugShowCheckedModeBanner: false,
       theme: buildHermesTheme(appearance),
+      builder: (context, child) {
+        final textScale = appearance.fontSize == 'Large' ? 1.15 : (appearance.fontSize == 'Small' ? 0.85 : 1.0);
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+            disableAnimations: appearance.reducedMotion, // Helps with system animations if supported
+          ),
+          child: child!,
+        );
+      },
       home: const HermesShell(),
     );
   }
