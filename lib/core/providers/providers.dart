@@ -80,7 +80,9 @@ final sourcesProvider = Provider<List<KnowledgeSource>>((ref) {
 
 final allEvolutiosProvider = Provider<List<Evolutio>>((ref) {
   final storage = ref.watch(storageEngineProvider);
-  return storage.getEvolutios();
+  final allBlocks = ref.watch(allBlocksProvider);
+  final blockIds = allBlocks.map((b) => b.id).toSet();
+  return storage.getEvolutios().where((e) => blockIds.contains(e.blockId)).toList();
 });
 
 final recentEvolutiosProvider = Provider<List<Evolutio>>((ref) {

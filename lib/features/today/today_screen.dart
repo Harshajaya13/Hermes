@@ -15,6 +15,7 @@ import '../blocks/domain_detail_screen.dart';
 import '../blocks/create_item_sheet.dart';
 import 'workspace_security_dialogs.dart';
 import 'visibility_screen.dart';
+import '../../main.dart';
 
 class StarterWelcomeBanner extends StatefulWidget {
   const StarterWelcomeBanner({super.key});
@@ -175,7 +176,7 @@ class TodayScreen extends ConsumerWidget {
         // Stably sort them so the same items appear until solved
         unsolvedItems.sort((a, b) => a.id.compareTo(b.id));
         
-        // Enforce the Daily Limit from the KnowledgeSource!
+        // Enforce the Daily Limit from the KnowledgeSource, and allow manual daily goals!
         for (final item in unsolvedItems) {
           if (item.sourceId != null) {
             final source = sourceMap[item.sourceId];
@@ -187,16 +188,49 @@ class TodayScreen extends ConsumerWidget {
                 dailyItems.add(MapEntry(block, item));
               }
             }
-          } else if (item.metadata?['isManualDailyGoal'] == true) {
-             // If a user manually added a goal, explicitly include it.
-             dailyItems.add(MapEntry(block, item));
           } else {
-             // For legacy items without a sourceId but with isDailyGoal=true,
-             // these are old imports before the Data Pipeline v2.0 was built.
-             // We drop them.
+            // Manual goals that the user explicitly added to Today's Pursuit
+            dailyItems.add(MapEntry(block, item));
           }
         }
       }
+      
+      // Handle Daily Cycling: Stamp today's date, or expire if from yesterday.
+      final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+      final validDailyItems = <MapEntry<Block, Item>>[];
+      
+      for (final entry in dailyItems) {
+        final item = entry.value;
+        final surfacedDate = item.metadata?['surfacedDate'];
+        
+        if (surfacedDate == null) {
+          // Stamp it with today's date so it stays for today
+          final updatedMeta = Map<String, dynamic>.from(item.metadata ?? {});
+          updatedMeta['surfacedDate'] = todayStr;
+          final updatedItem = item.copyWith(metadata: updatedMeta);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(storageEngineProvider).saveItem(updatedItem);
+          });
+          validDailyItems.add(entry);
+        } else if (surfacedDate != todayStr) {
+          // Expire it! Remove daily goal status so it moves to blocks.
+          final updatedMeta = Map<String, dynamic>.from(item.metadata ?? {});
+          updatedMeta.remove('isDailyGoal');
+          updatedMeta.remove('surfacedDate');
+          final updatedItem = item.copyWith(metadata: updatedMeta);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(storageEngineProvider).saveItem(updatedItem);
+          });
+          // Do NOT add to validDailyItems, let it be replaced by the next item in the pipeline.
+        } else {
+          // Valid for today
+          validDailyItems.add(entry);
+        }
+      }
+      
+      dailyItems.clear();
+      dailyItems.addAll(validDailyItems);
+
       // Sort by newest first
       dailyItems.sort((a, b) => b.value.createdAt.compareTo(a.value.createdAt));
       

@@ -9,6 +9,9 @@ import 'workspace_management_dialogs.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../pipeline/pipeline.dart';
 import 'package_screens.dart';
+import '../today/workspace_security_dialogs.dart';
+import '../../main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ControlCenterScreen extends ConsumerStatefulWidget {
   const ControlCenterScreen({super.key});
@@ -54,6 +57,10 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
               
               _buildSectionHeader('Appearance'),
               _buildAppearanceSection(context, ref),
+              const SizedBox(height: HermesSpacing.xxl),
+              
+              _buildSectionHeader('Danger Zone'),
+              if (workspace != null) _buildDangerZoneSection(context, ref, workspace),
               const SizedBox(height: HermesSpacing.xxl),
               
               _buildSectionHeader('About'),
@@ -361,6 +368,87 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
             const SizedBox(height: HermesSpacing.md),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDangerZoneSection(BuildContext context, WidgetRef ref, Workspace workspace) {
+    return HermesCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          _buildSettingsTile(
+            icon: Icons.warning_amber_rounded,
+            title: 'Reset Workspace',
+            subtitle: 'Permanently delete all data and recreate Starter.',
+            textColor: Colors.redAccent,
+            iconColor: Colors.redAccent,
+            onTap: () {
+              final hasPin = workspace.pin != null && workspace.pin!.isNotEmpty;
+              if (hasPin) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => VerifyPinDialog(
+                    onSuccess: () => _confirmAndResetWorkspace(context, ref, workspace),
+                  ),
+                );
+              } else {
+                _confirmAndResetWorkspace(context, ref, workspace);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmAndResetWorkspace(BuildContext context, WidgetRef ref, Workspace workspace) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: HermesColors.surfaceElevated,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HermesRadius.lg)),
+        title: Text('Reset Workspace', style: HermesTypography.sectionTitle.copyWith(color: Colors.redAccent)),
+        content: Text(
+          'This will permanently delete all domains, blocks, items, and evolutios in this workspace.\n\nThe Starter Workspace will be recreated automatically.\n\nAre you absolutely sure?',
+          style: HermesTypography.body,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final engine = ref.read(storageEngineProvider);
+              await engine.resetWorkspace(workspace.id);
+              
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('welcome_dismissed', false);
+              
+              ref.invalidate(currentWorkspaceProvider);
+              ref.invalidate(domainsProvider);
+              ref.invalidate(allBlocksProvider);
+              ref.invalidate(allEvolutiosProvider);
+              
+              if (context.mounted) {
+                HermesToast.show(context, 'Workspace reset to Starter content.');
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HermesShell()),
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text('Reset Workspace'),
+          ),
+        ],
       ),
     );
   }

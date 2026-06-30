@@ -79,174 +79,59 @@ class LocalStorageEngine {
     await saveBlock(decisionBlock);
     await saveBlock(stoicismBlock);
 
+    final showcaseBlock = Block(domainId: lifeDomain.id, name: 'Hermes Showcase', icon: '✨', colorHex: '#F2C94C', pinned: true);
+    await saveBlock(showcaseBlock);
+
     // ── TODAY'S PURSUIT ITEMS (Living Showroom) ────────────────
     
-    final dailyMeta = {'isDailyGoal': true, 'isManualDailyGoal': true};
+    final dailyMeta = {'isDailyGoal': true};
 
-    // 1. Question (Probability - Monty Hall)
-    final qProb1 = Item(
-      blockId: mathBlock.id,
+    // ── SHOWCASE BLOCK (All 5 Types) ─────────────────────────
+
+    final showcaseQuestion = Item(
+      blockId: showcaseBlock.id,
       type: ItemType.question,
-      title: 'The Monty Hall Problem (N doors variant)',
-      content: 'If there are N doors, and you pick 1, and Monty opens N-2 doors with goats, what is the exact probability of winning if you switch? How does the math scale as N approaches infinity?',
+      title: 'The Turing Test',
+      content: 'If a machine can converse in a way that is indistinguishable from a human, does it mean the machine is actually thinking? Why did Alan Turing choose imitation as the benchmark for intelligence?',
       metadata: dailyMeta,
     );
-    await saveItem(qProb1);
+    await saveItem(showcaseQuestion);
 
-    // Question (Probability - Boy or Girl Paradox)
-    final qProb2 = Item(
-      blockId: mathBlock.id,
-      type: ItemType.question,
-      title: 'The Boy or Girl Paradox',
-      content: 'A family has two children. You are told that at least one of them is a boy. What is the probability that both children are boys? Why is the answer 1/3 and not 1/2, and how does the sample space change if you are told the *older* child is a boy?',
-      metadata: dailyMeta,
-    );
-    await saveItem(qProb2);
-
-    // Question (Probability - Base Rate Fallacy)
-    final qProb3 = Item(
-      blockId: mathBlock.id,
-      type: ItemType.question,
-      title: 'Base Rate Fallacy in Medical Testing',
-      content: 'A disease affects 1 in 10,000 people. A test for it is 99% accurate (1% false positive, 1% false negative). If you test positive, what is the actual probability you have the disease? How do I use Bayes\' Theorem to build an intuition for this?',
-      metadata: dailyMeta,
-    );
-    await saveItem(qProb3);
-
-    // Question (Probability - Birthday Paradox)
-    final qProb4 = Item(
-      blockId: mathBlock.id,
-      type: ItemType.question,
-      title: 'The Birthday Paradox',
-      content: 'How many people do you need in a room to have a 50% chance that two of them share the same birthday? Why does the human brain so dramatically underestimate this probability, and what is the mathematical formula to calculate it?',
-      metadata: dailyMeta,
-    );
-    await saveItem(qProb4);
-
-    // Question (Probability - St. Petersburg Paradox)
-    final qProb5 = Item(
-      blockId: mathBlock.id,
-      type: ItemType.question,
-      title: 'The St. Petersburg Paradox',
-      content: 'A casino offers a game: a fair coin is tossed at each stage. The pot starts at \$2 and is doubled every time a head appears. The first time a tail appears, the game ends and you win whatever is in the pot. The expected value of this game is infinite. So how much should a rational person pay to play it?',
-      metadata: dailyMeta,
-    );
-    await saveItem(qProb5);
-
-    // 2. Article (Long-form)
-    final articleToday = Item(
-      blockId: modelsBlock.id,
+    final showcaseArticle = Item(
+      blockId: showcaseBlock.id,
       type: ItemType.article,
-      title: 'The Psychology of Deep Work',
-      content: '''# The Psychology of Deep Work
-
-Deep work is the ability to focus without distraction on a cognitively demanding task. It's a skill that allows you to quickly master complicated information and produce better results in less time.
-
-![Deep Work Space](https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=800&q=80)
-
-## The Attention Economy
-
-We live in a world where distraction is the default. Notifications, endless feeds, and shallow work consume our cognitive resources.
-
-> "To produce at your peak level you need to work for extended periods with full concentration on a single task free from distraction."
-> — Cal Newport
-
-## Attention Residue
-
-When you switch from Task A to Task B, your attention doesn't immediately follow. A residue of your attention remains stuck thinking about the original task. This is why checking email for "just one minute" during a coding session destroys your productivity for the next twenty minutes.
-
-### The Rules of Deep Work
-
-1. **Work Deeply**: Institutionalize the habit. Build a physical and temporal space where focus is sacred.
-2. **Embrace Boredom**: If you train your brain to seek novel stimuli whenever you're bored (e.g., waiting in line and pulling out your phone), you lose the ability to sustain focus when work gets hard.
-3. **Quit Social Media**: Evaluate tools based on whether they substantially help you achieve your core goals.
-4. **Drain the Shallows**: Schedule every minute of your day to ruthlessly eliminate shallow, low-value work.
-
-## Conclusion
-
-Deep work is not a luxury; it is a necessity for anyone looking to build meaningful things in the modern economy. It requires deliberate practice and a rejection of the superficial.
-''',
+      title: 'The Philosophy of Hermes',
+      content: 'Hermes is designed to be a quiet place for your mind. It does not want to trap your attention. It wants you to capture a thought, distill it into knowledge, and close the app.',
       metadata: dailyMeta,
     );
-    await saveItem(articleToday);
+    await saveItem(showcaseArticle);
 
-    // 3. Meaningful Note
-    final noteToday = Item(
-      blockId: mathBlock.id,
-      type: ItemType.note,
-      title: 'Comprehensive Markdown Demo',
-      content: '''# Comprehensive Markdown Demo
-
-This note intentionally demonstrates the styling capabilities of Hermes.
-
-## Headings and Hierarchy
-You can structure your thoughts with multiple levels of headings.
-
-### Lists and Organization
-- Bullet point 1
-- Bullet point 2
-  - Nested point
-
-1. Numbered item 1
-2. Numbered item 2
-
-## Code Blocks
-Here is a demonstration of code highlighting:
-```python
-def fibonacci(n):
-    if n <= 1:
-        return n
-    return fibonacci(n-1) + fibonacci(n-2)
-```
-
-## Images and Visuals
-Images can be embedded natively:
-![Beautiful Architecture](https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=800&q=80)
-
-## Mathematics (LaTeX)
-Hermes also renders mathematics seamlessly:
-\$\$ E = mc^2 \$\$
-''',
-      metadata: dailyMeta,
-    );
-    
-    // Add Bidirectional Connections and Keywords
-    final articleMeta = Map<String, dynamic>.from(dailyMeta);
-    articleMeta['keywords'] = ['focus', 'deep work'];
-    articleMeta['connections'] = [
-      {'itemId': noteToday.id, 'note': 'Demonstrates the styling capabilities used in this article.', 'createdAt': DateTime.now().toIso8601String()}
-    ];
-    final articleWithMeta = articleToday.copyWith(metadata: articleMeta);
-    
-    final noteMeta = Map<String, dynamic>.from(dailyMeta);
-    noteMeta['keywords'] = ['markdown', 'demo', 'learning'];
-    noteMeta['connections'] = [
-      {'itemId': articleToday.id, 'note': 'This article uses markdown.', 'createdAt': DateTime.now().toIso8601String()}
-    ];
-    final noteWithMeta = noteToday.copyWith(metadata: noteMeta);
-
-    await saveItem(articleWithMeta);
-    await saveItem(noteWithMeta);
-
-    // 4. Observation
-    final obsToday = Item(
-      blockId: stoicismBlock.id,
-      type: ItemType.observation,
-      title: 'The cost of comparison',
-      content: 'I noticed that whenever I browse social media before working, my baseline level of satisfaction drops and my work feels less meaningful. Comparison isn\'t just the thief of joy; it\'s the thief of focus.',
-      metadata: dailyMeta,
-    );
-    await saveItem(obsToday);
-
-    // 5. Idea
-    final ideaToday = Item(
-      blockId: designBlock.id,
+    final showcaseIdea = Item(
+      blockId: showcaseBlock.id,
       type: ItemType.idea,
-      title: 'Products That Last',
-      content: 'Most apps try to keep you inside them for as long as possible. What if we designed a tool that actively tries to get you to close it and return to reality as quickly as possible?',
+      title: 'Friction as a Feature',
+      content: 'What if we deliberately added friction to note-taking? Instead of a quick capture button, you must select a Domain and Block. This forces you to categorize your thoughts and prevents a graveyard of unorganized notes.',
       metadata: dailyMeta,
     );
-    await saveItem(ideaToday);
+    await saveItem(showcaseIdea);
+
+    final showcaseObservation = Item(
+      blockId: showcaseBlock.id,
+      type: ItemType.observation,
+      title: 'Digital Hoarding',
+      content: 'I noticed that I bookmark hundreds of articles but never read them. The act of saving feels like learning, but it is just a dopamine hit. True learning requires synthesis.',
+      metadata: dailyMeta,
+    );
+    await saveItem(showcaseObservation);
+
+    final showcaseNote = Item(
+      blockId: showcaseBlock.id,
+      type: ItemType.note,
+      title: 'Knowledge vs Information',
+      content: 'Information is abundant and cheap. Knowledge is structured, contextualized information. Hermes exists to convert information into knowledge through the synthesis loop.',
+      metadata: dailyMeta,
+    );
+    await saveItem(showcaseNote);
 
     // ── GENERAL CAPABILITY DEMOS (Museum Pieces) ────────────────
 
@@ -278,7 +163,7 @@ Without reflection, experience is just a series of events. With reflection, expe
 
     // Day 1: Today (Evolutio Only - State 1)
     final day1 = DateTime.now();
-    final evo1Ref = Reflection(itemId: noteToday.id, content: 'Dummy', createdAt: day1);
+    final evo1Ref = Reflection(itemId: showcaseNote.id, content: 'Dummy', createdAt: day1);
     await saveReflection(evo1Ref);
     final evo1 = Evolutio(
       reflectionId: evo1Ref.id,
@@ -290,7 +175,7 @@ Without reflection, experience is just a series of events. With reflection, expe
 
     // Day 2: Today - 3 Days (Evolutio + Veritas - State 2)
     final day2 = DateTime.now().subtract(const Duration(days: 3));
-    final evo2Ref = Reflection(itemId: articleToday.id, content: 'Dummy', createdAt: day2);
+    final evo2Ref = Reflection(itemId: showcaseArticle.id, content: 'Dummy', createdAt: day2);
     await saveReflection(evo2Ref);
     final evo2 = Evolutio(
       reflectionId: evo2Ref.id,
@@ -369,6 +254,47 @@ Without reflection, experience is just a series of events. With reflection, expe
       _workspaces[defaultWorkspace.id] = defaultWorkspace;
       await _saveToDisk('workspaces', _workspaces.map((k, v) => MapEntry(k, v.toJson())));
       await seedStarterWorkspace(defaultWorkspace);
+    }
+  }
+
+  Future<void> resetWorkspace(String workspaceId) async {
+    // Keep the workspace itself, but clear all domains, blocks, items, evolutios
+    final domainsToRemove = getDomains(workspaceId, includeHidden: true);
+    final blocksToRemove = <Block>[];
+    for (var d in domainsToRemove) {
+      blocksToRemove.addAll(getBlocks(d.id, includeHidden: true));
+    }
+    final itemsToRemove = <Item>[];
+    for (var b in blocksToRemove) {
+      itemsToRemove.addAll(getItems(b.id));
+    }
+    
+    for (var item in itemsToRemove) {
+      _items.remove(item.id);
+    }
+    for (var block in blocksToRemove) {
+      _blocks.remove(block.id);
+    }
+    for (var domain in domainsToRemove) {
+      _domains.remove(domain.id);
+    }
+    
+    final evolutiosToRemove = <Evolutio>[];
+    for (var b in blocksToRemove) {
+      evolutiosToRemove.addAll(getEvolutiosForBlock(b.id));
+    }
+    for (var e in evolutiosToRemove) {
+      _evolutios.remove(e.id);
+    }
+    
+    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+    await _saveToDisk('blocks', _blocks.map((k, v) => MapEntry(k, v.toJson())));
+    await _saveToDisk('domains', _domains.map((k, v) => MapEntry(k, v.toJson())));
+    await _saveToDisk('evolutios', _evolutios.map((k, v) => MapEntry(k, v.toJson())));
+    
+    final workspace = _workspaces[workspaceId];
+    if (workspace != null) {
+      await seedStarterWorkspace(workspace);
     }
   }
 

@@ -230,9 +230,10 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
     final storage = ref.read(storageEngineProvider);
     final ws = Workspace(name: name);
     await storage.saveWorkspace(ws);
-    await storage.seedStarterWorkspace(ws);
     
-    ref.read(currentWorkspaceProvider.notifier).updateWorkspace(ws);
+    // We intentionally DO NOT seed the starter workspace here. 
+    // New workspaces should be completely blank.
+    // We also DO NOT auto-jump to the new workspace.
     
     if (mounted) Navigator.pop(context);
   }
@@ -250,7 +251,7 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
           children: [
             Text('Create Workspace', style: HermesTypography.sectionTitle),
             const SizedBox(height: HermesSpacing.xs),
-            Text('A new workspace will be seeded with the Hermes Starter Pack.', style: HermesTypography.metadata),
+            Text('A new blank workspace will be created.', style: HermesTypography.metadata),
             const SizedBox(height: HermesSpacing.md),
             TextField(
               controller: _controller,
