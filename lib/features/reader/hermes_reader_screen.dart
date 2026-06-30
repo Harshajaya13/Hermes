@@ -366,13 +366,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                             onPressed: _showShareOptions,
                             tooltip: 'Share',
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.search_rounded, color: HermesColors.textTertiary, size: 20),
-                            onPressed: () {
-                              // Search in article
-                            },
-                            tooltip: 'Search',
-                          ),
+
 
                           IconButton(
                             icon: const Icon(Icons.font_download_outlined, color: HermesColors.textTertiary, size: 20),

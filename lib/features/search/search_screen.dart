@@ -216,6 +216,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       );
     }
 
+    final storage = ref.read(storageEngineProvider);
+    final allBlocks = storage.getAllBlocks();
+    final allItems = storage.getAllItems();
+    final allReflections = storage.getAllReflections();
+
+    void navigateToItem(Item item) {
+      final block = allBlocks.where((b) => b.id == item.blockId).firstOrNull;
+      if (block != null) {
+        Navigator.push(context, MaterialPageRoute(
+          builder: (context) => HermesReaderScreen(item: item, block: block),
+        ));
+      }
+    }
+
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(
@@ -231,6 +245,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               subtitle: 'Question',
               icon: Icons.help_outline_rounded,
               color: HermesColors.accent,
+              onTap: () => navigateToItem(q),
             )),
             const SizedBox(height: HermesSpacing.lg),
           ],
@@ -242,6 +257,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               subtitle: 'Article',
               icon: Icons.article_outlined,
               color: HermesColors.accentWarm,
+              onTap: () => navigateToItem(a),
             )),
             const SizedBox(height: HermesSpacing.lg),
           ],
@@ -253,6 +269,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               subtitle: 'Idea',
               icon: Icons.lightbulb_outline_rounded,
               color: HermesColors.accentWarm,
+              onTap: () => navigateToItem(i),
             )),
             const SizedBox(height: HermesSpacing.lg),
           ],
@@ -264,29 +281,45 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               subtitle: 'Observation',
               icon: Icons.visibility_outlined,
               color: HermesColors.textTertiary,
+              onTap: () => navigateToItem(o),
             )),
             const SizedBox(height: HermesSpacing.lg),
           ],
 
           if (_reflectionResults.isNotEmpty) ...[
             const HermesSectionHeader(title: 'Reflections'),
-            ..._reflectionResults.map((r) => _ResultItem(
-              title: r.content,
-              subtitle: 'Reflection',
-              icon: Icons.edit_note_rounded,
-              color: HermesColors.reflectionColor,
-            )),
+            ..._reflectionResults.map((r) {
+              return _ResultItem(
+                title: r.content,
+                subtitle: 'Reflection',
+                icon: Icons.edit_note_rounded,
+                color: HermesColors.reflectionColor,
+                onTap: () {
+                  final item = allItems.where((i) => i.id == r.itemId).firstOrNull;
+                  if (item != null) navigateToItem(item);
+                },
+              );
+            }),
             const SizedBox(height: HermesSpacing.lg),
           ],
 
           if (_evolutioResults.isNotEmpty) ...[
             const HermesSectionHeader(title: 'Evolutios'),
-            ..._evolutioResults.map((e) => _ResultItem(
-              title: e.content,
-              subtitle: 'Evolutio',
-              icon: Icons.auto_awesome_outlined,
-              color: HermesColors.evolutioGlow,
-            )),
+            ..._evolutioResults.map((e) {
+              return _ResultItem(
+                title: e.content,
+                subtitle: 'Evolutio',
+                icon: Icons.auto_awesome_outlined,
+                color: HermesColors.evolutioGlow,
+                onTap: () {
+                  final reflection = allReflections.where((r) => r.id == e.reflectionId).firstOrNull;
+                  if (reflection != null) {
+                    final item = allItems.where((i) => i.id == reflection.itemId).firstOrNull;
+                    if (item != null) navigateToItem(item);
+                  }
+                },
+              );
+            }),
             const SizedBox(height: HermesSpacing.lg),
           ],
 
@@ -297,6 +330,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               subtitle: 'Block',
               icon: Icons.grid_view_rounded,
               color: HermesColors.accent,
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) => BlockDetailScreen(block: b),
+                ));
+              },
             )),
             const SizedBox(height: HermesSpacing.lg),
           ],
@@ -313,12 +351,14 @@ class _ResultItem extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final Color color;
+  final VoidCallback onTap;
 
   const _ResultItem({
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.color,
+    required this.onTap,
   });
 
   @override
@@ -326,9 +366,7 @@ class _ResultItem extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          // Future: Navigate to specific object detail screen
-        },
+        onTap: onTap,
         borderRadius: BorderRadius.circular(HermesRadius.sm),
         child: Padding(
           padding: const EdgeInsets.symmetric(

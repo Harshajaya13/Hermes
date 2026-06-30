@@ -6,6 +6,7 @@ import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
 import 'edit_identity_dialog.dart';
 import 'workspace_management_dialogs.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../pipeline/pipeline.dart';
 import 'package_screens.dart';
 
@@ -441,6 +442,17 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
                 ),
               );
             }
+          ),
+          _buildSettingsTile(
+            icon: Icons.code_rounded,
+            title: 'Developer',
+            subtitle: 'github.com/Harshajaya13',
+            onTap: () async {
+              final url = Uri.parse('https://github.com/Harshajaya13');
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url);
+              }
+            },
           ),
         ],
       ),
