@@ -1220,7 +1220,9 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   bool _solutionRevealed = false;
 
   Widget _buildQuestionWorkflow() {
-    final officialSolution = widget.item.metadata?['officialSolution'] as String? ?? '';
+    final officialSolution = widget.item.metadata?['officialSolution'] as String? ?? widget.item.metadata?['officialAnswer'] as String? ?? '';
+    final explanation = widget.item.metadata?['explanation'] as String? ?? '';
+    final hasOfficialAnswer = officialSolution.isNotEmpty;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1257,7 +1259,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             child: InkWell(
               onTap: () {
                 if (_answerController.text.trim().isNotEmpty) {
-                  setState(() => _questionStep = 1);
+                  setState(() => _questionStep = hasOfficialAnswer ? 1 : 3);
                 }
               },
               borderRadius: BorderRadius.circular(HermesRadius.md),
@@ -1268,14 +1270,14 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                   borderRadius: BorderRadius.circular(HermesRadius.md),
                   border: Border.all(color: HermesColors.border.withValues(alpha: 0.2)),
                 ),
-                child: Text('Validate Answer', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
+                child: Text(hasOfficialAnswer ? 'Validate Answer' : 'Continue to Reflection', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
               ),
             ),
           ),
         ],
         
         // Step 1: Validate — confirm you're ready to see the solution
-        if (_questionStep == 1) ...[
+        if (hasOfficialAnswer && _questionStep == 1) ...[
           Container(
             padding: const EdgeInsets.all(HermesSpacing.lg),
             decoration: BoxDecoration(
@@ -1324,7 +1326,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
         ],
         
         // Step 2: Reveal Official Solution
-        if (_questionStep == 2) ...[
+        if (hasOfficialAnswer && _questionStep == 2) ...[
           Container(
             padding: const EdgeInsets.all(HermesSpacing.lg),
             decoration: BoxDecoration(
@@ -1342,37 +1344,28 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             ),
           ),
           const SizedBox(height: HermesSpacing.xl),
-          if (officialSolution.isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(HermesSpacing.lg),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0D1117),
-                borderRadius: BorderRadius.circular(HermesRadius.md),
-                border: Border.all(color: HermesColors.accent.withValues(alpha: 0.2)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Official Solution', style: HermesTypography.metadata.copyWith(color: HermesColors.accent)),
-                  const SizedBox(height: HermesSpacing.sm),
-                  Text(officialSolution, style: HermesTypography.body.copyWith(height: 1.6)),
+          Container(
+            padding: const EdgeInsets.all(HermesSpacing.lg),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D1117),
+              borderRadius: BorderRadius.circular(HermesRadius.md),
+              border: Border.all(color: HermesColors.accent.withValues(alpha: 0.2)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Official Solution', style: HermesTypography.metadata.copyWith(color: HermesColors.accent)),
+                const SizedBox(height: HermesSpacing.sm),
+                Text(officialSolution, style: HermesTypography.body.copyWith(height: 1.6)),
+                if (explanation.isNotEmpty) ...[
+                  const SizedBox(height: HermesSpacing.lg),
+                  Text('Explanation', style: HermesTypography.metadata.copyWith(color: HermesColors.textSecondary)),
+                  const SizedBox(height: HermesSpacing.xs),
+                  Text(explanation, style: HermesTypography.body.copyWith(color: HermesColors.textTertiary, height: 1.5)),
                 ],
-              ),
+              ],
             ),
-          ] else ...[
-            Container(
-              padding: const EdgeInsets.all(HermesSpacing.lg),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0D1117),
-                borderRadius: BorderRadius.circular(HermesRadius.md),
-                border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
-              ),
-              child: Text(
-                'No official solution was provided for this question. Reflect on your own answer.',
-                style: HermesTypography.body.copyWith(color: HermesColors.textTertiary, height: 1.6),
-              ),
-            ),
-          ],
+          ),
           const SizedBox(height: HermesSpacing.xl),
           Align(
             alignment: Alignment.centerRight,

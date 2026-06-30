@@ -41,6 +41,8 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _urlController = TextEditingController();
+  final _officialAnswerController = TextEditingController();
+  final _explanationController = TextEditingController();
   late ItemType _selectedType;
   Block? _selectedBlock;
   bool _isFetching = false;
@@ -55,6 +57,12 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
       _titleController.text = widget.existingItem!.title;
       _contentController.text = widget.existingItem!.content;
       _urlController.text = widget.existingItem!.sourceUrl ?? '';
+      if (widget.existingItem!.metadata?['officialAnswer'] != null) {
+        _officialAnswerController.text = widget.existingItem!.metadata!['officialAnswer'];
+      }
+      if (widget.existingItem!.metadata?['explanation'] != null) {
+        _explanationController.text = widget.existingItem!.metadata!['explanation'];
+      }
       _selectedType = widget.existingItem!.type;
     }
   }
@@ -102,14 +110,32 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
       return;
     }
 
+    Map<String, dynamic> metadata = widget.existingItem != null ? Map<String, dynamic>.from(widget.existingItem!.metadata ?? {}) : {};
+    if (widget.isDailyGoal) {
+      metadata['isDailyGoal'] = true;
+      metadata['isManualDailyGoal'] = true;
+    }
+    
+    if (_selectedType == ItemType.question) {
+      if (_officialAnswerController.text.trim().isNotEmpty) {
+        metadata['officialAnswer'] = _officialAnswerController.text.trim();
+      } else {
+        metadata.remove('officialAnswer');
+      }
+      if (_explanationController.text.trim().isNotEmpty) {
+        metadata['explanation'] = _explanationController.text.trim();
+      } else {
+        metadata.remove('explanation');
+      }
+    }
+
     final newItem = widget.existingItem != null
         ? widget.existingItem!.copyWith(
             type: _selectedType,
             title: title,
             content: finalContent,
             sourceUrl: sourceUrl,
-            metadata: widget.isDailyGoal ? {'isDailyGoal': true, 'isManualDailyGoal': true, ...?widget.existingItem!.metadata} : widget.existingItem!.metadata,
-            // Cannot easily change blockId in copyWith currently, assuming it stays in same block if edited
+            metadata: metadata.isNotEmpty ? metadata : null,
           )
         : Item(
             blockId: _selectedBlock!.id,
@@ -117,7 +143,7 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
             title: title,
             content: finalContent,
             sourceUrl: sourceUrl,
-            metadata: widget.isDailyGoal ? {'isDailyGoal': true, 'isManualDailyGoal': true} : null,
+            metadata: metadata.isNotEmpty ? metadata : null,
           );
 
     await ref.read(storageEngineProvider).saveItem(newItem);
@@ -247,6 +273,39 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
                   enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.border)),
                   focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.accent)),
                   prefixIcon: const Icon(Icons.link, color: HermesColors.textTertiary),
+                ),
+              ),
+            ],
+            
+            if (_selectedType == ItemType.question) ...[
+              const SizedBox(height: HermesSpacing.md),
+              TextField(
+                controller: _officialAnswerController,
+                style: HermesTypography.body,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: HermesColors.surfaceElevated,
+                  hintText: 'Official Answer (optional for manual questions)',
+                  hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+                  border: UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.border)),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.border)),
+                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.accent)),
+                ),
+              ),
+              const SizedBox(height: HermesSpacing.md),
+              TextField(
+                controller: _explanationController,
+                style: HermesTypography.body,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: HermesColors.surfaceElevated,
+                  hintText: 'Explanation (optional)',
+                  hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+                  border: UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.border)),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.border)),
+                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.accent)),
                 ),
               ),
             ],
