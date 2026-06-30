@@ -4,13 +4,9 @@ import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
-import '../today/workspace_security_dialogs.dart';
-import '../today/visibility_screen.dart';
-import '../archive/archive_screen.dart';
 import 'edit_identity_dialog.dart';
 import 'workspace_management_dialogs.dart';
 import '../pipeline/pipeline.dart';
-import '../exchange/exchange_screen.dart';
 import 'package_screens.dart';
 
 class ControlCenterScreen extends ConsumerStatefulWidget {
@@ -136,7 +132,7 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
             const SizedBox(height: HermesSpacing.md),
             Row(
               children: [
-                Icon(Icons.format_quote_rounded, color: HermesColors.textTertiary.withOpacity(0.5), size: 16),
+                Icon(Icons.format_quote_rounded, color: HermesColors.textTertiary.withValues(alpha: 0.5), size: 16),
                 const SizedBox(width: HermesSpacing.sm),
                 Expanded(
                   child: Text(
@@ -372,11 +368,80 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          _buildSettingsTile(icon: Icons.info_outline, title: 'Version', subtitle: '1.0.0 (Foundation)', onTap: () {}),
-          _buildSettingsTile(icon: Icons.gavel_rounded, title: 'License', subtitle: 'FOSS (MIT)', onTap: () {}),
-          _buildSettingsTile(icon: Icons.menu_book_rounded, title: 'Hermes Codex', onTap: () {}),
-          _buildSettingsTile(icon: Icons.history_rounded, title: 'Changelog', onTap: () {}),
-          _buildSettingsTile(icon: Icons.group_outlined, title: 'Contributors', onTap: () {}),
+          _buildSettingsTile(
+            icon: Icons.info_outline, 
+            title: 'Version', 
+            subtitle: '3.0.0 (Constellation)', 
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  backgroundColor: HermesColors.surfaceElevated,
+                  title: Text('Hermes Version', style: HermesTypography.sectionTitle),
+                  content: Text('Version 3.0.0 (Constellation)\n\nA Personal Development Operating System built for deliberate growth.', style: HermesTypography.body),
+                ),
+              );
+            }
+          ),
+          _buildSettingsTile(
+            icon: Icons.gavel_rounded, 
+            title: 'License', 
+            subtitle: 'FOSS (MIT)', 
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  backgroundColor: HermesColors.surfaceElevated,
+                  title: Text('MIT License', style: HermesTypography.sectionTitle),
+                  content: SingleChildScrollView(
+                    child: Text('Copyright (c) 2026 Hermes\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software...', style: HermesTypography.bodySmall),
+                  ),
+                ),
+              );
+            }
+          ),
+          _buildSettingsTile(
+            icon: Icons.menu_book_rounded, 
+            title: 'Hermes Codex', 
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  backgroundColor: HermesColors.surfaceElevated,
+                  title: Text('The Codex', style: HermesTypography.sectionTitle),
+                  content: Text('1. Intentionality\n2. Attention Respect\n3. Local Sovereignty\n4. Non-Judgmental Ownership\n5. Anti-Guilt Reflection\n6. Performance as a Feature\n7. Friction Reduction\n8. Evolution Over Completion', style: HermesTypography.body),
+                ),
+              );
+            }
+          ),
+          _buildSettingsTile(
+            icon: Icons.history_rounded, 
+            title: 'Changelog', 
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  backgroundColor: HermesColors.surfaceElevated,
+                  title: Text('v3.0 Constellation', style: HermesTypography.sectionTitle),
+                  content: Text('• Introduced Native .hitem OS Sharing\n• Refined Hermes Reader Engine\n• Rewritten permanent Manifesto\n• Upgraded codebase to modern standards', style: HermesTypography.body),
+                ),
+              );
+            }
+          ),
+          _buildSettingsTile(
+            icon: Icons.group_outlined, 
+            title: 'Contributors', 
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  backgroundColor: HermesColors.surfaceElevated,
+                  title: Text('The Architects', style: HermesTypography.sectionTitle),
+                  content: Text('Built with deep intention by the Hermes Community.', style: HermesTypography.body),
+                ),
+              );
+            }
+          ),
         ],
       ),
     );

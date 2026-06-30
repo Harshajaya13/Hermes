@@ -282,7 +282,7 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> {
                     ListTile(
                       leading: Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: HermesColors.evolutioGlow.withOpacity(0.1), shape: BoxShape.circle),
+                        decoration: BoxDecoration(color: HermesColors.evolutioGlow.withValues(alpha: 0.1), shape: BoxShape.circle),
                         child: const Icon(Icons.upload_rounded, color: HermesColors.evolutioGlow),
                       ),
                       title: Text('Export Workspace', style: HermesTypography.body.copyWith(fontWeight: FontWeight.bold)),
@@ -294,7 +294,7 @@ class _ExchangeScreenState extends ConsumerState<ExchangeScreen> {
                     ListTile(
                       leading: Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: HermesColors.accent.withOpacity(0.1), shape: BoxShape.circle),
+                        decoration: BoxDecoration(color: HermesColors.accent.withValues(alpha: 0.1), shape: BoxShape.circle),
                         child: const Icon(Icons.download_rounded, color: HermesColors.accent),
                       ),
                       title: Text('Import Package', style: HermesTypography.body.copyWith(fontWeight: FontWeight.bold)),

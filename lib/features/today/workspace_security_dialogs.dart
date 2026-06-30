@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/hermes_theme.dart';
-import '../../core/models/workspace.dart';
 import '../../core/providers/providers.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import '../../core/engines/local_storage_engine.dart';
 
 String _hashString(String input) {
   return sha256.convert(utf8.encode(input)).toString();

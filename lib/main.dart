@@ -48,15 +48,17 @@ void main() async {
   );
 }
 
-class HermesApp extends StatelessWidget {
+class HermesApp extends ConsumerWidget {
   const HermesApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appearance = ref.watch(appearanceProvider);
+    
     return MaterialApp(
       title: 'Hermes',
       debugShowCheckedModeBanner: false,
-      theme: buildHermesTheme(),
+      theme: buildHermesTheme(appearance),
       home: const HermesShell(),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../models/models.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
 /// Hermes Design System
@@ -215,11 +216,13 @@ class HermesTypography {
 /// ThemeData Builder
 /// ─────────────────────────────────────────────────────────────────────────────
 
-ThemeData buildHermesTheme() {
+ThemeData buildHermesTheme(AppearanceSettings appearance) {
+  final bgColor = appearance.oledBlack ? const Color(0xFF000000) : const Color(0xFF121212);
+  
   return ThemeData(
     brightness: Brightness.dark,
-    scaffoldBackgroundColor: HermesColors.background,
-    canvasColor: HermesColors.background,
+    scaffoldBackgroundColor: bgColor,
+    canvasColor: bgColor,
     primaryColor: HermesColors.accent,
     colorScheme: const ColorScheme.dark(
       primary: HermesColors.accent,
