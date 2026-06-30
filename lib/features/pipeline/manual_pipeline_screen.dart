@@ -143,6 +143,11 @@ class ManualPipelineScreen extends ConsumerWidget {
                       } else if (val == 'delete') {
                         await ref.read(storageEngineProvider).deleteSource(source.id);
                         ref.invalidate(sourcesProvider);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Source deleted.'), backgroundColor: HermesColors.error),
+                          );
+                        }
                       } else if (val == 'replace') {
                         _handleReplaceJson(context, ref, source);
                       }

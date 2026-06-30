@@ -66,10 +66,11 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
 
   void _autoSaveQuestionData() {
     final storage = ref.read(storageEngineProvider);
-    final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+    final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
     updatedMeta['userAnswer'] = _answerController.text.trim();
     updatedMeta['questionReflection'] = _questionReflectionController.text.trim();
-    final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+    final updatedItem = latestItem.copyWith(metadata: updatedMeta);
     storage.saveItems([updatedItem]);
   }
 
@@ -1392,6 +1393,9 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
         const SizedBox(height: HermesSpacing.xl),
         _buildWorkflowAction('Create Evolutio', Icons.auto_awesome_rounded, color: HermesColors.evolutioGlow, onTap: () => _handleWorkflowAction('Create Evolutio')),
         _buildWorkflowAction('Save Reflection', Icons.save_rounded, onTap: () => _handleWorkflowAction('Save Reflection')),
+        
+        const SizedBox(height: HermesSpacing.md),
+        _buildConnectionsSection(),
       ],
     );
   }
@@ -1625,6 +1629,9 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             ),
           ),
         ],
+        
+        const SizedBox(height: HermesSpacing.md),
+        _buildConnectionsSection(),
       ],
     );
   }
