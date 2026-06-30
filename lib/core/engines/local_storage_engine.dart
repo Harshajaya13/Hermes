@@ -28,34 +28,18 @@ class LocalStorageEngine {
     final hermesDir = Directory('${dir.path}/hermes');
     if (!await hermesDir.exists()) {
       await hermesDir.create(recursive: true);
-      // Create a default workspace if empty
+    }
+    
+    await _loadAllFromDisk(hermesDir);
+    
+    if (_workspaces.values.where((w) => !w.deleted).isEmpty) {
       final defaultWorkspace = Workspace(name: 'Starter', isDefault: true, icon: '⭐');
-      await saveWorkspace(defaultWorkspace);
-      try {
-        await seedStarterWorkspace(defaultWorkspace);
-      } catch (e, stack) {
-        print('Starter workspace seed failed: $e');
-        print(stack);
-      }
-    } else {
-      await _loadAllFromDisk(hermesDir);
-      
-      // Safety check: ensure at least one default workspace exists
-      if (_workspaces.values.where((w) => !w.deleted && w.isDefault).isEmpty) {
-        final firstActive = _workspaces.values.where((w) => !w.deleted).firstOrNull;
-        if (firstActive != null) {
-          await saveWorkspace(firstActive.copyWith(isDefault: true));
-        } else {
-          final defaultWorkspace = Workspace(name: 'Starter', isDefault: true, icon: '⭐');
-          await saveWorkspace(defaultWorkspace);
-          try {
-            await seedStarterWorkspace(defaultWorkspace);
-          } catch (e, stack) {
-            print('Starter workspace seed failed: $e');
-            print(stack);
-          }
-        }
-      }
+      _workspaces[defaultWorkspace.id] = defaultWorkspace;
+      await _saveToDisk('workspaces', _workspaces.map((k, v) => MapEntry(k, v.toJson())));
+      await seedStarterWorkspace(defaultWorkspace);
+    } else if (_workspaces.values.where((w) => !w.deleted && w.isDefault).isEmpty) {
+      final firstActive = _workspaces.values.where((w) => !w.deleted).first;
+      await saveWorkspace(firstActive.copyWith(isDefault: true));
     }
     
     // Load Appearance
@@ -190,45 +174,59 @@ Deep work is not a luxury; it is a necessity for anyone looking to build meaning
     final noteToday = Item(
       blockId: mathBlock.id,
       type: ItemType.note,
-      title: 'Mathematics Is a Language',
-      content: '''# Mathematics Is a Language
+      title: 'Comprehensive Markdown Demo',
+      content: '''# Comprehensive Markdown Demo
 
-We often treat mathematics as a series of computations to be executed. This is fundamentally wrong. Mathematics is a language designed to describe truth with absolute precision.
+This note intentionally demonstrates the styling capabilities of Hermes.
 
-## The Problem with Memorization
+## Headings and Hierarchy
+You can structure your thoughts with multiple levels of headings.
 
-When you memorize a formula, you are memorizing a sentence without understanding its grammar. 
+### Lists and Organization
+- Bullet point 1
+- Bullet point 2
+  - Nested point
 
-Take Expected Value, for example. The formula is:
+1. Numbered item 1
+2. Numbered item 2
 
-```latex
-E(X) = \\sum x P(x)
-```
-
-If you memorize this, it's just symbols. But if you understand the language, it translates to: *"The average outcome of a situation is the sum of every possible event multiplied by how likely that event is to occur."*
-
-This is the exact same logic we use to cross the street. We subconsciously weigh the magnitude of an event (getting hit by a car) against its probability.
-
-![Math Notebook](https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=800&q=80)
-
-## Application in Code
-
-Understanding this language makes programming much more powerful. 
-
+## Code Blocks
+Here is a demonstration of code highlighting:
 ```python
-# Calculating Expected Value
-outcomes = [(100, 0.2), (-10, 0.8)]
-expected_value = sum(magnitude * probability for magnitude, probability in outcomes)
-
-if expected_value > 0:
-    print("This is a positive expected value bet.")
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
 ```
 
-When you stop treating math as computation and start treating it as language, the world becomes much easier to read.
+## Images and Visuals
+Images can be embedded natively:
+![Beautiful Architecture](https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=800&q=80)
+
+## Mathematics (LaTeX)
+Hermes also renders mathematics seamlessly:
+\$\$ E = mc^2 \$\$
 ''',
       metadata: dailyMeta,
     );
-    await saveItem(noteToday);
+    
+    // Add Bidirectional Connections and Keywords
+    final articleMeta = Map<String, dynamic>.from(dailyMeta);
+    articleMeta['keywords'] = ['focus', 'deep work'];
+    articleMeta['connections'] = [
+      {'itemId': noteToday.id, 'note': 'Demonstrates the styling capabilities used in this article.', 'createdAt': DateTime.now().toIso8601String()}
+    ];
+    final articleWithMeta = articleToday.copyWith(metadata: articleMeta);
+    
+    final noteMeta = Map<String, dynamic>.from(dailyMeta);
+    noteMeta['keywords'] = ['markdown', 'demo', 'learning'];
+    noteMeta['connections'] = [
+      {'itemId': articleToday.id, 'note': 'This article uses markdown.', 'createdAt': DateTime.now().toIso8601String()}
+    ];
+    final noteWithMeta = noteToday.copyWith(metadata: noteMeta);
+
+    await saveItem(articleWithMeta);
+    await saveItem(noteWithMeta);
 
     // 4. Observation
     final obsToday = Item(
@@ -278,43 +276,43 @@ Without reflection, experience is just a series of events. With reflection, expe
 
     // ── EVOLUTIOS AND VERITAS (Timeline Demonstration) ────────────────
 
-    // Day 1: Today (Evolutio Only)
+    // Day 1: Today (Evolutio Only - State 1)
     final day1 = DateTime.now();
     final evo1Ref = Reflection(itemId: noteToday.id, content: 'Dummy', createdAt: day1);
     await saveReflection(evo1Ref);
     final evo1 = Evolutio(
       reflectionId: evo1Ref.id,
       blockId: mathBlock.id,
-      content: 'Expected Value changed how I evaluate risk.',
+      content: 'Finally understood conditional probability after solving multiple problems.',
       createdAt: day1,
     );
     await saveEvolutio(evo1);
 
-    // Day 2: Today - 3 Days (Evolutio + Veritas)
+    // Day 2: Today - 3 Days (Evolutio + Veritas - State 2)
     final day2 = DateTime.now().subtract(const Duration(days: 3));
-    final evo2Ref = Reflection(itemId: articleToday.id, content: 'I realized that focused work matters more than the number of hours.', createdAt: day2);
+    final evo2Ref = Reflection(itemId: articleToday.id, content: 'Dummy', createdAt: day2);
     await saveReflection(evo2Ref);
     final evo2 = Evolutio(
       reflectionId: evo2Ref.id,
       blockId: modelsBlock.id,
-      content: 'Reading Deep Work changed how I study.',
+      content: 'Finished reading an article on Deep Learning optimization.',
       createdAt: day2,
     );
     await saveEvolutio(evo2);
 
     final veritas2 = Veritas(
       workspaceId: workspace.id,
-      reason: 'I was mentally tired after college, but I still finished one article.',
+      reason: 'I was mentally exhausted after college, but I still wanted to read something before sleeping.',
       dateMissed: day2,
       createdAt: day2,
     );
     await saveVeritas(veritas2);
 
-    // Day 3: Today - 8 Days (Veritas Only)
+    // Day 3: Today - 8 Days (Veritas Only - State 3)
     final day3 = DateTime.now().subtract(const Duration(days: 8));
     final veritas3 = Veritas(
       workspaceId: workspace.id,
-      reason: 'Semester exams took all of my attention this week. I\'ll continue once they\'re over.',
+      reason: 'Semester examinations demanded my complete attention today. I intentionally paused Hermes and will continue tomorrow.',
       dateMissed: day3,
       createdAt: day3,
     );
@@ -370,12 +368,7 @@ Without reflection, experience is just a series of events. With reflection, expe
       final defaultWorkspace = Workspace(name: 'Starter', isDefault: true, icon: '⭐');
       _workspaces[defaultWorkspace.id] = defaultWorkspace;
       await _saveToDisk('workspaces', _workspaces.map((k, v) => MapEntry(k, v.toJson())));
-      try {
-        await seedStarterWorkspace(defaultWorkspace);
-      } catch (e, stack) {
-        print('Starter workspace seed failed: $e');
-        print(stack);
-      }
+      await seedStarterWorkspace(defaultWorkspace);
     }
   }
 
@@ -616,6 +609,10 @@ Without reflection, experience is just a series of events. With reflection, expe
 
   List<Reflection> getAllReflections() {
     return _reflections.values.where((r) => !r.deleted).toList();
+  }
+
+  Reflection? getReflectionForItem(String itemId) {
+    return _reflections.values.where((r) => r.itemId == itemId && !r.deleted).firstOrNull;
   }
 
   Future<void> saveReflection(Reflection reflection) async {

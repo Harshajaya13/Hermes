@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -722,11 +723,20 @@ class TodayScreen extends ConsumerWidget {
                                   icon: const Icon(Icons.more_vert_rounded, size: 18, color: HermesColors.textTertiary),
                                   color: HermesColors.surfaceElevated,
                                   itemBuilder: (context) => [
+                                    const PopupMenuItem(value: 'copy', child: Text('Copy Text')),
+                                    const PopupMenuItem(value: 'share', child: Text('Share')),
                                     const PopupMenuItem(value: 'hide', child: Text('Hide From Home')),
                                     const PopupMenuItem(value: 'archive', child: Text('Archive Evolutio')),
                                   ],
                                   onSelected: (value) async {
-                                    if (value == 'hide') {
+                                    if (value == 'copy') {
+                                      final content = '${evo.content}'; // Optionally prefix with blockName or keep plain
+                                      Clipboard.setData(ClipboardData(text: content));
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied text to clipboard.')));
+                                    } else if (value == 'share') {
+                                      final content = '${evo.content}';
+                                      Share.share(content); // No title since Evolutio doesn't have a specific title field, but we can pass it if we want
+                                    } else if (value == 'hide') {
                                       final updated = evo.copyWith(hiddenFromHome: true);
                                       await ref.read(storageEngineProvider).saveEvolutio(updated);
                                       ref.invalidate(recentEvolutiosProvider);

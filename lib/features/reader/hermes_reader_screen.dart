@@ -319,48 +319,25 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                           IconButton(
                             icon: const Icon(Icons.copy_outlined, color: HermesColors.textTertiary, size: 20),
                             onPressed: () {
-                              Clipboard.setData(ClipboardData(text: widget.item.content));
+                              final content = _getShareContent();
+                              Clipboard.setData(ClipboardData(text: content));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Copied entire text to clipboard.', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
+                                  content: Text('Copied text to clipboard.', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textPrimary)),
                                   backgroundColor: HermesColors.surfaceElevated,
                                   duration: const Duration(seconds: 1),
                                 ),
                               );
                             },
-                            tooltip: 'Copy All Text',
+                            tooltip: 'Copy Text',
                           ),
-                          PopupMenuButton<String>(
+                          IconButton(
                             icon: const Icon(Icons.share_outlined, color: HermesColors.textTertiary, size: 20),
-                            tooltip: 'Share Options',
-                            color: HermesColors.surfaceElevated,
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'share_text',
-                                child: Text('Share Text Content', style: HermesTypography.bodySmall),
-                              ),
-                              PopupMenuItem(
-                                value: 'export_hitem',
-                                child: Text('Export as .hitem', style: HermesTypography.bodySmall),
-                              ),
-                            ],
-                            onSelected: (value) async {
-                              if (value == 'share_text') {
-                                Share.share(widget.item.content, subject: widget.item.title);
-                              } else if (value == 'export_hitem') {
-                                try {
-                                  final engine = ref.read(exchangeEngineProvider);
-                                  final path = await engine.exportItems([widget.item]);
-                                  await Share.shareXFiles([XFile(path)], subject: '${widget.item.title} (Hermes)');
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Export failed: $e'), backgroundColor: HermesColors.veritasColor),
-                                    );
-                                  }
-                                }
-                              }
+                            onPressed: () {
+                              final content = _getShareContent();
+                              Share.share(content, subject: widget.item.title);
                             },
+                            tooltip: 'Share',
                           ),
 
 
@@ -1475,5 +1452,55 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
         ],
       ],
     );
+  }
+
+  String _getShareContent() {
+    final item = widget.item;
+    final engine = ref.read(storageEngineProvider);
+    final reflection = engine.getReflectionForItem(item.id);
+    
+    switch (item.type) {
+      case ItemType.article:
+        return '${item.title}\n\n${item.content}';
+        
+      case ItemType.question:
+        final answer = item.metadata?['answer'] as String?;
+        final parts = <String>[];
+        parts.add('Question: ${item.title}');
+        if (item.content.isNotEmpty) {
+          parts.add(item.content);
+        }
+        if (answer != null && answer.isNotEmpty) {
+          parts.add('\nMy Answer:\n$answer');
+        }
+        if (reflection != null && reflection.content.isNotEmpty) {
+          parts.add('\nReflection:\n${reflection.content}');
+        }
+        return parts.join('\n');
+        
+      case ItemType.note:
+        return item.content;
+        
+      case ItemType.idea:
+        return '${item.title}\n\n${item.content}';
+        
+      case ItemType.observation:
+        final patterns = List<String>.from(item.metadata?['patterns'] ?? []);
+        final parts = <String>[];
+        parts.add(item.content);
+        if (patterns.isNotEmpty) {
+          parts.add('\nPatterns Observed:');
+          for (final p in patterns) {
+            parts.add('- $p');
+          }
+        }
+        return parts.join('\n');
+        
+      case ItemType.reflection:
+        return item.content;
+        
+      default:
+        return '${item.title}\n\n${item.content}';
+    }
   }
 }
