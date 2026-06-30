@@ -230,13 +230,14 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       }
     }
     
-    final updatedMetadata = Map<String, dynamic>.from(widget.item.metadata ?? {});
+    final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final updatedMetadata = Map<String, dynamic>.from(latestItem.metadata ?? {});
     updatedMetadata['isSolved'] = true;
-    final updatedItem = widget.item.copyWith(metadata: updatedMetadata);
+    final updatedItem = latestItem.copyWith(metadata: updatedMetadata);
     await storage.saveItems([updatedItem]);
     if (mounted) {
       ref.invalidate(itemsByBlockProvider(widget.block.id));
-      Navigator.pop(context);
+      setState(() {});
     }
   }
 
@@ -676,14 +677,33 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   }
 
   void _handleWorkflowAction(String action) async {
-    final terminalActions = ['Save Reflection', 'Complete', 'Convert to Idea', 'Convert to Reflection', 'Promote to Project'];
+    final terminalActions = ['Save Reflection', 'Complete', 'Promote to Project'];
+    final storage = ref.read(storageEngineProvider);
     
     if (action == 'Archive') {
-      await ref.read(storageEngineProvider).deleteItem(widget.item.id);
+      await storage.deleteItem(widget.item.id);
       if (mounted) {
         ref.invalidate(itemsByBlockProvider(widget.block.id));
         Navigator.pop(context);
         HermesToast.show(context, 'Item archived.');
+      }
+      return;
+    }
+    
+    if (action == 'Convert to Idea' || action == 'Convert to Reflection') {
+      final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+      final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
+      if (!updatedMeta.containsKey('originalType')) {
+        updatedMeta['originalType'] = latestItem.type.name;
+      }
+      
+      final newType = action == 'Convert to Idea' ? ItemType.idea : ItemType.reflection;
+      final updatedItem = latestItem.copyWith(type: newType, metadata: updatedMeta);
+      await storage.saveItems([updatedItem]);
+      if (mounted) {
+        ref.invalidate(itemsByBlockProvider(widget.block.id));
+        setState(() {});
+        HermesToast.show(context, 'Converted successfully.');
       }
       return;
     }
@@ -695,6 +715,66 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     } else {
       HermesToast.show(context, '$action workflow opens in next update.');
     }
+  }
+
+  Widget _buildRevertSection() {
+    final storage = ref.read(storageEngineProvider);
+    final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final originalTypeString = latestItem.metadata?['originalType'] as String?;
+    
+    if (originalTypeString == null) {
+      if (latestItem.type != ItemType.reflection) return const SizedBox.shrink();
+      
+      // Fallback for reflections that don't have originalType
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: HermesSpacing.xl),
+          Text('Item Management', style: HermesTypography.metadata),
+          const SizedBox(height: HermesSpacing.sm),
+          _buildWorkflowAction('Revert to Idea', Icons.undo_rounded, onTap: () async {
+            final updatedItem = latestItem.copyWith(type: ItemType.idea);
+            await storage.saveItems([updatedItem]);
+            if (mounted) {
+              ref.invalidate(itemsByBlockProvider(widget.block.id));
+              setState(() {});
+              HermesToast.show(context, 'Reverted to Idea.');
+            }
+          }),
+          _buildWorkflowAction('Revert to Article', Icons.undo_rounded, onTap: () async {
+            final updatedItem = latestItem.copyWith(type: ItemType.article);
+            await storage.saveItems([updatedItem]);
+            if (mounted) {
+              ref.invalidate(itemsByBlockProvider(widget.block.id));
+              setState(() {});
+              HermesToast.show(context, 'Reverted to Article.');
+            }
+          }),
+        ],
+      );
+    }
+    
+    final formattedType = originalTypeString[0].toUpperCase() + originalTypeString.substring(1);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: HermesSpacing.xl),
+        Text('Item Management', style: HermesTypography.metadata),
+        const SizedBox(height: HermesSpacing.sm),
+        _buildWorkflowAction('Revert to $formattedType', Icons.undo_rounded, onTap: () async {
+          final typeToRevert = ItemType.values.firstWhere((t) => t.name == originalTypeString, orElse: () => ItemType.note);
+          final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
+          updatedMeta.remove('originalType');
+          final updatedItem = latestItem.copyWith(type: typeToRevert, metadata: updatedMeta);
+          await storage.saveItems([updatedItem]);
+          if (mounted) {
+            ref.invalidate(itemsByBlockProvider(widget.block.id));
+            setState(() {});
+            HermesToast.show(context, 'Reverted to $formattedType.');
+          }
+        }),
+      ],
+    );
   }
 
   Widget _buildConnectionsSection() {
@@ -906,6 +986,10 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             }
           },
         ),
+        
+        _buildRevertSection(),
+        
+        const SizedBox(height: HermesSpacing.md),
         
         // Archive
         _buildWorkflowAction('Archive', Icons.archive_outlined, onTap: () => _handleWorkflowAction('Archive')),
@@ -1225,15 +1309,9 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             Navigator.pop(context);
           }
         }),
-        _buildWorkflowAction('Convert to Idea', Icons.lightbulb_outline_rounded, color: HermesColors.accent, onTap: () async {
-          final updatedItem = widget.item.copyWith(type: ItemType.idea);
-          await ref.read(storageEngineProvider).saveItems([updatedItem]);
-          ref.invalidate(itemsByBlockProvider(widget.block.id));
-          if (mounted) {
-            HermesToast.show(context, 'Converted to Idea.');
-            Navigator.pop(context);
-          }
-        }),
+        _buildWorkflowAction('Convert to Idea', Icons.lightbulb_outline_rounded, color: HermesColors.accent, onTap: () => _handleWorkflowAction('Convert to Idea')),
+        
+        _buildRevertSection(),
       ],
     );
   }
@@ -1393,6 +1471,8 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
         const SizedBox(height: HermesSpacing.xl),
         _buildWorkflowAction('Create Evolutio', Icons.auto_awesome_rounded, color: HermesColors.evolutioGlow, onTap: () => _handleWorkflowAction('Create Evolutio')),
         _buildWorkflowAction('Save Reflection', Icons.save_rounded, onTap: () => _handleWorkflowAction('Save Reflection')),
+        
+        _buildRevertSection(),
         
         const SizedBox(height: HermesSpacing.md),
         _buildConnectionsSection(),
@@ -1609,12 +1689,17 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                 final hasReflection = reflectionText.isNotEmpty;
                 
                 // Save the user's answer into the item metadata
-                final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                final storage = ref.read(storageEngineProvider);
+                final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+                final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
                 updatedMeta['userAnswer'] = _answerController.text.trim();
                 updatedMeta['isSolved'] = true;
                 if (hasReflection) updatedMeta['questionReflection'] = reflectionText;
                 
-                _recordEvolutio(hasReflection, customText: hasReflection ? reflectionText : 'Solved: ${widget.item.title}');
+                final updatedItem = latestItem.copyWith(metadata: updatedMeta);
+                storage.saveItems([updatedItem]);
+                
+                _recordEvolutio(hasReflection, customText: hasReflection ? reflectionText : 'Solved: ${latestItem.title}');
               },
               borderRadius: BorderRadius.circular(HermesRadius.md),
               child: Container(

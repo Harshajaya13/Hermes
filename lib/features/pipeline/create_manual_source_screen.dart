@@ -163,8 +163,8 @@ class _CreateManualSourceScreenState extends ConsumerState<CreateManualSourceScr
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Successfully created source "${source.name}"!'),
-          backgroundColor: HermesColors.evolutioGlow,
+          content: Text('Successfully created source "${source.name}"!', style: const TextStyle(color: HermesColors.textSecondary)),
+          backgroundColor: HermesColors.surfaceElevated,
           behavior: SnackBarBehavior.floating,
         ),
       );

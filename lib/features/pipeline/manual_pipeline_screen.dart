@@ -145,7 +145,7 @@ class ManualPipelineScreen extends ConsumerWidget {
                         ref.invalidate(sourcesProvider);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Source deleted.'), backgroundColor: HermesColors.error),
+                            const SnackBar(content: Text('Source deleted.'), backgroundColor: HermesColors.surfaceElevated),
                           );
                         }
                       } else if (val == 'replace') {
@@ -228,8 +228,8 @@ class ManualPipelineScreen extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Replaced with ${itemsToSave.length} new items!'),
-              backgroundColor: HermesColors.evolutioGlow,
+              content: Text('Replaced with ${itemsToSave.length} new items!', style: const TextStyle(color: HermesColors.textSecondary)),
+              backgroundColor: HermesColors.surfaceElevated,
             )
           );
         }
