@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -57,37 +57,52 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     super.dispose();
   }
 
-  Future<void> _exportAsMarkdown() async {
-    try {
-      final String? path = await FilePicker.platform.saveFile(
-        dialogTitle: 'Export Markdown',
-        fileName: '${widget.item.title.replaceAll(' ', '_')}.md',
-        type: FileType.custom,
-        allowedExtensions: ['md'],
-      );
-
-      if (path != null) {
-        final file = File(path);
-        await file.writeAsString(widget.item.content);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Exported successfully to $path'),
-              backgroundColor: HermesColors.evolutioGlow,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Export failed: $e'),
-            backgroundColor: HermesColors.veritasColor,
+  void _showShareOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: HermesColors.surfaceElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: HermesSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.text_snippet_outlined, color: HermesColors.textSecondary),
+                title: const Text('Share Text Content'),
+                subtitle: const Text('Best for sharing with non-Hermes users', style: TextStyle(color: HermesColors.textTertiary, fontSize: 12)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Share.share(widget.item.content, subject: widget.item.title);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.archive_outlined, color: HermesColors.textSecondary),
+                title: const Text('Export as .hitem'),
+                subtitle: const Text('Best for sending to another Hermes workspace', style: TextStyle(color: HermesColors.textTertiary, fontSize: 12)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  try {
+                    final engine = ref.read(exchangeEngineProvider);
+                    final path = await engine.exportItems([widget.item]);
+                    await Share.shareXFiles([XFile(path)], subject: '${widget.item.title} (Hermes)');
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Export failed: $e'), backgroundColor: HermesColors.veritasColor),
+                      );
+                    }
+                  }
+                },
+              ),
+            ],
           ),
-        );
-      }
-    }
+        ),
+      ),
+    );
   }
 
   void _recordEvolutio(bool didChange, {String? customText}) async {
@@ -202,8 +217,8 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.share_outlined, color: HermesColors.textTertiary, size: 20),
-                            onPressed: _exportAsMarkdown,
-                            tooltip: 'Export as .md',
+                            onPressed: _showShareOptions,
+                            tooltip: 'Share',
                           ),
                           IconButton(
                             icon: const Icon(Icons.search_rounded, color: HermesColors.textTertiary, size: 20),

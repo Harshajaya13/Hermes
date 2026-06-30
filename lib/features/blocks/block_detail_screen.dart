@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/models/models.dart';
@@ -74,11 +75,7 @@ class _BlockDetailScreenState extends ConsumerState<BlockDetailScreen> {
                           
                           final engine = ref.read(exchangeEngineProvider);
                           final path = await engine.exportItems(itemsToExport);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Block items exported to $path'), backgroundColor: HermesColors.evolutioGlow),
-                            );
-                          }
+                          await Share.shareXFiles([XFile(path)], subject: '${widget.block.name} (Hermes Block)');
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -407,15 +404,13 @@ class _ItemRow extends ConsumerWidget {
                 onSelected: (value) async {
                   if (value == 'rename') {
                     CreateItemSheet.show(context, existingItem: item, block: block);
-                  } else if (value == 'share') {
+                  } else if (value == 'share_text') {
+                    Share.share(item.content, subject: item.title);
+                  } else if (value == 'export_hitem') {
                     try {
                       final engine = ref.read(exchangeEngineProvider);
                       final path = await engine.exportItems([item]);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Exported to $path'), backgroundColor: HermesColors.evolutioGlow),
-                        );
-                      }
+                      await Share.shareXFiles([XFile(path)], subject: '${item.title} (Hermes)');
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -438,7 +433,8 @@ class _ItemRow extends ConsumerWidget {
                 },
                 itemBuilder: (context) => [
                   PopupMenuItem(value: 'rename', child: Text('Rename Item', style: HermesTypography.bodySmall)),
-                  PopupMenuItem(value: 'share', child: Text('Share as .hitem', style: HermesTypography.bodySmall)),
+                  PopupMenuItem(value: 'share_text', child: Text('Share Text Content', style: HermesTypography.bodySmall)),
+                  PopupMenuItem(value: 'export_hitem', child: Text('Export as .hitem', style: HermesTypography.bodySmall)),
                   PopupMenuItem(value: 'archive', child: Text('Archive Item', style: HermesTypography.bodySmall)),
                 ],
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/hermes_theme.dart';
@@ -457,15 +458,13 @@ class TodayScreen extends ConsumerWidget {
                                               Navigator.push(context, MaterialPageRoute(
                                                 builder: (context) => BlockDetailScreen(block: block),
                                               ));
-                                            } else if (value == 'share') {
+                                            } else if (value == 'share_text') {
+                                              Share.share(item.content, subject: item.title);
+                                            } else if (value == 'export_hitem') {
                                               try {
                                                 final engine = ref.read(exchangeEngineProvider);
                                                 final path = await engine.exportItems([item]);
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(content: Text('Exported to $path'), backgroundColor: HermesColors.evolutioGlow),
-                                                  );
-                                                }
+                                                await Share.shareXFiles([XFile(path)], subject: '${item.title} (Hermes)');
                                               } catch (e) {
                                                 if (context.mounted) {
                                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -485,8 +484,12 @@ class TodayScreen extends ConsumerWidget {
                                               child: Text('Open Original Block', style: HermesTypography.bodySmall),
                                             ),
                                             PopupMenuItem(
-                                              value: 'share',
-                                              child: Text('Share as .hitem', style: HermesTypography.bodySmall),
+                                              value: 'share_text',
+                                              child: Text('Share Text Content', style: HermesTypography.bodySmall),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'export_hitem',
+                                              child: Text('Export as .hitem', style: HermesTypography.bodySmall),
                                             ),
                                           ],
                                         ),
