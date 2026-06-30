@@ -42,11 +42,24 @@ If you have a reading list, you can import it as a JSON array.
 
 By collecting articles over months and importing them here, reading becomes an intentional daily practice rather than an overwhelming backlog. Hermes will slowly surface these articles into Today's Pursuit.
 
-## 4. Importing Questions
+## 4. Generating JSON with AI (No Coding Required)
+
+Don't worry if you've never written JSON. You do not need to manually type these files.
+
+Copy one of the prompts below into ChatGPT, Gemini, Claude, or another AI. It will generate a Hermes-compatible JSON file that you can import directly.
+
+**Example Prompts:**
+- *"Generate 200 Python questions in Hermes JSON format."*
+- *"Convert these 50 article links into Hermes JSON format."*
+- *"Create a Hermes JSON collection for Linear Algebra with 50 concepts."*
+
+The AI will output the exact format Hermes needs. You simply save it as a `.json` file and import it.
+
+## 5. Importing Questions
 
 Questions are powerful. They create a void in your mind that demands to be filled.
 
-You can use AI tools (like ChatGPT or Claude) to generate hundreds of deep, conceptual questions about a topic you want to learn, and import them directly:
+You can import questions directly:
 
 ```json
 [
@@ -63,7 +76,7 @@ You can use AI tools (like ChatGPT or Claude) to generate hundreds of deep, conc
 
 When you import this file, Hermes validates the format and saves it. Now, every day, your *Today's Pursuit* will automatically contain a few profound questions for you to solve.
 
-## 5. Daily Scheduling Limits
+## 6. Daily Scheduling Limits
 
 Hermes intentionally restricts how much knowledge you see at once. 
 

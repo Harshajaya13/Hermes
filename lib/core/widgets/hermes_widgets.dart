@@ -1,3 +1,4 @@
+export 'hermes_toast.dart';
 import 'package:flutter/material.dart';
 import '../theme/hermes_theme.dart';
 

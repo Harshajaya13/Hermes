@@ -610,6 +610,50 @@ class _TimelineEntry extends ConsumerWidget {
     );
   }
 
+  void _editEvolutio(BuildContext context, WidgetRef ref, Evolutio evolutio) {
+    final controller = TextEditingController(text: evolutio.content);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: HermesColors.surfaceElevated,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HermesRadius.lg)),
+        title: Text('Edit Evolutio', style: HermesTypography.sectionTitle),
+        content: TextField(
+          controller: controller,
+          maxLines: null,
+          autofocus: true,
+          style: HermesTypography.body,
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            hintText: 'Record your realization...',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: HermesTypography.button.copyWith(color: HermesColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: HermesColors.evolutioGlow,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () async {
+              if (controller.text.trim().isNotEmpty) {
+                final updated = evolutio.copyWith(content: controller.text.trim());
+                await ref.read(storageEngineProvider).saveEvolutio(updated);
+                ref.invalidate(allEvolutiosProvider);
+                ref.invalidate(recentEvolutiosProvider);
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
@@ -706,10 +750,13 @@ class _TimelineEntry extends ConsumerWidget {
                           padding: EdgeInsets.zero,
                           color: HermesColors.surfaceElevated,
                           itemBuilder: (context) => [
+                            const PopupMenuItem(value: 'edit', child: Text('Edit Evolutio', style: TextStyle(color: HermesColors.textPrimary))),
                             const PopupMenuItem(value: 'delete', child: Text('Delete Evolutio', style: TextStyle(color: HermesColors.error))),
                           ],
                           onSelected: (value) {
-                            if (value == 'delete') {
+                            if (value == 'edit') {
+                              _editEvolutio(context, ref, item);
+                            } else if (value == 'delete') {
                               _confirmDelete(context, ref, 'Evolutio', item.id);
                             }
                           },

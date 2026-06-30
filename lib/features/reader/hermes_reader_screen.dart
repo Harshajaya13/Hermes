@@ -222,16 +222,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       if (mounted) {
         ref.invalidate(allEvolutiosProvider);
         ref.invalidate(recentEvolutiosProvider);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Evolution recorded. The journey continues.', style: HermesTypography.bodySmall.copyWith(color: Colors.white)),
-            backgroundColor: HermesColors.evolutioGlow,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HermesRadius.md)),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        HermesToast.show(context, 'Reading completed.');
       }
     }
     
@@ -566,7 +557,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                 if (_reflectionController.text.trim().isNotEmpty) {
                   setState(() => _showEvolutioPrompt = true);
                 } else {
-                  _recordEvolutio(true, customText: 'Recorded an Evolutio without a formal reflection.');
+                  _recordEvolutio(true, customText: 'Read ${widget.item.type.name}.');
                 }
               },
               borderRadius: BorderRadius.circular(HermesRadius.md),
