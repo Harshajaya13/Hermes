@@ -466,12 +466,15 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       if (expansion != null && expansion.isNotEmpty) {
         mdData += '\n\n---\n\n**Expansion:**\n\n$expansion';
       }
-      final apps = (currentItem.metadata?['applications'] as List?)?.cast<String>() ?? [];
-      if (apps.isNotEmpty) {
-        mdData += '\n\n**Potential Applications:**\n';
-        for (final app in apps) {
-          mdData += '- $app\n';
-        }
+      final appsData = currentItem.metadata?['applications'];
+      String appsText = '';
+      if (appsData is List) {
+        appsText = appsData.map((e) => e.toString()).join('\n\n');
+      } else if (appsData is String) {
+        appsText = appsData;
+      }
+      if (appsText.trim().isNotEmpty) {
+        mdData += '\n\n---\n\n**Potential Applications:**\n\n$appsText';
       }
     }
     
@@ -881,10 +884,8 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
           _showApplicationsSheet();
         }),
         
-        // Connect To Another Item
-        _buildWorkflowAction('Connect', Icons.link_rounded, color: HermesColors.accent, onTap: () {
-          _showConnectionSheet();
-        }),
+        // Connections
+        _buildConnectionsSection(),
         
         // Promote To Project
         _buildWorkflowAction(
@@ -984,80 +985,74 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   }
   
   void _showApplicationsSheet() async {
-    final appController = TextEditingController();
-    final existingApps = List<String>.from(widget.item.metadata?['applications'] ?? []);
+    final storage = ref.read(storageEngineProvider);
+    final currentItem = storage.getItemById(widget.item.id) ?? widget.item;
+    
+    final appsData = currentItem.metadata?['applications'];
+    String initialText = '';
+    if (appsData is List) {
+      initialText = appsData.map((e) => e.toString()).join('\n\n');
+    } else if (appsData is String) {
+      initialText = appsData;
+    }
+    
+    final appController = TextEditingController(text: initialText);
     
     await showModalBottomSheet(
       context: context,
       backgroundColor: HermesColors.surfaceElevated,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.only(
-            left: HermesSpacing.lg, right: HermesSpacing.lg,
-            top: HermesSpacing.lg, bottom: MediaQuery.of(ctx).viewInsets.bottom + HermesSpacing.lg,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Potential Applications', style: HermesTypography.sectionTitle),
-              const SizedBox(height: HermesSpacing.md),
-              ...existingApps.map((app) => Padding(
-                padding: const EdgeInsets.only(bottom: HermesSpacing.xs),
-                child: Row(
-                  children: [
-                    const Icon(Icons.circle, size: 6, color: HermesColors.textTertiary),
-                    const SizedBox(width: HermesSpacing.sm),
-                    Expanded(child: Text(app, style: HermesTypography.bodySmall)),
-                  ],
-                ),
-              )),
-              const SizedBox(height: HermesSpacing.sm),
-              TextField(
-                controller: appController,
-                autofocus: true,
-                style: HermesTypography.body.copyWith(fontSize: 15),
-                decoration: InputDecoration(
-                  hintText: 'Add a potential application...',
-                  hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
-                  filled: true, fillColor: HermesColors.surface,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
-                ),
-                onSubmitted: (val) {
-                  if (val.trim().isEmpty) return;
-                  existingApps.add(val.trim());
-                  appController.clear();
-                  setSheetState(() {});
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: HermesSpacing.lg, right: HermesSpacing.lg,
+          top: HermesSpacing.lg, bottom: MediaQuery.of(ctx).viewInsets.bottom + HermesSpacing.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Potential Applications', style: HermesTypography.sectionTitle),
+            const SizedBox(height: HermesSpacing.md),
+            TextField(
+              controller: appController,
+              maxLines: null,
+              minLines: 4,
+              autofocus: true,
+              style: HermesTypography.body.copyWith(fontSize: 15),
+              decoration: InputDecoration(
+                hintText: 'Write potential applications here...',
+                hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+                filled: true, fillColor: HermesColors.surface,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: HermesSpacing.md),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
                 },
+                child: Text('Save', style: TextStyle(color: HermesColors.evolutioGlow)),
               ),
-              const SizedBox(height: HermesSpacing.md),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    if (appController.text.trim().isNotEmpty) {
-                      existingApps.add(appController.text.trim());
-                    }
-                    Navigator.pop(ctx);
-                  },
-                  child: Text('Save', style: TextStyle(color: HermesColors.evolutioGlow)),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
     
-    final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
-    updatedMeta['applications'] = existingApps;
-    final updatedItem = widget.item.copyWith(metadata: updatedMeta);
-    await ref.read(storageEngineProvider).saveItems([updatedItem]);
-    if (mounted) {
-      ref.invalidate(itemsByBlockProvider(widget.block.id));
-      setState(() {});
+    final updatedMeta = Map<String, dynamic>.from(currentItem.metadata ?? {});
+    final newText = appController.text.trim();
+    if (updatedMeta['applications'] != newText) {
+      updatedMeta['applications'] = newText;
+      final updatedItem = currentItem.copyWith(metadata: updatedMeta);
+      await ref.read(storageEngineProvider).saveItems([updatedItem]);
+      if (mounted) {
+        ref.invalidate(itemsByBlockProvider(widget.block.id));
+        setState(() {});
+        HermesToast.show(context, 'Applications saved.');
+      }
     }
   }
   
@@ -1156,37 +1151,47 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                 ],
                 
                 if (selectedItemId != null)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () async {
-                        final storage = ref.read(storageEngineProvider);
-                        final targetItem = storage.getItemById(selectedItemId!);
-                        if (targetItem == null) return;
-                        
-                        final connection = Connection(
-                          itemAId: widget.item.id,
-                          itemBId: selectedItemId!,
-                          title: '${widget.item.title} ↔ ${targetItem.title}',
-                        );
-                        
-                        await storage.saveConnection(connection);
-                        
-                        ref.invalidate(itemConnectionsProvider(widget.item.id));
-                        ref.invalidate(itemConnectionsProvider(targetItem.id));
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        if (mounted) {
-                          setState(() {});
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => ConnectionDetailScreen(
-                              connection: connection,
-                              itemA: widget.item,
-                              itemB: targetItem,
-                            ),
-                          ));
-                        }
-                      },
-                      child: Text('Create Connection', style: TextStyle(color: HermesColors.evolutioGlow)),
+                  Padding(
+                    padding: const EdgeInsets.only(top: HermesSpacing.md, bottom: HermesSpacing.lg),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () async {
+                          final storage = ref.read(storageEngineProvider);
+                          final targetItem = storage.getItemById(selectedItemId!);
+                          if (targetItem == null) return;
+                          
+                          final existingConnections = storage.getConnectionsForItem(widget.item.id);
+                          final existing = existingConnections.where((c) => c.itemAId == selectedItemId || c.itemBId == selectedItemId).firstOrNull;
+                          
+                          Connection connection;
+                          if (existing != null) {
+                            connection = existing;
+                          } else {
+                            connection = Connection(
+                              itemAId: widget.item.id,
+                              itemBId: selectedItemId!,
+                              title: '${widget.item.title} ↔ ${targetItem.title}',
+                            );
+                            await storage.saveConnection(connection);
+                          }
+                          
+                          ref.invalidate(itemConnectionsProvider(widget.item.id));
+                          ref.invalidate(itemConnectionsProvider(targetItem.id));
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          if (mounted) {
+                            setState(() {});
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => ConnectionDetailScreen(
+                                connection: connection,
+                                itemA: widget.item,
+                                itemB: targetItem,
+                              ),
+                            ));
+                          }
+                        },
+                        child: Text('Create Connection', style: TextStyle(color: HermesColors.evolutioGlow)),
+                      ),
                     ),
                   ),
               ],
