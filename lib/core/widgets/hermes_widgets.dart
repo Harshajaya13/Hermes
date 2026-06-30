@@ -137,11 +137,15 @@ class HermesBlockChip extends StatelessWidget {
             children: [
               Text(icon, style: const TextStyle(fontSize: 16)),
               const SizedBox(width: HermesSpacing.xs),
-              Text(
-                label,
-                style: HermesTypography.bodySmall.copyWith(
-                  color: color.withValues(alpha: 0.9),
-                  fontWeight: FontWeight.w500,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: HermesTypography.bodySmall.copyWith(
+                    color: color.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               if (trailing != null) ...[

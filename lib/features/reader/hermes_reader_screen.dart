@@ -8,6 +8,7 @@ import '../../core/widgets/hermes_markdown.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../blocks/create_item_sheet.dart';
+import 'connection_detail_screen.dart';
 
 class HermesReaderScreen extends ConsumerStatefulWidget {
   final Item item;
@@ -633,6 +634,66 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     }
   }
 
+  Widget _buildConnectionsSection() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final connections = ref.watch(itemConnectionsProvider(widget.item.id));
+        final storage = ref.watch(storageEngineProvider);
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (connections.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.md, vertical: HermesSpacing.xs),
+                child: Text('Connected Items', style: HermesTypography.metadata),
+              ),
+              ...connections.map((c) {
+                final targetId = c.itemAId == widget.item.id ? c.itemBId : c.itemAId;
+                final targetItem = storage.getItemById(targetId);
+                if (targetItem == null) return const SizedBox.shrink();
+                
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => ConnectionDetailScreen(
+                        connection: c,
+                        itemA: widget.item,
+                        itemB: targetItem,
+                      ),
+                    ));
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.md, vertical: HermesSpacing.xs),
+                    child: Row(
+                      children: [
+                        const Text('•', style: TextStyle(color: HermesColors.textTertiary, fontSize: 16)),
+                        const SizedBox(width: HermesSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            targetItem.title,
+                            style: HermesTypography.bodySmall.copyWith(color: HermesColors.accent),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+              const SizedBox(height: HermesSpacing.sm),
+            ],
+            _buildWorkflowAction(
+              connections.isEmpty ? 'Connect Items' : 'Add New Connection',
+              Icons.link_rounded,
+              color: HermesColors.accent,
+              onTap: () => _showConnectionSheet(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildNoteWorkflow() {
     final keywords = (widget.item.metadata?['keywords'] as List?)?.cast<String>() ?? [];
     
@@ -641,10 +702,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       children: [
         _buildWorkflowHeader('Connections'),
         
-        // Related Notes (bidirectional linking)
-        _buildWorkflowAction('Related Notes', Icons.link_rounded, color: HermesColors.accent, onTap: () {
-          _showConnectionSheet();
-        }),
+        _buildConnectionsSection(),
         
         // Keywords
         _buildWorkflowAction(
@@ -1005,54 +1063,37 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                   ),
                 ],
                 
-                // Step 4: Optional connection note
-                if (selectedItemId != null) ...[
-                  const SizedBox(height: HermesSpacing.md),
-                  TextField(
-                    controller: noteController,
-                    style: HermesTypography.body.copyWith(fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Optional connection note...',
-                      hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary, fontSize: 14),
-                      filled: true, fillColor: HermesColors.surface,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: HermesSpacing.md),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () async {
-                        // Bidirectional connection
-                        final note = noteController.text.trim();
-                        final connection = {'itemId': selectedItemId, 'note': note, 'createdAt': DateTime.now().toIso8601String()};
-                        final reverseConnection = {'itemId': widget.item.id, 'note': note, 'createdAt': DateTime.now().toIso8601String()};
-                        
-                        // Add to current item
-                        final meta1 = Map<String, dynamic>.from(widget.item.metadata ?? {});
-                        final connections1 = (meta1['connections'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-                        connections1.add(Map<String, dynamic>.from(connection));
-                        meta1['connections'] = connections1;
-                        await storage.saveItems([widget.item.copyWith(metadata: meta1)]);
-                        
-                        // Add to target item (bidirectional)
+                        final storage = ref.read(storageEngineProvider);
                         final targetItem = storage.getItemById(selectedItemId!);
-                        if (targetItem != null) {
-                          final meta2 = Map<String, dynamic>.from(targetItem.metadata ?? {});
-                          final connections2 = (meta2['connections'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-                          connections2.add(Map<String, dynamic>.from(reverseConnection));
-                          meta2['connections'] = connections2;
-                          await storage.saveItems([targetItem.copyWith(metadata: meta2)]);
-                        }
+                        if (targetItem == null) return;
                         
-                        ref.invalidate(itemsByBlockProvider(widget.block.id));
+                        final connection = Connection(
+                          itemAId: widget.item.id,
+                          itemBId: selectedItemId!,
+                          title: '${widget.item.title} ↔ ${targetItem.title}',
+                        );
+                        
+                        await storage.saveConnection(connection);
+                        
+                        ref.invalidate(itemConnectionsProvider(widget.item.id));
                         if (ctx.mounted) Navigator.pop(ctx);
-                        if (mounted) HermesToast.show(context, 'Connection saved.');
+                        if (mounted) {
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => ConnectionDetailScreen(
+                              connection: connection,
+                              itemA: widget.item,
+                              itemB: targetItem,
+                            ),
+                          ));
+                        }
                       },
-                      child: Text('Save Connection', style: TextStyle(color: HermesColors.evolutioGlow)),
+                      child: Text('Create Connection', style: TextStyle(color: HermesColors.evolutioGlow)),
                     ),
                   ),
-                ],
               ],
             ),
           );
@@ -1072,10 +1113,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
           _showObservationReasoningSheet();
         }),
 
-        // Pattern
-        _buildWorkflowAction('Pattern', Icons.pattern_rounded, onTap: () {
-          _showObservationPatternSheet();
-        }),
+        _buildConnectionsSection(),
 
         _buildWorkflowAction('Convert to Reflection', Icons.auto_awesome_rounded, color: HermesColors.evolutioGlow, onTap: () => _handleWorkflowAction('Convert to Reflection')),
         _buildWorkflowAction('Convert to Idea', Icons.lightbulb_outline_rounded, color: HermesColors.accent, onTap: () => _handleWorkflowAction('Convert to Idea')),

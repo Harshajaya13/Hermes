@@ -69,6 +69,16 @@ final itemsByBlockProvider = Provider.family<List<Item>, String>((ref, blockId) 
   return storage.getItems(blockId);
 });
 
+final reflectionsProvider = Provider.family<Reflection?, String>((ref, itemId) {
+  final storage = ref.watch(storageEngineProvider);
+  return storage.getReflectionForItem(itemId);
+});
+
+final itemConnectionsProvider = Provider.family<List<Connection>, String>((ref, itemId) {
+  final storage = ref.watch(storageEngineProvider);
+  return storage.getConnectionsForItem(itemId);
+});
+
 final sourcesProvider = Provider<List<KnowledgeSource>>((ref) {
   final storage = ref.watch(storageEngineProvider);
   final currentWorkspace = ref.watch(currentWorkspaceProvider);

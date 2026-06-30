@@ -94,6 +94,8 @@ class DomainDetailScreen extends ConsumerWidget {
                                   children: [
                                     Text(
                                       block.name,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                       style: HermesTypography.itemTitle.copyWith(
                                         color: HermesColors.textSecondary,
                                         fontSize: 16,

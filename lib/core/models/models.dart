@@ -7,3 +7,4 @@ export 'evolutio.dart';
 export 'veritas.dart';
 export 'app_settings.dart';
 export 'knowledge_source.dart';
+export 'connection.dart';

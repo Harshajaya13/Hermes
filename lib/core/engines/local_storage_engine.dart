@@ -20,6 +20,7 @@ class LocalStorageEngine {
   final Map<String, Evolutio> _evolutios = {};
   final Map<String, Veritas> _veritas = {};
   final Map<String, KnowledgeSource> _sources = {};
+  final Map<String, Connection> _connections = {};
   
   AppearanceSettings _appearance = const AppearanceSettings();
 
@@ -210,6 +211,10 @@ Without reflection, experience is just a series of events. With reflection, expe
 
   Future<void> _saveToDisk(String collection, Map<String, dynamic> data) async {
     final file = await _getFile(collection);
+    final parent = file.parent;
+    if (!await parent.exists()) {
+      await parent.create(recursive: true);
+    }
     await file.writeAsString(jsonEncode(data));
   }
 
@@ -222,6 +227,7 @@ Without reflection, experience is just a series of events. With reflection, expe
     await _loadCollection('evolutios', _evolutios, (json) => Evolutio.fromJson(json));
     await _loadCollection('veritas', _veritas, (json) => Veritas.fromJson(json));
     await _loadCollection('sources', _sources, (json) => KnowledgeSource.fromJson(json));
+    await _loadCollection('connections', _connections, (json) => Connection.fromJson(json));
   }
 
   Future<void> _loadCollection<T>(
@@ -552,6 +558,26 @@ Without reflection, experience is just a series of events. With reflection, expe
     await _saveToDisk('reflections', _reflections.map((k, v) => MapEntry(k, v.toJson())));
   }
 
+  // ── Connections ─────────────────────────────────────────────────────────────
+
+  List<Connection> getConnectionsForItem(String itemId) {
+    return _connections.values.where((c) => c.itemAId == itemId || c.itemBId == itemId).toList();
+  }
+  
+  Connection? getConnection(String id) {
+    return _connections[id];
+  }
+
+  Future<void> saveConnection(Connection connection) async {
+    _connections[connection.id] = connection;
+    await _saveToDisk('connections', _connections.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> deleteConnection(String id) async {
+    _connections.remove(id);
+    await _saveToDisk('connections', _connections.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
   // ── Evolutios ───────────────────────────────────────────────────────────────
 
   List<Evolutio> getEvolutios() {
@@ -641,6 +667,7 @@ Without reflection, experience is just a series of events. With reflection, expe
     _items.removeWhere((_, v) => v.deleted);
     _evolutios.removeWhere((_, v) => v.deleted);
     _veritas.removeWhere((_, v) => v.deleted);
+    // Connections don't have deleted flag currently, so we don't need to empty them.
 
     await Future.wait([
       _saveToDisk('domains', _domains.map((k, v) => MapEntry(k, v.toJson()))),
@@ -648,6 +675,7 @@ Without reflection, experience is just a series of events. With reflection, expe
       _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson()))),
       _saveToDisk('evolutios', _evolutios.map((k, v) => MapEntry(k, v.toJson()))),
       _saveToDisk('veritas', _veritas.map((k, v) => MapEntry(k, v.toJson()))),
+      _saveToDisk('connections', _connections.map((k, v) => MapEntry(k, v.toJson()))),
     ]);
   }
 
