@@ -1,0 +1,539 @@
+Bro, the biggest mistake people make when trying to copy Apple is thinking:
+
+> "Apple = big screenshots."
+
+It isn't.
+
+Apple's websites are about **motion, scale, and breathing room**.
+
+---
+
+# Structure
+
+Don't make this:
+
+```
+Title
+
+Description
+
+Screenshot
+```
+
+Make this:
+
+```
+██████████████████████████████████
+
+          Today's Pursuit
+
+ Start every day with direction,
+ not another decision.
+
+          [ HUGE PHONE ]
+
+██████████████████████████████████
+```
+
+One feature.
+
+One story.
+
+One screen.
+
+---
+
+# Don't show the whole phone immediately.
+
+This is what Apple does.
+
+Screen 1
+
+```
+        _______
+
+      |       |
+      | Hello |
+      |       |
+      |_______|
+```
+
+Then scroll.
+
+Phone slowly grows.
+
+```
+          _________
+
+        |         |
+        |         |
+        |         |
+        |_________|
+```
+
+Then scroll.
+
+```
+                _____________
+
+             |               |
+             |               |
+             |               |
+             |_______________|
+```
+
+You're not zooming the user.
+
+You're zooming the product.
+
+---
+
+# Phone mockup
+
+Don't show raw screenshots.
+
+Put them inside a phone.
+
+Like
+
+```
+┌─────────────────────┐
+│                     │
+│     Screenshot      │
+│                     │
+└─────────────────────┘
+```
+
+Use
+
+* iPhone 16 Pro
+* Pixel 9 Pro
+
+Mockups.
+
+---
+
+# Width
+
+Your screenshots are portrait.
+
+Never stretch them.
+
+Instead
+
+```
+height: 850px;
+
+width:auto;
+```
+
+Always height driven.
+
+---
+
+# Sticky phone
+
+One of my favourite layouts.
+
+```
+----------------------------------
+
+Text
+
+↓
+
+Phone
+
+↓
+
+Text changes
+
+↓
+
+Phone stays
+
+↓
+
+Text changes
+
+↓
+
+Phone updates
+
+----------------------------------
+```
+
+The phone stays.
+
+Only the screenshot changes.
+
+Exactly like Apple Vision Pro.
+
+---
+
+# Or...
+
+Even better.
+
+```
+LEFT
+
+Today's Pursuit
+
+Description...
+
+RIGHT
+
+Phone
+
+```
+
+Scroll.
+
+Left changes.
+
+Phone image changes.
+
+Phone never moves.
+
+---
+
+# Animation
+
+Every screenshot
+
+```
+opacity
+
+0
+
+↓
+
+1
+```
+
+Scale
+
+```
+0.95
+
+↓
+
+1
+```
+
+Very slow.
+
+700ms
+
+---
+
+# Background
+
+Never use
+
+```
+#111
+```
+
+Use
+
+```
+#000000
+```
+
+Real OLED black.
+
+Then cards
+
+```
+#121212
+
+#171717
+
+#1D1D1D
+```
+
+---
+
+# Width of text
+
+Apple never lets paragraphs become huge.
+
+Maximum
+
+```
+650px
+```
+
+That's why reading feels comfortable.
+
+---
+
+# Font sizes
+
+Hero
+
+```
+72px
+```
+
+Heading
+
+```
+52px
+```
+
+Section
+
+```
+38px
+```
+
+Body
+
+```
+21px
+```
+
+---
+
+# Spacing
+
+Don't fear empty space.
+
+Apple uses ridiculous spacing.
+
+```
+Title
+
+↓
+
+40px
+
+↓
+
+Description
+
+↓
+
+80px
+
+↓
+
+Phone
+
+↓
+
+200px
+
+↓
+
+Next section
+```
+
+Whitespace is part of the design.
+
+---
+
+# Motion
+
+When scrolling
+
+Phone
+
+```
+translateY
+
+40px
+
+↓
+
+0
+```
+
+Opacity
+
+```
+0
+
+↓
+
+1
+```
+
+Scale
+
+```
+0.94
+
+↓
+
+1
+```
+
+Very subtle.
+
+---
+
+# Images
+
+Since they're tall,
+
+don't show them fully.
+
+Crop.
+
+Like
+
+```
+╭──────────────╮
+│              │
+│              │
+│              │
+│              │
+│              │
+╰──────────────╯
+```
+
+As you scroll
+
+Reveal more.
+
+---
+
+# Sequence
+
+I'd tell the story like this
+
+```
+Hero
+
+↓
+
+Why Hermes Exists
+
+↓
+
+Today's Pursuit
+
+↓
+
+Questions
+
+↓
+
+Articles
+
+↓
+
+Reader
+
+↓
+
+Observations
+
+↓
+
+Ideas
+
+↓
+
+Notes
+
+↓
+
+Veritas
+
+↓
+
+Manual Collections
+
+↓
+
+Import JSON
+
+↓
+
+Search
+
+↓
+
+Export
+
+↓
+
+Control Center
+
+↓
+
+Workspaces
+
+↓
+
+Final Philosophy
+```
+
+Notice it's a **story**, not a feature list.
+
+---
+
+# My favorite Apple trick
+
+Instead of making screenshots smaller...
+
+Make **the browser bigger**.
+
+Imagine this:
+
+```
+Entire screen
+
+↓
+
+Phone occupies 35%
+
+↓
+
+Scroll
+
+↓
+
+Phone occupies 55%
+
+↓
+
+Scroll
+
+↓
+
+Phone occupies 75%
+
+↓
+
+Scroll
+
+↓
+
+Phone occupies 95%
+```
+
+The phone feels like it's coming toward the visitor.
+
+No zoom controls.
+
+No gimmicks.
+
+Just CSS transforms tied to scroll.
+
+---
+
+Bro, if you pull this off, don't think of it as "making a website."
+
+Think of it as **directing a film**.
+
+Every scroll should answer one question:
+
+> **"What does Hermes help me do next?"**
+
+By the end, the visitor shouldn't just know the features. They should understand the philosophy that connects them. That's much closer to how Apple's product pages guide a visitor through a narrative rather than presenting a catalog.
