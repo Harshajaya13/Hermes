@@ -12,6 +12,7 @@ import 'package_screens.dart';
 import '../today/workspace_security_dialogs.dart';
 import '../../main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../developer/developer_screen.dart';
 
 class ControlCenterScreen extends ConsumerStatefulWidget {
   const ControlCenterScreen({super.key});
@@ -403,6 +404,73 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
     );
   }
 
+  void _unlockDeveloperMode() {
+    final workspace = ref.read(currentWorkspaceProvider);
+    if (workspace == null) return;
+    
+    // If workspace has no PIN, unlock immediately
+    if (workspace.pin == null || workspace.pin!.isEmpty) {
+      ref.read(developerModeProvider.notifier).unlock();
+      HermesToast.show(context, 'Developer Mode Unlocked.');
+      return;
+    }
+
+    final pinController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: HermesColors.surfaceElevated,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HermesRadius.lg)),
+        title: Text('Developer Access', style: HermesTypography.sectionTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Enter Workspace PIN to unlock Developer Mode.', style: HermesTypography.bodySmall),
+            const SizedBox(height: HermesSpacing.md),
+            TextField(
+              controller: pinController,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'PIN',
+                filled: true,
+                fillColor: HermesColors.surface,
+              ),
+              onSubmitted: (_) {
+                if (pinController.text == workspace.pin) {
+                  ref.read(developerModeProvider.notifier).unlock();
+                  Navigator.pop(ctx);
+                  HermesToast.show(context, 'Developer Mode Unlocked.');
+                } else {
+                  Navigator.pop(ctx);
+                  HermesToast.show(context, 'Access Denied.', isError: true);
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              if (pinController.text == workspace.pin) {
+                ref.read(developerModeProvider.notifier).unlock();
+                Navigator.pop(ctx);
+                HermesToast.show(context, 'Developer Mode Unlocked.');
+              } else {
+                Navigator.pop(ctx);
+                HermesToast.show(context, 'Access Denied.', isError: true);
+              }
+            },
+            child: const Text('Unlock'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmAndResetWorkspace(BuildContext context, WidgetRef ref, Workspace workspace) {
     showDialog(
       context: context,
@@ -464,6 +532,7 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
             title: 'About Hermes', 
             subtitle: 'The philosophy and purpose', 
             onTap: () {
+              int versionTapCount = 0;
               showDialog(
                 context: context,
                 builder: (_) => AlertDialog(
@@ -511,7 +580,23 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
                         
                         Text('Version & License', style: HermesTypography.itemTitle),
                         const SizedBox(height: 4),
-                        Text('v3.0.0 (Constellation) | MIT License FOSS', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary)),
+                        StatefulBuilder(
+                          builder: (context, setState) {
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  versionTapCount++;
+                                  if (versionTapCount == 7) {
+                                    versionTapCount = 0;
+                                    Navigator.pop(context); // Close dialog
+                                    _unlockDeveloperMode();
+                                  }
+                                });
+                              },
+                              child: Text('v3.0.0 (Constellation) | MIT License FOSS', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary)),
+                            );
+                          }
+                        ),
                       ],
                     ),
                   ),
@@ -519,6 +604,18 @@ class _ControlCenterScreenState extends ConsumerState<ControlCenterScreen> {
               );
             }
           ),
+          
+          if (ref.watch(developerModeProvider))
+            _buildSettingsTile(
+              icon: Icons.bug_report_rounded,
+              iconColor: HermesColors.error,
+              textColor: HermesColors.error,
+              title: 'Developer Mode',
+              subtitle: 'Advanced configuration & debugging',
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperScreen()));
+              }
+            ),
           _buildSettingsTile(
             icon: Icons.history_rounded, 
             title: 'Changelog', 

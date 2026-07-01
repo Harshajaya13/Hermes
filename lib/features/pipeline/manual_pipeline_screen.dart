@@ -11,6 +11,7 @@ import '../../core/widgets/hermes_widgets.dart';
 import '../../core/constants/knowledge_guide.dart';
 import '../reader/hermes_reader_screen.dart';
 import 'create_manual_source_screen.dart';
+import 'create_web_source_screen.dart';
 
 class ManualPipelineScreen extends ConsumerWidget {
   const ManualPipelineScreen({super.key});
@@ -43,11 +44,14 @@ class ManualPipelineScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Knowledge Sources', style: HermesTypography.sectionTitle),
-                  Row(
+                  const SizedBox(height: HermesSpacing.sm),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       TextButton.icon(
                         onPressed: () {
@@ -71,16 +75,35 @@ class ManualPipelineScreen extends ConsumerWidget {
                         },
                         icon: const Icon(Icons.menu_book_rounded, size: 18),
                         label: const Text('Guide'),
-                        style: TextButton.styleFrom(foregroundColor: HermesColors.textSecondary),
+                        style: TextButton.styleFrom(
+                          foregroundColor: HermesColors.textSecondary,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          backgroundColor: HermesColors.surfaceElevated,
+                        ),
                       ),
-                      const SizedBox(width: 8),
                       TextButton.icon(
                         onPressed: () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateManualSourceScreen()));
                         },
-                        icon: const Icon(Icons.add_rounded, size: 18),
-                        label: const Text('Add Source'),
-                        style: TextButton.styleFrom(foregroundColor: HermesColors.evolutioGlow),
+                        icon: const Icon(Icons.upload_file_rounded, size: 18),
+                        label: const Text('JSON File'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: HermesColors.evolutioGlow,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          backgroundColor: HermesColors.evolutioGlow.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateWebSourceScreen()));
+                        },
+                        icon: const Icon(Icons.link_rounded, size: 18),
+                        label: const Text('URL'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: HermesColors.accent,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          backgroundColor: HermesColors.accent.withValues(alpha: 0.1),
+                        ),
                       ),
                     ],
                   ),

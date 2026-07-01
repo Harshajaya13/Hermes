@@ -263,6 +263,25 @@ Without reflection, experience is just a series of events. With reflection, expe
     }
   }
 
+  Future<void> factoryReset() async {
+    _workspaces.clear();
+    _domains.clear();
+    _blocks.clear();
+    _items.clear();
+    _evolutios.clear();
+    
+    await _saveToDisk('workspaces', {});
+    await _saveToDisk('domains', {});
+    await _saveToDisk('blocks', {});
+    await _saveToDisk('items', {});
+    await _saveToDisk('evolutios', {});
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    
+    await _initialize();
+  }
+
   Future<void> resetWorkspace(String workspaceId) async {
     // Keep the workspace itself, but clear all domains, blocks, items, evolutios
     final domainsToRemove = getDomains(workspaceId, includeHidden: true);

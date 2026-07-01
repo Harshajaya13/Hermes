@@ -37,6 +37,28 @@ class CurrentWorkspaceNotifier extends Notifier<Workspace?> {
   }
 }
 
+class DeveloperModeNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+  
+  void unlock() => state = true;
+}
+
+final developerModeProvider = NotifierProvider<DeveloperModeNotifier, bool>(
+  DeveloperModeNotifier.new,
+);
+
+class CamouflageModeNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+  
+  void toggle() => state = !state;
+}
+
+final camouflageModeProvider = NotifierProvider<CamouflageModeNotifier, bool>(
+  CamouflageModeNotifier.new,
+);
+
 final currentWorkspaceProvider = NotifierProvider<CurrentWorkspaceNotifier, Workspace?>(
   CurrentWorkspaceNotifier.new,
 );
