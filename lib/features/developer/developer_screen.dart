@@ -81,6 +81,30 @@ class DeveloperScreen extends ConsumerWidget {
                       style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
                       onPressed: () async {
                         Navigator.pop(ctx);
+                        await ref.read(storageEngineProvider).advanceTime(-1);
+                        if (context.mounted) {
+                          HermesToast.show(context, 'Rewound 1 day. Generating pursuit...');
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                        }
+                      },
+                      child: const Text('- 1 Day'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await ref.read(storageEngineProvider).advanceTime(-7);
+                        if (context.mounted) {
+                          HermesToast.show(context, 'Rewound 7 days. Generating pursuit...');
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                        }
+                      },
+                      child: const Text('- 7 Days'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
                         final selected = await showDatePicker(
                           context: context,
                           initialDate: ref.read(storageEngineProvider).currentDate,

@@ -60,18 +60,46 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       _reflectionController.addListener(_autoSaveReflection);
     });
     
-    _answerController.addListener(_autoSaveQuestionData);
-    _questionReflectionController.addListener(_autoSaveQuestionData);
+    _answerController.addListener(_onQuestionDataChanged);
+    _questionReflectionController.addListener(_onQuestionDataChanged);
   }
 
-  void _autoSaveQuestionData() {
+  bool _hasQuestionChanges = false;
+  
+  void _onQuestionDataChanged() {
+    if (!mounted) return;
+    
+    final storage = ref.read(storageEngineProvider);
+    final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+    
+    final storedAnswer = latestItem.metadata?['userAnswer'] as String? ?? '';
+    final storedReflection = latestItem.metadata?['questionReflection'] as String? ?? '';
+    
+    final currentAnswer = _answerController.text;
+    final currentReflection = _questionReflectionController.text;
+    
+    final hasChanges = currentAnswer != storedAnswer || currentReflection != storedReflection;
+    if (_hasQuestionChanges != hasChanges) {
+      setState(() => _hasQuestionChanges = hasChanges);
+    }
+  }
+
+  void _saveQuestionChanges() {
     final storage = ref.read(storageEngineProvider);
     final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
     final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
-    updatedMeta['userAnswer'] = _answerController.text.trim();
-    updatedMeta['questionReflection'] = _questionReflectionController.text.trim();
+    updatedMeta['userAnswer'] = _answerController.text;
+    updatedMeta['questionReflection'] = _questionReflectionController.text;
+    
+    // Explicitly update so that erasing everything actually saves empty state
     final updatedItem = latestItem.copyWith(metadata: updatedMeta);
     storage.saveItems([updatedItem]);
+    
+    setState(() {
+      _hasQuestionChanges = false;
+    });
+    
+    HermesToast.show(context, 'Changes saved');
   }
 
   void _autoSaveReflection() {
@@ -1591,6 +1619,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                   updatedMeta.remove('isSolved');
                   updatedMeta.remove('completedDate');
                   storage.saveItems([latestItem.copyWith(metadata: updatedMeta)]);
+                  ref.invalidate(itemsByBlockProvider(widget.item.blockId));
                   if (mounted) setState(() {});
                 },
                 icon: const Icon(Icons.undo_rounded, size: 16),
@@ -1603,7 +1632,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
           Text('Your Answer', style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
           const SizedBox(height: HermesSpacing.sm),
           TextField(
-            controller: _answerController..text = userAnswer,
+            controller: _answerController,
             maxLines: null,
             minLines: 3,
             style: HermesTypography.body.copyWith(height: 1.6),
@@ -1613,13 +1642,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
               contentPadding: const EdgeInsets.all(HermesSpacing.lg),
             ),
-            onChanged: (val) {
-              final storage = ref.read(storageEngineProvider);
-              final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
-              final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
-              updatedMeta['userAnswer'] = val;
-              storage.saveItems([latestItem.copyWith(metadata: updatedMeta)]);
-            },
+            onChanged: (val) {},
           ),
           const SizedBox(height: HermesSpacing.xl),
           
@@ -1653,7 +1676,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
           Text('Your Reflection', style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
           const SizedBox(height: HermesSpacing.sm),
           TextField(
-            controller: _questionReflectionController..text = reflection,
+            controller: _questionReflectionController,
             maxLines: null,
             minLines: 3,
             style: HermesTypography.body.copyWith(height: 1.6),
@@ -1665,14 +1688,25 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
               hintText: 'Add a reflection...',
               hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
             ),
-            onChanged: (val) {
-              final storage = ref.read(storageEngineProvider);
-              final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
-              final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
-              updatedMeta['questionReflection'] = val;
-              storage.saveItems([latestItem.copyWith(metadata: updatedMeta)]);
-            },
+            onChanged: (val) {},
           ),
+          const SizedBox(height: HermesSpacing.lg),
+          
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton(
+              onPressed: _hasQuestionChanges ? _saveQuestionChanges : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: HermesColors.surfaceElevated,
+                foregroundColor: _hasQuestionChanges ? HermesColors.evolutioGlow : HermesColors.textTertiary,
+                padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.xl, vertical: HermesSpacing.md),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HermesRadius.md)),
+                side: BorderSide(color: _hasQuestionChanges ? HermesColors.evolutioGlow.withValues(alpha: 0.5) : HermesColors.border.withValues(alpha: 0.1)),
+              ),
+              child: Text('Save Changes', style: HermesTypography.button),
+            ),
+          ),
+          
           const SizedBox(height: HermesSpacing.xl),
           
           Text('Completed on: ${completedDateStr.substring(0, 10)}', style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),

@@ -173,7 +173,8 @@ class TodayScreen extends ConsumerWidget {
           if (i.metadata?['isSolved'] == true) return false;
           
           final skippedDates = (i.metadata?['skippedDates'] as List?)?.cast<String>() ?? [];
-          if (skippedDates.contains(todayStr)) return false;
+          final deletedDates = (i.metadata?['deletedDates'] as List?)?.cast<String>() ?? [];
+          if (skippedDates.contains(todayStr) || deletedDates.contains(todayStr)) return false;
           
           return true;
         }).toList();
@@ -474,9 +475,11 @@ class TodayScreen extends ConsumerWidget {
                                               final updatedMeta = Map<String, dynamic>.from(item.metadata ?? {});
                                               
                                               if (value == 'remove') {
-                                                updatedMeta['isDailyGoal'] = false; // permanent remove
+                                                final deleted = List<String>.from((updatedMeta['deletedDates'] as List?) ?? []);
+                                                if (!deleted.contains(todayStr)) deleted.add(todayStr);
+                                                updatedMeta['deletedDates'] = deleted;
                                               } else {
-                                                final skipped = (updatedMeta['skippedDates'] as List?)?.cast<String>() ?? [];
+                                                final skipped = List<String>.from((updatedMeta['skippedDates'] as List?) ?? []);
                                                 if (!skipped.contains(todayStr)) skipped.add(todayStr);
                                                 updatedMeta['skippedDates'] = skipped;
                                               }

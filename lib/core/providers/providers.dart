@@ -36,7 +36,7 @@ class CurrentWorkspaceNotifier extends Notifier<Workspace?> {
     if (isCamouflage) {
       final dummy = workspaces.where((w) => w.name == 'Dummy Workspace' || w.name == 'Starter Workspace').firstOrNull;
       if (dummy != null) return dummy;
-      return Workspace(id: 'temp_demo', name: 'Demo Workspace', isDefault: false);
+      return Workspace(id: 'temp_demo', name: 'Workspace', isDefault: false);
     }
     
     if (_manualState != null && workspaces.any((w) => w.id == _manualState!.id)) {
