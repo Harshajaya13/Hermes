@@ -68,23 +68,22 @@ body {
 /* Phone Mockup Frame */
 .phone-frame {
   position: relative;
-  width: auto;
   height: 850px;
+  width: max-content; /* Hug the content */
   border-radius: 40px;
-  background: var(--card-1);
-  border: 8px solid #222;
+  background: var(--bg-black);
+  border: 12px solid #222;
   box-shadow: 0 0 0 1px #333, 0 30px 60px rgba(0,0,0,0.8);
   overflow: hidden;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
-/* Crop image cleanly at top */
 .phone-frame img {
-  width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: top;
+  width: auto;
+  display: block;
 }
 
 /* Scroll Container */
@@ -110,6 +109,38 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Markdown Content */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  color: var(--text-primary);
+  margin-top: 32px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.markdown-content p {
+  margin-bottom: 16px;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-bottom: 16px;
+  padding-left: 24px;
+}
+
+.markdown-content li {
+  margin-bottom: 8px;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid var(--text-secondary);
+  padding-left: 16px;
+  margin-left: 0;
+  margin-bottom: 16px;
+  font-style: italic;
 }
 
 /* Sections */
