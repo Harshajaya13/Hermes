@@ -57,17 +57,31 @@ class WebScraper {
       
       // We will look for headers and paragraphs within the chosen content node.
       // This is a naive but effective approach for basic blogs, Wikipedia, Hacker News, etc.
-      final validTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li'];
+      final validTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li', 'img'];
       
       void extract(Node node) {
         if (node is Element) {
           final tag = node.localName?.toLowerCase();
           
-          if (['script', 'style', 'nav', 'header', 'footer', 'aside'].contains(tag)) {
+          if (['script', 'style', 'nav', 'header', 'footer', 'aside', 'svg'].contains(tag)) {
             return;
           }
 
           if (validTags.contains(tag)) {
+            if (tag == 'img') {
+              final src = node.attributes['src'] ?? node.attributes['data-src'] ?? node.attributes['data-lazy-src'];
+              final alt = node.attributes['alt'] ?? 'Image';
+              if (src != null && src.isNotEmpty && !src.startsWith('data:image')) {
+                String finalSrc = src;
+                if (src.startsWith('/')) {
+                  final baseUri = Uri.parse(url);
+                  finalSrc = '${baseUri.scheme}://${baseUri.host}$src';
+                }
+                buffer.writeln('\n![$alt]($finalSrc)\n');
+              }
+              return;
+            }
+
             final text = node.text.trim().replaceAll(RegExp(r'\s+'), ' ');
             if (text.isEmpty) return;
 

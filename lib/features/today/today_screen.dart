@@ -899,14 +899,20 @@ class TodayScreen extends ConsumerWidget {
   void _showWorkspaceSettings(BuildContext screenContext, WidgetRef ref, Workspace? currentWorkspace) {
     showModalBottomSheet(
       context: screenContext,
+      isScrollControlled: true,
       backgroundColor: HermesColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl)),
       ),
       builder: (bottomSheetContext) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(HermesSpacing.lg),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(bottomSheetContext).viewInsets.bottom + HermesSpacing.lg,
+              left: HermesSpacing.lg,
+              right: HermesSpacing.lg,
+              top: HermesSpacing.lg,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,

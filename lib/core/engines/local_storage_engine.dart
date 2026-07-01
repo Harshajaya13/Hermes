@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -279,7 +280,7 @@ Without reflection, experience is just a series of events. With reflection, expe
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     
-    await _initialize();
+    await initialize();
   }
 
   Future<void> resetWorkspace(String workspaceId) async {

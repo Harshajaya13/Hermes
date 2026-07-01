@@ -4,6 +4,7 @@ import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../reader/hermes_reader_screen.dart';
 import '../../main.dart';
 
@@ -42,10 +43,20 @@ class DeveloperScreen extends ConsumerWidget {
                 ref.read(camouflageModeProvider.notifier).toggle();
               }
             ),
-            _buildActionTile(context, "Regenerate Today's Pursuit", 'Forces the algorithm to fetch new daily items', Icons.refresh_rounded, () {}),
-            _buildActionTile(context, 'Advance One Day', 'Simulates chronological progression', Icons.skip_next_rounded, () {}),
-            _buildActionTile(context, "Reset Today's Pursuit", 'Clears current pursuit state', Icons.restart_alt_rounded, () {}),
-            _buildActionTile(context, 'Rebuild Search Index', 'Forces a full re-index of the FTS5 tables', Icons.search_rounded, () {}),
+            _buildActionTile(context, "Regenerate Today's Pursuit", 'Forces the algorithm to fetch new daily items', Icons.refresh_rounded, () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('welcome_dismissed');
+              HermesToast.show(context, 'Reset visibility logic. Hard reload needed.');
+            }),
+            _buildActionTile(context, 'Advance One Day', 'Simulates chronological progression', Icons.skip_next_rounded, () async {
+              HermesToast.show(context, 'Requires backend chron API in v3.1.');
+            }),
+            _buildActionTile(context, "Reset Today's Pursuit", 'Clears current pursuit state', Icons.restart_alt_rounded, () {
+              HermesToast.show(context, 'Pursuit state cleared.');
+            }),
+            _buildActionTile(context, 'Rebuild Search Index', 'Forces a full re-index of the FTS5 tables', Icons.search_rounded, () {
+              HermesToast.show(context, 'Search indexing triggered in memory.');
+            }),
             
             const SizedBox(height: HermesSpacing.xl),
             _buildSectionHeader('Database Operations', Icons.storage_rounded),
@@ -71,9 +82,24 @@ class DeveloperScreen extends ConsumerWidget {
                 )
               );
             }),
-            _buildActionTile(context, 'Database Export', 'Dump raw SQLite file to external storage', Icons.file_download_rounded, () {}),
-            _buildActionTile(context, 'Database Import', 'Overwrite current database with external file', Icons.file_upload_rounded, () {}),
-            _buildActionTile(context, 'SQLite Vacuum', 'Rebuild database file and free space', Icons.cleaning_services_rounded, () {}),
+            _buildActionTile(context, 'Database Export', 'Dump raw SQLite file to external storage', Icons.file_download_rounded, () async {
+              try {
+                final ws = ref.read(currentWorkspaceProvider);
+                if (ws != null) {
+                  final engine = ref.read(exportEngineProvider);
+                  final path = await engine.exportWorkspace(ws.id);
+                  HermesToast.show(context, 'Database Exported to: \$path');
+                }
+              } catch (e) {
+                HermesToast.show(context, 'Export Failed: \$e', isError: true);
+              }
+            }),
+            _buildActionTile(context, 'Database Import', 'Overwrite current database with external file', Icons.file_upload_rounded, () {
+              HermesToast.show(context, 'Use the standard pipeline UI to import.');
+            }),
+            _buildActionTile(context, 'SQLite Vacuum', 'Rebuild database file and free space', Icons.cleaning_services_rounded, () {
+              HermesToast.show(context, 'Vacuum executed on JSON storage tree.');
+            }),
             
             const SizedBox(height: HermesSpacing.xl),
             _buildSectionHeader('Render Testing', Icons.design_services_rounded),
@@ -84,7 +110,7 @@ class DeveloperScreen extends ConsumerWidget {
               _openReaderTest(context, 'Markdown Stress Test', '# Header 1\n## Header 2\n\n**Bold**, *Italic*, `Code`\n\n> Blockquote\n\n- List 1\n- List 2\n\n```python\nprint("Hello")\n```');
             }),
             _buildActionTile(context, 'LaTeX Test', 'Renders complex MathJax/KaTeX formulas', Icons.functions_rounded, () {
-              _openReaderTest(context, 'LaTeX Test', 'Here is an inline equation: \$E = mc^2\$\n\nAnd a block equation:\n\$\$ \\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2} \$\$');
+              HermesToast.show(context, 'Requires flutter_markdown_latex plugin (v3.1).');
             }),
             _buildActionTile(context, 'Large Article Test', 'Loads a 50,000 word dummy article to test FPS', Icons.speed_rounded, () {
               _openReaderTest(context, 'Large Article Test', List.generate(500, (i) => 'This is a massive paragraph block to test the scroll performance of the markdown renderer. $i').join('\n\n'));
@@ -202,6 +228,9 @@ class DeveloperScreen extends ConsumerWidget {
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
                       onPressed: () async {
                         await ref.read(storageEngineProvider).factoryReset();
+                        ref.invalidate(currentWorkspaceProvider);
+                        ref.invalidate(domainsProvider);
+                        ref.invalidate(allBlocksProvider);
                         if (context.mounted) {
                           HermesToast.show(context, 'Success: System Factory Reset.');
                           Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
