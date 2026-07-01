@@ -73,9 +73,14 @@ class WebScraper {
               final alt = node.attributes['alt'] ?? 'Image';
               if (src != null && src.isNotEmpty && !src.startsWith('data:image')) {
                 String finalSrc = src;
-                if (src.startsWith('/')) {
+                if (src.startsWith('//')) {
+                  finalSrc = 'https:$src';
+                } else if (src.startsWith('/')) {
                   final baseUri = Uri.parse(url);
                   finalSrc = '${baseUri.scheme}://${baseUri.host}$src';
+                } else if (!src.startsWith('http')) {
+                  final baseUri = Uri.parse(url);
+                  finalSrc = '${baseUri.scheme}://${baseUri.host}/$src';
                 }
                 buffer.writeln('\n![$alt]($finalSrc)\n');
               }

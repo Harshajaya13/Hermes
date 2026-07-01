@@ -54,93 +54,121 @@ class DeveloperScreen extends ConsumerWidget {
                 builder: (ctx) => AlertDialog(
                   backgroundColor: HermesColors.surfaceElevated,
                   title: Text('Advance Time', style: HermesTypography.sectionTitle),
-                  content: Text('Simulating future dates allows you to test the scheduling engine.', style: HermesTypography.metadata),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
-                      onPressed: () async {
-                        Navigator.pop(ctx);
-                        await ref.read(storageEngineProvider).advanceTime(1);
-                        if (context.mounted) {
-                          HermesToast.show(context, 'Advanced 1 day. Generating pursuit...');
-                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-                        }
-                      },
-                      child: const Text('+ 1 Day'),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
-                      onPressed: () async {
-                        Navigator.pop(ctx);
-                        await ref.read(storageEngineProvider).advanceTime(7);
-                        if (context.mounted) {
-                          HermesToast.show(context, 'Advanced 7 days. Generating pursuit...');
-                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-                        }
-                      },
-                      child: const Text('+ 7 Days'),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
-                      onPressed: () async {
-                        Navigator.pop(ctx);
-                        await ref.read(storageEngineProvider).advanceTime(-1);
-                        if (context.mounted) {
-                          HermesToast.show(context, 'Rewound 1 day. Generating pursuit...');
-                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-                        }
-                      },
-                      child: const Text('- 1 Day'),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
-                      onPressed: () async {
-                        Navigator.pop(ctx);
-                        await ref.read(storageEngineProvider).advanceTime(-7);
-                        if (context.mounted) {
-                          HermesToast.show(context, 'Rewound 7 days. Generating pursuit...');
-                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-                        }
-                      },
-                      child: const Text('- 7 Days'),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
-                      onPressed: () async {
-                        Navigator.pop(ctx);
-                        final selected = await showDatePicker(
-                          context: context,
-                          initialDate: ref.read(storageEngineProvider).currentDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2050),
-                          builder: (context, child) => Theme(
-                            data: ThemeData.dark(),
-                            child: child!,
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text('Simulating future dates allows you to test the scheduling engine.', style: HermesTypography.metadata),
+                      const SizedBox(height: HermesSpacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
+                              onPressed: () async {
+                                Navigator.pop(ctx);
+                                await ref.read(storageEngineProvider).advanceTime(-7);
+                                if (context.mounted) {
+                                  HermesToast.show(context, 'Rewound 7 days. Generating pursuit...');
+                                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                                }
+                              },
+                              child: const Text('- 7 Days'),
+                            ),
                           ),
-                        );
-                        if (selected != null) {
-                          await ref.read(storageEngineProvider).jumpToDate(selected);
+                          const SizedBox(width: HermesSpacing.sm),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
+                              onPressed: () async {
+                                Navigator.pop(ctx);
+                                await ref.read(storageEngineProvider).advanceTime(-1);
+                                if (context.mounted) {
+                                  HermesToast.show(context, 'Rewound 1 day. Generating pursuit...');
+                                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                                }
+                              },
+                              child: const Text('- 1 Day'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: HermesSpacing.sm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
+                              onPressed: () async {
+                                Navigator.pop(ctx);
+                                await ref.read(storageEngineProvider).advanceTime(1);
+                                if (context.mounted) {
+                                  HermesToast.show(context, 'Advanced 1 day. Generating pursuit...');
+                                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                                }
+                              },
+                              child: const Text('+ 1 Day'),
+                            ),
+                          ),
+                          const SizedBox(width: HermesSpacing.sm),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
+                              onPressed: () async {
+                                Navigator.pop(ctx);
+                                await ref.read(storageEngineProvider).advanceTime(7);
+                                if (context.mounted) {
+                                  HermesToast.show(context, 'Advanced 7 days. Generating pursuit...');
+                                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                                }
+                              },
+                              child: const Text('+ 7 Days'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: HermesSpacing.sm),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          final selected = await showDatePicker(
+                            context: context,
+                            initialDate: ref.read(storageEngineProvider).currentDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2050),
+                            builder: (context, child) => Theme(
+                              data: ThemeData.dark(),
+                              child: child!,
+                            ),
+                          );
+                          if (selected != null) {
+                            await ref.read(storageEngineProvider).jumpToDate(selected);
+                            if (context.mounted) {
+                              HermesToast.show(context, 'Jumped to date. Generating pursuit...');
+                              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                            }
+                          }
+                        },
+                        child: const Text('Jump to Date'),
+                      ),
+                      const SizedBox(height: HermesSpacing.md),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: HermesColors.veritasColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await ref.read(storageEngineProvider).resetTime();
                           if (context.mounted) {
-                            HermesToast.show(context, 'Jumped to date. Generating pursuit...');
+                            HermesToast.show(context, 'Returned to today. Generating pursuit...');
                             Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
                           }
-                        }
-                      },
-                      child: const Text('Jump to Date'),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.veritasColor, foregroundColor: Colors.white),
-                      onPressed: () async {
-                        Navigator.pop(ctx);
-                        await ref.read(storageEngineProvider).resetTime();
-                        if (context.mounted) {
-                          HermesToast.show(context, 'Returned to today. Generating pursuit...');
-                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-                        }
-                      },
-                      child: const Text('Reset to Today'),
-                    ),
+                        },
+                        child: const Text('Reset to Today'),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: HermesColors.textSecondary))),
                   ],
                 ),
               );

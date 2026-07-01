@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/providers/providers.dart';
@@ -56,7 +57,8 @@ class _StarterWelcomeBannerState extends State<StarterWelcomeBanner> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading || !_isVisible) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (_isLoading || !_isVisible)
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: Column(
@@ -64,13 +66,17 @@ class _StarterWelcomeBannerState extends State<StarterWelcomeBanner> {
           HermesFadeIn(
             delay: const Duration(milliseconds: 100),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: HermesSpacing.screenHorizontal),
+              padding: const EdgeInsets.symmetric(
+                horizontal: HermesSpacing.screenHorizontal,
+              ),
               child: Container(
                 padding: const EdgeInsets.all(HermesSpacing.lg),
                 decoration: BoxDecoration(
                   color: HermesColors.surfaceElevated,
                   borderRadius: BorderRadius.circular(HermesRadius.md),
-                  border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
+                  border: Border.all(
+                    color: HermesColors.border.withValues(alpha: 0.1),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,9 +84,18 @@ class _StarterWelcomeBannerState extends State<StarterWelcomeBanner> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Welcome to Hermes.', style: HermesTypography.body.copyWith(color: HermesColors.textPrimary)),
+                        Text(
+                          'Welcome to Hermes.',
+                          style: HermesTypography.body.copyWith(
+                            color: HermesColors.textPrimary,
+                          ),
+                        ),
                         IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 20, color: HermesColors.textTertiary),
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            size: 20,
+                            color: HermesColors.textTertiary,
+                          ),
                           onPressed: _dismiss,
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
@@ -95,7 +110,10 @@ class _StarterWelcomeBannerState extends State<StarterWelcomeBanner> {
                     const SizedBox(height: HermesSpacing.sm),
                     Text(
                       '> Tip: Tap the ⋮ menu on section titles to discover additional actions.',
-                      style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary, fontSize: 11),
+                      style: HermesTypography.metadata.copyWith(
+                        color: HermesColors.textTertiary,
+                        fontSize: 11,
+                      ),
                     ),
                   ],
                 ),
@@ -114,24 +132,30 @@ class TodayScreen extends ConsumerWidget {
 
   String _getItemTypeBadge(ItemType type) {
     switch (type) {
-      case ItemType.article: return '📖 Article';
-      case ItemType.question: return '❓ Question';
-      case ItemType.idea: return '💡 Idea';
-      case ItemType.note: return '📝 Note';
-      case ItemType.observation: return '👀 Observation';
-      case ItemType.reflection: return '💭 Reflection';
+      case ItemType.article:
+        return '📖 Article';
+      case ItemType.question:
+        return '❓ Question';
+      case ItemType.idea:
+        return '💡 Idea';
+      case ItemType.note:
+        return '📝 Note';
+      case ItemType.observation:
+        return '👀 Observation';
+      case ItemType.reflection:
+        return '💭 Reflection';
     }
   }
 
   String _getPreviewText(String content) {
     // Remove markdown headers, code blocks, bold, italic
     String preview = content
-      .replaceAll(RegExp(r'```.*?```', dotAll: true), '[Code Block]')
-      .replaceAll(RegExp(r'#+\s'), '')
-      .replaceAll(RegExp(r'[*_`~]'), '')
-      .replaceAll(RegExp(r'!\[.*?\]\(.*?\)'), '[Image]')
-      .replaceAll(RegExp(r'\[.*?\]\(.*?\)'), '[Link]')
-      .trim();
+        .replaceAll(RegExp(r'```.*?```', dotAll: true), '[Code Block]')
+        .replaceAll(RegExp(r'#+\s'), '')
+        .replaceAll(RegExp(r'[*_`~]'), '')
+        .replaceAll(RegExp(r'!\[.*?\]\(.*?\)'), '[Image]')
+        .replaceAll(RegExp(r'\[.*?\]\(.*?\)'), '[Link]')
+        .trim();
     return preview;
   }
 
@@ -140,48 +164,68 @@ class TodayScreen extends ConsumerWidget {
     final storage = ref.watch(storageEngineProvider);
     final now = storage.currentDate;
     final greeting = _getGreeting(now.hour);
-    
+
     // Read dynamic data from offline storage
     final recentEvolutios = ref.watch(recentEvolutiosProvider);
     final workspace = ref.watch(currentWorkspaceProvider);
     final archivedSections = ref.watch(archivedSectionsProvider);
-    final veritasList = workspace != null ? storage.getVeritas(workspace.id) : <Veritas>[];
-    
+    final veritasList = workspace != null
+        ? storage.getVeritas(workspace.id)
+        : <Veritas>[];
+
     final allDomains = ref.watch(domainsProvider);
-    final pinnedDomains = allDomains.where((d) => d.pinned && !d.deleted && !d.archived).take(2).toList();
-    
+    final pinnedDomains = allDomains
+        .where((d) => d.pinned && !d.deleted && !d.archived)
+        .take(2)
+        .toList();
+
     final allBlocks = ref.watch(allBlocksProvider);
-    var pinnedBlocks = allBlocks.where((b) => b.pinned && !b.deleted && !b.archived).take(4).toList();
+    var pinnedBlocks = allBlocks
+        .where((b) => b.pinned && !b.deleted && !b.archived)
+        .take(4)
+        .toList();
 
     // Dynamic daily item calculation based on selected format
     final List<MapEntry<Block, Item>> dailyItems = [];
     final sources = ref.watch(sourcesProvider);
-    final Map<String, KnowledgeSource> sourceMap = { for (var s in sources) s.id: s };
-    
+    final Map<String, KnowledgeSource> sourceMap = {
+      for (var s in sources) s.id: s,
+    };
+
     if (allBlocks.isNotEmpty) {
       // Temporary map to track how many items we've taken per source today
       final sourceCounts = <String, int>{};
-      
+
       for (final block in allBlocks) {
         final items = ref.watch(itemsByBlockProvider(block.id));
-        
+
         final todayStr = storage.currentDate.toIso8601String().substring(0, 10);
-        
+
         // Find all unsolved items meant for Today's Pursuit
         final unsolvedItems = items.where((i) {
           if (i.metadata?['isDailyGoal'] != true) return false;
           if (i.metadata?['isSolved'] == true) return false;
-          
-          final skippedDates = (i.metadata?['skippedDates'] as List?)?.cast<String>() ?? [];
-          final deletedDates = (i.metadata?['deletedDates'] as List?)?.cast<String>() ?? [];
-          if (skippedDates.contains(todayStr) || deletedDates.contains(todayStr)) return false;
-          
+
+          final skippedDates =
+              (i.metadata?['skippedDates'] as List?)?.cast<String>() ?? [];
+          final deletedDates =
+              (i.metadata?['deletedDates'] as List?)?.cast<String>() ?? [];
+          if (skippedDates.contains(todayStr) ||
+              deletedDates.contains(todayStr)) {
+            return false;
+          }
+
+          // If simulating a date before the item was even created, do not show it!
+          final itemDate = DateTime(i.createdAt.year, i.createdAt.month, i.createdAt.day);
+          final simDate = DateTime(storage.currentDate.year, storage.currentDate.month, storage.currentDate.day);
+          if (simDate.isBefore(itemDate)) return false;
+
           return true;
         }).toList();
-        
+
         // Stably sort them so the same items appear until solved
         unsolvedItems.sort((a, b) => a.id.compareTo(b.id));
-        
+
         // Enforce the Daily Limit from the KnowledgeSource, and allow manual daily goals!
         for (final item in unsolvedItems) {
           if (item.sourceId != null) {
@@ -201,10 +245,9 @@ class TodayScreen extends ConsumerWidget {
         }
       }
 
-
       // Sort by newest first
       dailyItems.sort((a, b) => b.value.createdAt.compareTo(a.value.createdAt));
-      
+
       // Deduplicate by title to hide past duplicate attempts
       final uniqueTitles = <String>{};
       final dedupedItems = <MapEntry<Block, Item>>[];
@@ -221,31 +264,45 @@ class TodayScreen extends ConsumerWidget {
 
     void showSectionOptions(String sectionId, String sectionName) {
       final isDailySection = sectionId == 'question';
-      
+
       showModalBottomSheet(
         context: context,
         backgroundColor: HermesColors.surfaceElevated,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(HermesRadius.xl),
+          ),
+        ),
         builder: (ctx) => SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(HermesSpacing.lg),
             child: Consumer(
               builder: (consumerCtx, ref, child) {
-                
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('$sectionName Options', style: HermesTypography.sectionTitle),
+                    Text(
+                      '$sectionName Options',
+                      style: HermesTypography.sectionTitle,
+                    ),
                     const SizedBox(height: HermesSpacing.md),
-                    
+
                     if (isDailySection) ...[
                       ListTile(
-                        leading: const Icon(Icons.add_circle_outline, color: HermesColors.textPrimary),
-                        title: Text('Add New Goal', style: HermesTypography.body),
+                        leading: const Icon(
+                          Icons.add_circle_outline,
+                          color: HermesColors.textPrimary,
+                        ),
+                        title: Text(
+                          'Add New Goal',
+                          style: HermesTypography.body,
+                        ),
                         onTap: () {
                           Navigator.pop(ctx);
-                          final blockToUse = allBlocks.isNotEmpty ? allBlocks.first : null;
+                          final blockToUse = allBlocks.isNotEmpty
+                              ? allBlocks.first
+                              : null;
                           if (blockToUse != null) {
                             CreateItemSheet.show(
                               context,
@@ -254,20 +311,37 @@ class TodayScreen extends ConsumerWidget {
                               isDailyGoal: true,
                             );
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please create a block first.')));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please create a block first.'),
+                              ),
+                            );
                           }
                         },
                       ),
                     ],
-                      
+
                     if (!isDailySection)
                       ListTile(
-                        leading: const Icon(Icons.visibility_off_outlined, color: HermesColors.textPrimary),
-                        title: Text((sectionId == 'pinned' || sectionId == 'pinned_domains') ? 'Unpin From Home' : 'Hide From Home', style: HermesTypography.body),
+                        leading: const Icon(
+                          Icons.visibility_off_outlined,
+                          color: HermesColors.textPrimary,
+                        ),
+                        title: Text(
+                          (sectionId == 'pinned' ||
+                                  sectionId == 'pinned_domains')
+                              ? 'Unpin From Home'
+                              : 'Hide From Home',
+                          style: HermesTypography.body,
+                        ),
                         onTap: () {
                           Navigator.pop(ctx);
-                          ref.read(archivedSectionsProvider.notifier).archiveSection(sectionId);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$sectionName hidden.')));
+                          ref
+                              .read(archivedSectionsProvider.notifier)
+                              .archiveSection(sectionId);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('$sectionName hidden.')),
+                          );
                         },
                       ),
                   ],
@@ -287,590 +361,954 @@ class TodayScreen extends ConsumerWidget {
             constraints: const BoxConstraints(maxWidth: 800),
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
-          slivers: [
-            const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.xl),
-            ),
+              slivers: [
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: HermesSpacing.xl),
+                ),
 
-            // ── Greeting & Date & Settings ──────────────────────────────
-            SliverToBoxAdapter(
-              child: HermesFadeIn(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HermesSpacing.screenHorizontal,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
+                // ── Greeting & Date & Settings ──────────────────────────────
+                SliverToBoxAdapter(
+                  child: HermesFadeIn(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: HermesSpacing.screenHorizontal,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            greeting,
-                            style: HermesTypography.screenTitle,
-                          ),
-                          const SizedBox(height: HermesSpacing.xxs),
-                          Text(
-                            _formatDate(now),
-                            style: HermesTypography.metadata,
-                          ),
-                        ],
-                      ),
-                      // Workspace & Settings Button
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            // TODO: Open Workspace/Settings Sheet
-                            _showWorkspaceSettings(context, ref, workspace);
-                          },
-                          borderRadius: BorderRadius.circular(HermesRadius.pill),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: HermesSpacing.sm,
-                              vertical: HermesSpacing.xs,
-                            ),
-                            decoration: BoxDecoration(
-                              color: HermesColors.surfaceElevated,
-                              borderRadius: BorderRadius.circular(HermesRadius.pill),
-                              border: Border.all(
-                                color: HermesColors.border,
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: workspace?.isEncrypted == true 
-                                        ? HermesColors.veritasColor 
-                                        : HermesColors.evolutioGlow,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: HermesSpacing.xs),
-                                Text(
-                                  workspace?.name ?? 'Personal',
-                                  style: HermesTypography.metadata.copyWith(
-                                    color: HermesColors.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(width: HermesSpacing.xs),
-                                const Icon(
-                                  Icons.settings_rounded,
-                                  size: 14,
-                                  color: HermesColors.textTertiary,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.sectionGap),
-            ),
-
-            if (workspace?.name == 'Starter') 
-              const StarterWelcomeBanner(),
-
-            // ── Morning Question ────────────────────────────────────
-            if (!archivedSections.contains('question')) ...[
-              SliverToBoxAdapter(
-                child: HermesFadeIn(
-                  delay: Duration.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: HermesSpacing.screenHorizontal,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        HermesSectionHeader(
-                          title: "Today's Pursuit",
-                          onAction: () {
-                            showSectionOptions('question', "Today's Pursuit");
-                          },
-                        ),
-                        const SizedBox(height: HermesSpacing.xs),
-                        
-                        if (dailyItems.isEmpty)
-                          HermesCard(
-                            onTap: () {},
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: HermesSpacing.lg),
-                              child: Center(child: Text('No goals for today.\nTap the ⋮ menu on the section title to add one.', textAlign: TextAlign.center, style: HermesTypography.metadata)),
-                            ),
-                          )
-                        else
-                          ...dailyItems.take(20).map((entry) {
-                            final item = entry.value;
-                            final block = entry.key;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: HermesSpacing.sm),
-                              child: HermesCard(
-                                onTap: () {
-                                  Navigator.push(context, MaterialPageRoute(
-                                    builder: (context) => HermesReaderScreen(item: item, block: block),
-                                  ));
-                                },
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 6,
-                                          height: 6,
-                                          decoration: BoxDecoration(
-                                            color: item.type.color,
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        const SizedBox(width: HermesSpacing.xs),
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              Expanded(
-                                                child: Opacity(
-                                                  opacity: item.metadata?['isSolved'] == true ? 0.4 : 1.0,
-                                                  child: Text(
-                                                    '${_getItemTypeBadge(item.type)}  •  ${item.title}',
-                                                    style: HermesTypography.metadata.copyWith(
-                                                      color: item.type.color,
-                                                      fontWeight: FontWeight.bold,
-                                                      decoration: item.metadata?['isSolved'] == true ? TextDecoration.lineThrough : null,
-                                                    ),
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ),
-                                              if (item.type == ItemType.article) ...[
-                                                const SizedBox(width: HermesSpacing.sm),
-                                                if ((item.metadata?['readCount'] ?? 0) > 0)
-                                                  Text('✓ Read', style: HermesTypography.metadata.copyWith(color: HermesColors.accent, fontWeight: FontWeight.bold, fontSize: 10))
-                                                else if (item.metadata?['firstSurfacedDate'] != null || item.metadata?['surfacedDate'] != null)
-                                                  Text('○ Surfaced', style: HermesTypography.metadata.copyWith(color: HermesColors.textSecondary, fontSize: 10))
-                                                else
-                                                  Text('● New', style: HermesTypography.metadata.copyWith(color: HermesColors.veritasColor, fontSize: 10)),
-                                              ],
-                                            ],
-                                          ),
-                                        ),
-                                        PopupMenuButton<String>(
-                                          icon: const Icon(Icons.more_horiz, size: 20, color: HermesColors.textSecondary),
-                                          padding: EdgeInsets.zero,
-                                          color: HermesColors.surfaceElevated,
-                                          onSelected: (value) async {
-                                            if (value == 'skip' || value == 'remove') {
-                                              final todayStr = storage.currentDate.toIso8601String().substring(0, 10);
-                                              final updatedMeta = Map<String, dynamic>.from(item.metadata ?? {});
-                                              
-                                              if (value == 'remove') {
-                                                final deleted = List<String>.from((updatedMeta['deletedDates'] as List?) ?? []);
-                                                if (!deleted.contains(todayStr)) deleted.add(todayStr);
-                                                updatedMeta['deletedDates'] = deleted;
-                                              } else {
-                                                final skipped = List<String>.from((updatedMeta['skippedDates'] as List?) ?? []);
-                                                if (!skipped.contains(todayStr)) skipped.add(todayStr);
-                                                updatedMeta['skippedDates'] = skipped;
-                                              }
-                                              
-                                              final updatedItem = item.copyWith(metadata: updatedMeta);
-                                              await ref.read(storageEngineProvider).saveItem(updatedItem);
-                                              ref.invalidate(itemsByBlockProvider(item.blockId));
-                                              if (context.mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(content: Text(value == 'remove' ? 'Removed from Today\'s Pursuit' : 'Skipped for today')),
-                                                );
-                                              }
-                                            } else if (value == 'open') {
-                                              Navigator.push(context, MaterialPageRoute(
-                                                builder: (context) => BlockDetailScreen(block: block),
-                                              ));
-                                            } else if (value == 'share_text') {
-                                              Share.share(item.content, subject: item.title);
-                                            } else if (value == 'export_hitem') {
-                                              try {
-                                                final engine = ref.read(exchangeEngineProvider);
-                                                final path = await engine.exportItems([item]);
-                                                await Share.shareXFiles([XFile(path)], subject: '${item.title} (Hermes)');
-                                              } catch (e) {
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(content: Text('Export failed: $e'), backgroundColor: HermesColors.veritasColor),
-                                                  );
-                                                }
-                                              }
-                                            }
-                                          },
-                                          itemBuilder: (context) => [
-                                            if (item.type == ItemType.question)
-                                              PopupMenuItem(
-                                                value: 'skip',
-                                                child: Text('Skip for Today', style: HermesTypography.bodySmall),
-                                              ),
-                                            PopupMenuItem(
-                                              value: 'remove',
-                                              child: Text('Remove from Today\'s Pursuit', style: HermesTypography.bodySmall.copyWith(color: HermesColors.veritasColor)),
-                                            ),
-                                            PopupMenuItem(
-                                              value: 'open',
-                                              child: Text('Open Original Block', style: HermesTypography.bodySmall),
-                                            ),
-                                            PopupMenuItem(
-                                              value: 'share_text',
-                                              child: Text('Share Text Content', style: HermesTypography.bodySmall),
-                                            ),
-                                            PopupMenuItem(
-                                              value: 'export_hitem',
-                                              child: Text('Export as .hitem', style: HermesTypography.bodySmall),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: HermesSpacing.sm),
-                                    Text(
-                                      _getPreviewText(item.content),
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: HermesTypography.body.copyWith(
-                                        color: HermesColors.textSecondary, 
-                                        height: 1.5,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: HermesSpacing.md),
-                                    Text(
-                                      (() {
-                                        switch (item.type) {
-                                          case ItemType.question: return 'Tap to evaluate';
-                                          case ItemType.article: return 'Tap to read';
-                                          case ItemType.idea: return 'Tap to expand';
-                                          case ItemType.observation: return 'Tap to review';
-                                          case ItemType.reflection: return 'Tap to reflect';
-                                          case ItemType.note: return 'Tap to view note';
-                                        }
-                                      })(),
-                                      style: HermesTypography.metadata,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: HermesSpacing.sectionGap),
-              ),
-            ],
-
-
-
-            // ── Pinned Domains ──────────────────────────────────────
-            if (!archivedSections.contains('pinned_domains') && pinnedDomains.isNotEmpty) ...[
-              SliverToBoxAdapter(
-                child: HermesFadeIn(
-                  delay: Duration.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: HermesSpacing.screenHorizontal,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        HermesSectionHeader(
-                          title: 'Pinned Domains',
-                          onAction: () => showSectionOptions('pinned_domains', 'Pinned Domains'),
-                        ),
-                        const SizedBox(height: HermesSpacing.xs),
-                        Wrap(
-                          spacing: HermesSpacing.xs,
-                          runSpacing: HermesSpacing.xs,
-                          children: pinnedDomains.map((d) {
-                            return HermesBlockChip(
-                              icon: d.icon,
-                              label: d.name,
-                              color: HermesColors.accent,
-                              onTap: () {
-                                Navigator.push(context, MaterialPageRoute(
-                                  builder: (context) => DomainDetailScreen(domain: d),
-                                ));
-                              },
-                              trailing: PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_vert_rounded, size: 16, color: HermesColors.textTertiary),
-                                padding: EdgeInsets.zero,
-                                color: HermesColors.surfaceElevated,
-                                itemBuilder: (context) => [
-                                  const PopupMenuItem(value: 'open', child: Text('Open Domain')),
-                                  const PopupMenuItem(value: 'unpin', child: Text('Unpin From Home')),
-                                  const PopupMenuItem(value: 'archive', child: Text('Archive Domain')),
-                                ],
-                                onSelected: (value) async {
-                                  if (value == 'open') {
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => DomainDetailScreen(domain: d)));
-                                  } else if (value == 'unpin') {
-                                    final updated = d.copyWith(pinned: false);
-                                    await ref.read(storageEngineProvider).saveDomain(updated);
-                                    ref.invalidate(domainsProvider);
-                                  } else if (value == 'archive') {
-                                    final updated = d.copyWith(archived: true);
-                                    await ref.read(storageEngineProvider).saveDomain(updated);
-                                    ref.invalidate(domainsProvider);
-                                  }
-                                },
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: HermesSpacing.sectionGap),
-              ),
-            ],
-
-            // ── Pinned Blocks ───────────────────────────────────────
-            if (!archivedSections.contains('pinned') && pinnedBlocks.isNotEmpty) ...[
-              SliverToBoxAdapter(
-                child: HermesFadeIn(
-                  delay: Duration.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: HermesSpacing.screenHorizontal,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        HermesSectionHeader(
-                          title: 'Pinned Blocks',
-                          onAction: () => showSectionOptions('pinned', 'Pinned Blocks'),
-                        ),
-                        const SizedBox(height: HermesSpacing.xs),
-                        Wrap(
-                          spacing: HermesSpacing.xs,
-                          runSpacing: HermesSpacing.xs,
-                            children: pinnedBlocks.map((b) {
-                              return HermesBlockChip(
-                                icon: b.icon,
-                                label: b.name,
-                                color: Color(int.parse(b.colorHex.replaceAll('#', '0xFF'))),
-                                onTap: () {
-                                  Navigator.push(context, MaterialPageRoute(
-                                    builder: (context) => BlockDetailScreen(block: b),
-                                  ));
-                                },
-                                trailing: PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert_rounded, size: 16, color: HermesColors.textTertiary),
-                                  padding: EdgeInsets.zero,
-                                  color: HermesColors.surfaceElevated,
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(value: 'open', child: Text('Open Block')),
-                                    const PopupMenuItem(value: 'unpin', child: Text('Unpin From Home')),
-                                    const PopupMenuItem(value: 'archive', child: Text('Archive Block')),
-                                  ],
-                                  onSelected: (value) async {
-                                    if (value == 'open') {
-                                      Navigator.push(context, MaterialPageRoute(builder: (_) => BlockDetailScreen(block: b)));
-                                    } else if (value == 'unpin') {
-                                      final updated = b.copyWith(pinned: false);
-                                      await ref.read(storageEngineProvider).saveBlock(updated);
-                                      ref.invalidate(allBlocksProvider);
-                                    } else if (value == 'archive') {
-                                      final updated = b.copyWith(archived: true);
-                                      await ref.read(storageEngineProvider).saveBlock(updated);
-                                      ref.invalidate(allBlocksProvider);
-                                    }
-                                  },
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: HermesSpacing.sectionGap),
-              ),
-            ],
-
-            // ── Today's Evolutios (Dynamic from storage) ─────────────
-            if (!archivedSections.contains('evolutios')) ...[
-              SliverToBoxAdapter(
-                child: HermesFadeIn(
-                  delay: Duration.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: HermesSpacing.screenHorizontal,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        HermesSectionHeader(
-                          title: "Recent Evolutios",
-                          onAction: () => showSectionOptions('evolutios', "Recent Evolutios"),
-                        ),
-                        const SizedBox(height: HermesSpacing.xs),
-                        if (recentEvolutios.isEmpty)
-                          Text(
-                            'No evolutios yet. Solve a question or read an article to generate one.',
-                            style: HermesTypography.metadata,
-                          )
-                        else
-                          ...recentEvolutios.where((e) => !e.hiddenFromHome).map((evo) {
-                            final block = allBlocks.where((b) => b.id == evo.blockId).firstOrNull;
-                            final blockName = block?.name ?? 'Unknown Block';
-                            
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: HermesSpacing.itemGap),
-                              child: _EvolutioEntry(
-                                text: evo.content,
-                                block: blockName,
-                                time: _formatTimeAgo(evo.createdAt, ref),
-                                onTap: () {
-                                  final engine = ref.read(storageEngineProvider);
-                                  final allReflections = engine.getAllReflections();
-                                  final allItems = engine.getAllItems();
-                                  
-                                  final reflection = allReflections.where((r) => r.id == evo.reflectionId).firstOrNull;
-                                  if (reflection != null) {
-                                    final item = allItems.where((i) => i.id == reflection.itemId).firstOrNull;
-                                    if (item != null && block != null) {
-                                      Navigator.push(context, MaterialPageRoute(
-                                        builder: (context) => HermesReaderScreen(item: item, block: block),
-                                      ));
-                                    }
-                                  }
-                                },
-                                trailing: PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert_rounded, size: 18, color: HermesColors.textTertiary),
-                                  color: HermesColors.surfaceElevated,
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(value: 'copy', child: Text('Copy Text')),
-                                    const PopupMenuItem(value: 'share', child: Text('Share')),
-                                    const PopupMenuItem(value: 'hide', child: Text('Hide From Home')),
-                                    const PopupMenuItem(value: 'archive', child: Text('Archive Evolutio')),
-                                  ],
-                                  onSelected: (value) async {
-                                    if (value == 'copy') {
-                                      final content = '${evo.content}'; // Optionally prefix with blockName or keep plain
-                                      Clipboard.setData(ClipboardData(text: content));
-                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied text to clipboard.')));
-                                    } else if (value == 'share') {
-                                      final content = '${evo.content}';
-                                      Share.share(content); // No title since Evolutio doesn't have a specific title field, but we can pass it if we want
-                                    } else if (value == 'hide') {
-                                      final updated = evo.copyWith(hiddenFromHome: true);
-                                      await ref.read(storageEngineProvider).saveEvolutio(updated);
-                                      ref.invalidate(recentEvolutiosProvider);
-                                      ref.invalidate(allEvolutiosProvider);
-                                    } else if (value == 'archive') {
-                                      final updated = evo.copyWith(archived: true);
-                                      await ref.read(storageEngineProvider).saveEvolutio(updated);
-                                      ref.invalidate(recentEvolutiosProvider);
-                                      ref.invalidate(allEvolutiosProvider);
-                                    }
-                                  },
-                                ),
-                              ),
-                            );
-                          }),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: HermesSpacing.sectionGap),
-              ),
-            ],
-
-            // ── Veritas ─────────────────────────────────────────────
-            if (!archivedSections.contains('veritas')) ...[
-              SliverToBoxAdapter(
-                child: HermesFadeIn(
-                  delay: Duration.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: HermesSpacing.screenHorizontal,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        HermesSectionHeader(
-                          title: 'Veritas',
-                          onAction: () => showSectionOptions('veritas', 'Veritas'),
-                        ),
-                        const SizedBox(height: HermesSpacing.xs),
-                        HermesCard(
-                            onTap: () {
-                              VeritasSheet.show(context);
-                            },
-                            child: Column(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.edit_note_rounded,
-                                    size: 18,
-                                    color: HermesColors.veritasColor
-                                        .withValues(alpha: 0.7),
-                                  ),
-                                  const SizedBox(width: HermesSpacing.xs),
-                                  Text(
-                                    workspace?.isEncrypted == true 
-                                        ? 'Locked & Encrypted' 
-                                        : 'Always available',
-                                    style: HermesTypography.metadata.copyWith(
-                                      color: HermesColors.veritasColor
-                                          .withValues(alpha: 0.7),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: HermesSpacing.sm),
                               Text(
-                                'What happened today?',
-                                style: HermesTypography.reflection.copyWith(
-                                  fontStyle: FontStyle.normal,
-                                  color: HermesColors.textTertiary,
-                                ),
+                                greeting,
+                                style: HermesTypography.screenTitle,
+                              ),
+                              const SizedBox(height: HermesSpacing.xxs),
+                              Text(
+                                _formatDate(now),
+                                style: HermesTypography.metadata,
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: HermesSpacing.sm),
-                      ],
+                          // Workspace & Settings Button
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                // TODO: Open Workspace/Settings Sheet
+                                _showWorkspaceSettings(context, ref, workspace);
+                              },
+                              borderRadius: BorderRadius.circular(
+                                HermesRadius.pill,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: HermesSpacing.sm,
+                                  vertical: HermesSpacing.xs,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: HermesColors.surfaceElevated,
+                                  borderRadius: BorderRadius.circular(
+                                    HermesRadius.pill,
+                                  ),
+                                  border: Border.all(
+                                    color: HermesColors.border,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: workspace?.isEncrypted == true
+                                            ? HermesColors.veritasColor
+                                            : HermesColors.evolutioGlow,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: HermesSpacing.xs),
+                                    Text(
+                                      workspace?.name ?? 'Personal',
+                                      style: HermesTypography.metadata.copyWith(
+                                        color: HermesColors.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: HermesSpacing.xs),
+                                    const Icon(
+                                      Icons.settings_rounded,
+                                      size: 14,
+                                      color: HermesColors.textTertiary,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
 
-            const SliverToBoxAdapter(
-              child: SizedBox(height: HermesSpacing.xxxl),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: HermesSpacing.sectionGap),
+                ),
+
+                if (workspace?.name == 'Starter') const StarterWelcomeBanner(),
+
+                // ── Morning Question ────────────────────────────────────
+                if (!archivedSections.contains('question')) ...[
+                  SliverToBoxAdapter(
+                    child: HermesFadeIn(
+                      delay: Duration.zero,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: HermesSpacing.screenHorizontal,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            HermesSectionHeader(
+                              title: "Today's Pursuit",
+                              onAction: () {
+                                showSectionOptions(
+                                  'question',
+                                  "Today's Pursuit",
+                                );
+                              },
+                            ),
+                            const SizedBox(height: HermesSpacing.xs),
+
+                            if (dailyItems.isEmpty)
+                              HermesCard(
+                                onTap: () {},
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: HermesSpacing.lg,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      'No goals for today.\nTap the ⋮ menu on the section title to add one.',
+                                      textAlign: TextAlign.center,
+                                      style: HermesTypography.metadata,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              ...dailyItems.take(20).map((entry) {
+                                final item = entry.value;
+                                final block = entry.key;
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: HermesSpacing.sm,
+                                  ),
+                                  child: HermesCard(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              HermesReaderScreen(
+                                                item: item,
+                                                block: block,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              width: 6,
+                                              height: 6,
+                                              decoration: BoxDecoration(
+                                                color: item.type.color,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              width: HermesSpacing.xs,
+                                            ),
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Opacity(
+                                                      opacity:
+                                                          item.metadata?['isSolved'] ==
+                                                              true
+                                                          ? 0.4
+                                                          : 1.0,
+                                                      child: Text(
+                                                        '${_getItemTypeBadge(item.type)}  •  ${item.title}',
+                                                        style: HermesTypography
+                                                            .metadata
+                                                            .copyWith(
+                                                              color: item
+                                                                  .type
+                                                                  .color,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              decoration:
+                                                                  item.metadata?['isSolved'] ==
+                                                                      true
+                                                                  ? TextDecoration
+                                                                        .lineThrough
+                                                                  : null,
+                                                            ),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (item.type ==
+                                                      ItemType.article) ...[
+                                                    const SizedBox(
+                                                      width: HermesSpacing.sm,
+                                                    ),
+                                                    if ((item.metadata?['readCount'] ??
+                                                            0) >
+                                                        0)
+                                                      Text(
+                                                        '✓ Read',
+                                                        style: HermesTypography
+                                                            .metadata
+                                                            .copyWith(
+                                                              color:
+                                                                  HermesColors
+                                                                      .accent,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 10,
+                                                            ),
+                                                      )
+                                                    else if (item
+                                                                .metadata?['firstSurfacedDate'] !=
+                                                            null ||
+                                                        item.metadata?['surfacedDate'] !=
+                                                            null)
+                                                      Text(
+                                                        '○ Surfaced',
+                                                        style: HermesTypography
+                                                            .metadata
+                                                            .copyWith(
+                                                              color: HermesColors
+                                                                  .textSecondary,
+                                                              fontSize: 10,
+                                                            ),
+                                                      )
+                                                    else
+                                                      Text(
+                                                        '● New',
+                                                        style: HermesTypography
+                                                            .metadata
+                                                            .copyWith(
+                                                              color: HermesColors
+                                                                  .veritasColor,
+                                                              fontSize: 10,
+                                                            ),
+                                                      ),
+                                                  ],
+                                                ],
+                                              ),
+                                            ),
+                                            PopupMenuButton<String>(
+                                              icon: const Icon(
+                                                Icons.more_horiz,
+                                                size: 20,
+                                                color:
+                                                    HermesColors.textSecondary,
+                                              ),
+                                              padding: EdgeInsets.zero,
+                                              color:
+                                                  HermesColors.surfaceElevated,
+                                              onSelected: (value) async {
+                                                if (value == 'skip' ||
+                                                    value == 'remove') {
+                                                  final todayStr = storage
+                                                      .currentDate
+                                                      .toIso8601String()
+                                                      .substring(0, 10);
+                                                  final updatedMeta =
+                                                      Map<String, dynamic>.from(
+                                                        item.metadata ?? {},
+                                                      );
+
+                                                  if (value == 'remove') {
+                                                    final deleted =
+                                                        List<String>.from(
+                                                          (updatedMeta['deletedDates']
+                                                                  as List?) ??
+                                                              [],
+                                                        );
+                                                    if (!deleted.contains(
+                                                      todayStr,
+                                                    ))
+                                                      deleted.add(todayStr);
+                                                    updatedMeta['deletedDates'] =
+                                                        deleted;
+                                                  } else {
+                                                    final skipped =
+                                                        List<String>.from(
+                                                          (updatedMeta['skippedDates']
+                                                                  as List?) ??
+                                                              [],
+                                                        );
+                                                    if (!skipped.contains(
+                                                      todayStr,
+                                                    ))
+                                                      skipped.add(todayStr);
+                                                    updatedMeta['skippedDates'] =
+                                                        skipped;
+                                                  }
+
+                                                  final updatedItem = item
+                                                      .copyWith(
+                                                        metadata: updatedMeta,
+                                                      );
+                                                  await ref
+                                                      .read(
+                                                        storageEngineProvider,
+                                                      )
+                                                      .saveItem(updatedItem);
+                                                  ref.invalidate(
+                                                    itemsByBlockProvider(
+                                                      item.blockId,
+                                                    ),
+                                                  );
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          value == 'remove'
+                                                              ? 'Removed from Today\'s Pursuit'
+                                                              : 'Skipped for today',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                } else if (value == 'open') {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          BlockDetailScreen(
+                                                            block: block,
+                                                          ),
+                                                    ),
+                                                  );
+                                                } else if (value ==
+                                                    'share_text') {
+                                                  Share.share(
+                                                    item.content,
+                                                    subject: item.title,
+                                                  );
+                                                } else if (value ==
+                                                    'export_hitem') {
+                                                  try {
+                                                    final engine = ref.read(
+                                                      exchangeEngineProvider,
+                                                    );
+                                                    final path = await engine
+                                                        .exportItems([item]);
+                                                    await Share.shareXFiles(
+                                                      [XFile(path)],
+                                                      subject:
+                                                          '${item.title} (Hermes)',
+                                                    );
+                                                  } catch (e) {
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            'Export failed: $e',
+                                                          ),
+                                                          backgroundColor:
+                                                              HermesColors
+                                                                  .veritasColor,
+                                                        ),
+                                                      );
+                                                    }
+                                                  }
+                                                } else if (value ==
+                                                    'open_url') {
+                                                  if (item.sourceUrl != null &&
+                                                      item
+                                                          .sourceUrl!
+                                                          .isNotEmpty) {
+                                                    final uri = Uri.parse(
+                                                      item.sourceUrl!,
+                                                    );
+                                                    if (await canLaunchUrl(
+                                                      uri,
+                                                    )) {
+                                                      await launchUrl(uri);
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              itemBuilder: (context) => [
+                                                if (item.type ==
+                                                    ItemType.question)
+                                                  PopupMenuItem(
+                                                    value: 'skip',
+                                                    child: Text(
+                                                      'Skip for Today',
+                                                      style: HermesTypography
+                                                          .bodySmall,
+                                                    ),
+                                                  ),
+                                                PopupMenuItem(
+                                                  value: 'remove',
+                                                  child: Text(
+                                                    'Remove from Today\'s Pursuit',
+                                                    style: HermesTypography
+                                                        .bodySmall
+                                                        .copyWith(
+                                                          color: HermesColors
+                                                              .veritasColor,
+                                                        ),
+                                                  ),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'open',
+                                                  child: Text(
+                                                    'Open Original Block',
+                                                    style: HermesTypography
+                                                        .bodySmall,
+                                                  ),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'share_text',
+                                                  child: Text(
+                                                    'Share Text Content',
+                                                    style: HermesTypography
+                                                        .bodySmall,
+                                                  ),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'export_hitem',
+                                                  child: Text(
+                                                    'Export as .hitem',
+                                                    style: HermesTypography
+                                                        .bodySmall,
+                                                  ),
+                                                ),
+                                                if (item.sourceUrl != null &&
+                                                    item.sourceUrl!.isNotEmpty)
+                                                  PopupMenuItem(
+                                                    value: 'open_url',
+                                                    child: Text(
+                                                      'Open Original Link',
+                                                      style: HermesTypography
+                                                          .bodySmall
+                                                          .copyWith(
+                                                            color: HermesColors
+                                                                .evolutioGlow,
+                                                          ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(
+                                          height: HermesSpacing.sm,
+                                        ),
+                                        Text(
+                                          _getPreviewText(item.content),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: HermesTypography.body.copyWith(
+                                            color: HermesColors.textSecondary,
+                                            height: 1.5,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: HermesSpacing.md,
+                                        ),
+                                        Text(
+                                          (() {
+                                            switch (item.type) {
+                                              case ItemType.question:
+                                                return 'Tap to evaluate';
+                                              case ItemType.article:
+                                                return 'Tap to read';
+                                              case ItemType.idea:
+                                                return 'Tap to expand';
+                                              case ItemType.observation:
+                                                return 'Tap to review';
+                                              case ItemType.reflection:
+                                                return 'Tap to reflect';
+                                              case ItemType.note:
+                                                return 'Tap to view note';
+                                            }
+                                          })(),
+                                          style: HermesTypography.metadata,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HermesSpacing.sectionGap),
+                  ),
+                ],
+
+                // ── Pinned Domains ──────────────────────────────────────
+                if (!archivedSections.contains('pinned_domains') &&
+                    pinnedDomains.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: HermesFadeIn(
+                      delay: Duration.zero,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: HermesSpacing.screenHorizontal,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            HermesSectionHeader(
+                              title: 'Pinned Domains',
+                              onAction: () => showSectionOptions(
+                                'pinned_domains',
+                                'Pinned Domains',
+                              ),
+                            ),
+                            const SizedBox(height: HermesSpacing.xs),
+                            Wrap(
+                              spacing: HermesSpacing.xs,
+                              runSpacing: HermesSpacing.xs,
+                              children: pinnedDomains.map((d) {
+                                return HermesBlockChip(
+                                  icon: d.icon,
+                                  label: d.name,
+                                  color: HermesColors.accent,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            DomainDetailScreen(domain: d),
+                                      ),
+                                    );
+                                  },
+                                  trailing: PopupMenuButton<String>(
+                                    icon: const Icon(
+                                      Icons.more_vert_rounded,
+                                      size: 16,
+                                      color: HermesColors.textTertiary,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    color: HermesColors.surfaceElevated,
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'open',
+                                        child: Text('Open Domain'),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'unpin',
+                                        child: Text('Unpin From Home'),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'archive',
+                                        child: Text('Archive Domain'),
+                                      ),
+                                    ],
+                                    onSelected: (value) async {
+                                      if (value == 'open') {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                DomainDetailScreen(domain: d),
+                                          ),
+                                        );
+                                      } else if (value == 'unpin') {
+                                        final updated = d.copyWith(
+                                          pinned: false,
+                                        );
+                                        await ref
+                                            .read(storageEngineProvider)
+                                            .saveDomain(updated);
+                                        ref.invalidate(domainsProvider);
+                                      } else if (value == 'archive') {
+                                        final updated = d.copyWith(
+                                          archived: true,
+                                        );
+                                        await ref
+                                            .read(storageEngineProvider)
+                                            .saveDomain(updated);
+                                        ref.invalidate(domainsProvider);
+                                      }
+                                    },
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HermesSpacing.sectionGap),
+                  ),
+                ],
+
+                // ── Pinned Blocks ───────────────────────────────────────
+                if (!archivedSections.contains('pinned') &&
+                    pinnedBlocks.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: HermesFadeIn(
+                      delay: Duration.zero,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: HermesSpacing.screenHorizontal,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            HermesSectionHeader(
+                              title: 'Pinned Blocks',
+                              onAction: () =>
+                                  showSectionOptions('pinned', 'Pinned Blocks'),
+                            ),
+                            const SizedBox(height: HermesSpacing.xs),
+                            Wrap(
+                              spacing: HermesSpacing.xs,
+                              runSpacing: HermesSpacing.xs,
+                              children: pinnedBlocks.map((b) {
+                                return HermesBlockChip(
+                                  icon: b.icon,
+                                  label: b.name,
+                                  color: Color(
+                                    int.parse(
+                                      b.colorHex.replaceAll('#', '0xFF'),
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            BlockDetailScreen(block: b),
+                                      ),
+                                    );
+                                  },
+                                  trailing: PopupMenuButton<String>(
+                                    icon: const Icon(
+                                      Icons.more_vert_rounded,
+                                      size: 16,
+                                      color: HermesColors.textTertiary,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    color: HermesColors.surfaceElevated,
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'open',
+                                        child: Text('Open Block'),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'unpin',
+                                        child: Text('Unpin From Home'),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'archive',
+                                        child: Text('Archive Block'),
+                                      ),
+                                    ],
+                                    onSelected: (value) async {
+                                      if (value == 'open') {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                BlockDetailScreen(block: b),
+                                          ),
+                                        );
+                                      } else if (value == 'unpin') {
+                                        final updated = b.copyWith(
+                                          pinned: false,
+                                        );
+                                        await ref
+                                            .read(storageEngineProvider)
+                                            .saveBlock(updated);
+                                        ref.invalidate(allBlocksProvider);
+                                      } else if (value == 'archive') {
+                                        final updated = b.copyWith(
+                                          archived: true,
+                                        );
+                                        await ref
+                                            .read(storageEngineProvider)
+                                            .saveBlock(updated);
+                                        ref.invalidate(allBlocksProvider);
+                                      }
+                                    },
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HermesSpacing.sectionGap),
+                  ),
+                ],
+
+                // ── Today's Evolutios (Dynamic from storage) ─────────────
+                if (!archivedSections.contains('evolutios')) ...[
+                  SliverToBoxAdapter(
+                    child: HermesFadeIn(
+                      delay: Duration.zero,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: HermesSpacing.screenHorizontal,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            HermesSectionHeader(
+                              title: "Recent Evolutios",
+                              onAction: () => showSectionOptions(
+                                'evolutios',
+                                "Recent Evolutios",
+                              ),
+                            ),
+                            const SizedBox(height: HermesSpacing.xs),
+                            if (recentEvolutios.isEmpty)
+                              Text(
+                                'No evolutios yet. Solve a question or read an article to generate one.',
+                                style: HermesTypography.metadata,
+                              )
+                            else
+                              ...recentEvolutios.where((e) => !e.hiddenFromHome).map((
+                                evo,
+                              ) {
+                                final block = allBlocks
+                                    .where((b) => b.id == evo.blockId)
+                                    .firstOrNull;
+                                final blockName =
+                                    block?.name ?? 'Unknown Block';
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: HermesSpacing.itemGap,
+                                  ),
+                                  child: _EvolutioEntry(
+                                    text: evo.content,
+                                    block: blockName,
+                                    time: _formatTimeAgo(evo.createdAt, ref),
+                                    onTap: () {
+                                      final engine = ref.read(
+                                        storageEngineProvider,
+                                      );
+                                      final allReflections = engine
+                                          .getAllReflections();
+                                      final allItems = engine.getAllItems();
+
+                                      final reflection = allReflections
+                                          .where(
+                                            (r) => r.id == evo.reflectionId,
+                                          )
+                                          .firstOrNull;
+                                      if (reflection != null) {
+                                        final item = allItems
+                                            .where(
+                                              (i) => i.id == reflection.itemId,
+                                            )
+                                            .firstOrNull;
+                                        if (item != null && block != null) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  HermesReaderScreen(
+                                                    item: item,
+                                                    block: block,
+                                                  ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    },
+                                    trailing: PopupMenuButton<String>(
+                                      icon: const Icon(
+                                        Icons.more_vert_rounded,
+                                        size: 18,
+                                        color: HermesColors.textTertiary,
+                                      ),
+                                      color: HermesColors.surfaceElevated,
+                                      itemBuilder: (context) => [
+                                        const PopupMenuItem(
+                                          value: 'copy',
+                                          child: Text('Copy Text'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'share',
+                                          child: Text('Share'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'hide',
+                                          child: Text('Hide From Home'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'archive',
+                                          child: Text('Archive Evolutio'),
+                                        ),
+                                      ],
+                                      onSelected: (value) async {
+                                        if (value == 'copy') {
+                                          final content =
+                                              '${evo.content}'; // Optionally prefix with blockName or keep plain
+                                          Clipboard.setData(
+                                            ClipboardData(text: content),
+                                          );
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Copied text to clipboard.',
+                                              ),
+                                            ),
+                                          );
+                                        } else if (value == 'share') {
+                                          final content = '${evo.content}';
+                                          Share.share(
+                                            content,
+                                          ); // No title since Evolutio doesn't have a specific title field, but we can pass it if we want
+                                        } else if (value == 'hide') {
+                                          final updated = evo.copyWith(
+                                            hiddenFromHome: true,
+                                          );
+                                          await ref
+                                              .read(storageEngineProvider)
+                                              .saveEvolutio(updated);
+                                          ref.invalidate(
+                                            recentEvolutiosProvider,
+                                          );
+                                          ref.invalidate(allEvolutiosProvider);
+                                        } else if (value == 'archive') {
+                                          final updated = evo.copyWith(
+                                            archived: true,
+                                          );
+                                          await ref
+                                              .read(storageEngineProvider)
+                                              .saveEvolutio(updated);
+                                          ref.invalidate(
+                                            recentEvolutiosProvider,
+                                          );
+                                          ref.invalidate(allEvolutiosProvider);
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                );
+                              }),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HermesSpacing.sectionGap),
+                  ),
+                ],
+
+                // ── Veritas ─────────────────────────────────────────────
+                if (!archivedSections.contains('veritas')) ...[
+                  SliverToBoxAdapter(
+                    child: HermesFadeIn(
+                      delay: Duration.zero,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: HermesSpacing.screenHorizontal,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            HermesSectionHeader(
+                              title: 'Veritas',
+                              onAction: () =>
+                                  showSectionOptions('veritas', 'Veritas'),
+                            ),
+                            const SizedBox(height: HermesSpacing.xs),
+                            HermesCard(
+                              onTap: () {
+                                VeritasSheet.show(context);
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.edit_note_rounded,
+                                        size: 18,
+                                        color: HermesColors.veritasColor
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                      const SizedBox(width: HermesSpacing.xs),
+                                      Text(
+                                        workspace?.isEncrypted == true
+                                            ? 'Locked & Encrypted'
+                                            : 'Always available',
+                                        style: HermesTypography.metadata
+                                            .copyWith(
+                                              color: HermesColors.veritasColor
+                                                  .withValues(alpha: 0.7),
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: HermesSpacing.sm),
+                                  Text(
+                                    'What happened today?',
+                                    style: HermesTypography.reflection.copyWith(
+                                      fontStyle: FontStyle.normal,
+                                      color: HermesColors.textTertiary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: HermesSpacing.sm),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: HermesSpacing.xxxl),
+                ),
+              ],
             ),
-          ],
-        ),
           ),
         ),
       ),
@@ -885,16 +1323,31 @@ class TodayScreen extends ConsumerWidget {
 
   String _formatDate(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     const days = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-      'Friday', 'Saturday', 'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
     ];
     return '${days[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
   }
-  
+
   String _formatTimeAgo(DateTime date, WidgetRef ref) {
     final storage = ref.watch(storageEngineProvider);
     final diff = storage.currentDate.difference(date);
@@ -904,20 +1357,28 @@ class TodayScreen extends ConsumerWidget {
     return 'Just now';
   }
 
-  void _showWorkspaceSettings(BuildContext screenContext, WidgetRef ref, Workspace? currentWorkspace) {
+  void _showWorkspaceSettings(
+    BuildContext screenContext,
+    WidgetRef ref,
+    Workspace? currentWorkspace,
+  ) {
     showModalBottomSheet(
       context: screenContext,
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: HermesColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(HermesRadius.xl),
+        ),
       ),
       builder: (bottomSheetContext) {
         return SafeArea(
           child: SingleChildScrollView(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(bottomSheetContext).viewInsets.bottom + HermesSpacing.lg,
+              bottom:
+                  MediaQuery.of(bottomSheetContext).viewInsets.bottom +
+                  HermesSpacing.lg,
               left: HermesSpacing.lg,
               right: HermesSpacing.lg,
               top: HermesSpacing.lg,
@@ -926,9 +1387,12 @@ class TodayScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Workspace Settings', style: HermesTypography.sectionTitle),
+                Text(
+                  'Workspace Settings',
+                  style: HermesTypography.sectionTitle,
+                ),
                 const SizedBox(height: HermesSpacing.md),
-                
+
                 // Current Workspace Info
                 HermesCard(
                   child: Row(
@@ -936,17 +1400,19 @@ class TodayScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(HermesSpacing.sm),
                         decoration: BoxDecoration(
-                          color: currentWorkspace?.isEncrypted == true 
+                          color: currentWorkspace?.isEncrypted == true
                               ? HermesColors.veritasColor.withValues(alpha: 0.1)
-                              : HermesColors.evolutioGlow.withValues(alpha: 0.1),
+                              : HermesColors.evolutioGlow.withValues(
+                                  alpha: 0.1,
+                                ),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          currentWorkspace?.isEncrypted == true 
-                              ? Icons.lock_rounded 
+                          currentWorkspace?.isEncrypted == true
+                              ? Icons.lock_rounded
                               : Icons.public_rounded,
-                          color: currentWorkspace?.isEncrypted == true 
-                              ? HermesColors.veritasColor 
+                          color: currentWorkspace?.isEncrypted == true
+                              ? HermesColors.veritasColor
                               : HermesColors.evolutioGlow,
                         ),
                       ),
@@ -955,10 +1421,13 @@ class TodayScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(currentWorkspace?.name ?? 'Personal', style: HermesTypography.itemTitle),
                             Text(
-                              currentWorkspace?.isEncrypted == true 
-                                  ? 'Encrypted & Locked' 
+                              currentWorkspace?.name ?? 'Personal',
+                              style: HermesTypography.itemTitle,
+                            ),
+                            Text(
+                              currentWorkspace?.isEncrypted == true
+                                  ? 'Encrypted & Locked'
                                   : 'Public Workspace',
                               style: HermesTypography.metadata,
                             ),
@@ -975,11 +1444,17 @@ class TodayScreen extends ConsumerWidget {
                   builder: (consumerContext, consumerRef, child) {
                     final isLocked = consumerRef.watch(workspaceLockedProvider);
                     final ws = consumerRef.watch(currentWorkspaceProvider);
-                    
+
                     if (isLocked) {
                       return ListTile(
-                        leading: const Icon(Icons.lock_open_rounded, color: HermesColors.textPrimary),
-                        title: Text('Unlock Workspace', style: HermesTypography.body),
+                        leading: const Icon(
+                          Icons.lock_open_rounded,
+                          color: HermesColors.textPrimary,
+                        ),
+                        title: Text(
+                          'Unlock Workspace',
+                          style: HermesTypography.body,
+                        ),
                         onTap: () {
                           Navigator.pop(bottomSheetContext);
                           showDialog(
@@ -990,15 +1465,21 @@ class TodayScreen extends ConsumerWidget {
                         },
                       );
                     }
-                    
+
                     final hasPin = ws?.pin != null && ws!.pin!.isNotEmpty;
-                    
+
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ListTile(
-                          leading: const Icon(Icons.inventory_2_outlined, color: HermesColors.textPrimary),
-                          title: Text('View Archive', style: HermesTypography.body),
+                          leading: const Icon(
+                            Icons.inventory_2_outlined,
+                            color: HermesColors.textPrimary,
+                          ),
+                          title: Text(
+                            'View Archive',
+                            style: HermesTypography.body,
+                          ),
                           onTap: () {
                             Navigator.pop(bottomSheetContext);
                             Navigator.push(
@@ -1010,8 +1491,14 @@ class TodayScreen extends ConsumerWidget {
                           },
                         ),
                         ListTile(
-                          leading: const Icon(Icons.visibility_off_outlined, color: HermesColors.textPrimary),
-                          title: Text('Visibility', style: HermesTypography.body),
+                          leading: const Icon(
+                            Icons.visibility_off_outlined,
+                            color: HermesColors.textPrimary,
+                          ),
+                          title: Text(
+                            'Visibility',
+                            style: HermesTypography.body,
+                          ),
                           onTap: () {
                             Navigator.pop(bottomSheetContext);
                             Navigator.push(
@@ -1022,15 +1509,26 @@ class TodayScreen extends ConsumerWidget {
                             );
                           },
                         ),
-                        
+
                         const SizedBox(height: HermesSpacing.sm),
-                        Text('Security', style: HermesTypography.metadata.copyWith(color: HermesColors.textSecondary)),
+                        Text(
+                          'Security',
+                          style: HermesTypography.metadata.copyWith(
+                            color: HermesColors.textSecondary,
+                          ),
+                        ),
                         const SizedBox(height: HermesSpacing.xs),
-                        
+
                         if (!hasPin)
                           ListTile(
-                            leading: const Icon(Icons.security_rounded, color: HermesColors.textPrimary),
-                            title: Text('Setup Workspace Lock', style: HermesTypography.body),
+                            leading: const Icon(
+                              Icons.security_rounded,
+                              color: HermesColors.textPrimary,
+                            ),
+                            title: Text(
+                              'Setup Workspace Lock',
+                              style: HermesTypography.body,
+                            ),
                             onTap: () {
                               Navigator.pop(bottomSheetContext);
                               showDialog(
@@ -1042,16 +1540,30 @@ class TodayScreen extends ConsumerWidget {
                           )
                         else ...[
                           ListTile(
-                            leading: const Icon(Icons.lock_outline, color: HermesColors.textPrimary),
-                            title: Text('Lock Workspace', style: HermesTypography.body),
+                            leading: const Icon(
+                              Icons.lock_outline,
+                              color: HermesColors.textPrimary,
+                            ),
+                            title: Text(
+                              'Lock Workspace',
+                              style: HermesTypography.body,
+                            ),
                             onTap: () {
-                              ref.read(workspaceLockedProvider.notifier).setLocked(true);
+                              ref
+                                  .read(workspaceLockedProvider.notifier)
+                                  .setLocked(true);
                               Navigator.pop(bottomSheetContext);
                             },
                           ),
                           ListTile(
-                            leading: const Icon(Icons.pin_outlined, color: HermesColors.textPrimary),
-                            title: Text('Change PIN', style: HermesTypography.body),
+                            leading: const Icon(
+                              Icons.pin_outlined,
+                              color: HermesColors.textPrimary,
+                            ),
+                            title: Text(
+                              'Change PIN',
+                              style: HermesTypography.body,
+                            ),
                             onTap: () {
                               Navigator.pop(bottomSheetContext);
                               showDialog(
@@ -1070,8 +1582,14 @@ class TodayScreen extends ConsumerWidget {
                             },
                           ),
                           ListTile(
-                            leading: const Icon(Icons.lock_reset_rounded, color: HermesColors.textPrimary),
-                            title: Text('Change Recovery Question', style: HermesTypography.body),
+                            leading: const Icon(
+                              Icons.lock_reset_rounded,
+                              color: HermesColors.textPrimary,
+                            ),
+                            title: Text(
+                              'Change Recovery Question',
+                              style: HermesTypography.body,
+                            ),
                             onTap: () {
                               Navigator.pop(bottomSheetContext);
                               showDialog(
@@ -1082,7 +1600,8 @@ class TodayScreen extends ConsumerWidget {
                                     showDialog(
                                       context: screenContext,
                                       barrierDismissible: false,
-                                      builder: (_) => const ChangeRecoveryQuestionDialog(),
+                                      builder: (_) =>
+                                          const ChangeRecoveryQuestionDialog(),
                                     );
                                   },
                                 ),
@@ -1090,8 +1609,16 @@ class TodayScreen extends ConsumerWidget {
                             },
                           ),
                           ListTile(
-                            leading: const Icon(Icons.no_encryption_outlined, color: Colors.redAccent),
-                            title: Text('Remove Workspace Lock', style: HermesTypography.body.copyWith(color: Colors.redAccent)),
+                            leading: const Icon(
+                              Icons.no_encryption_outlined,
+                              color: Colors.redAccent,
+                            ),
+                            title: Text(
+                              'Remove Workspace Lock',
+                              style: HermesTypography.body.copyWith(
+                                color: Colors.redAccent,
+                              ),
+                            ),
                             onTap: () {
                               Navigator.pop(bottomSheetContext);
                               showDialog(
@@ -1107,14 +1634,33 @@ class TodayScreen extends ConsumerWidget {
                                         isEncrypted: false,
                                       );
                                       // Safely read providers after dialog pops
-                                      final container = ProviderScope.containerOf(screenContext);
-                                      await container.read(storageEngineProvider).saveWorkspace(updated);
-                                      container.read(currentWorkspaceProvider.notifier).updateWorkspace(updated);
-                                      container.read(workspaceLockedProvider.notifier).setLocked(false);
-                                      
+                                      final container =
+                                          ProviderScope.containerOf(
+                                            screenContext,
+                                          );
+                                      await container
+                                          .read(storageEngineProvider)
+                                          .saveWorkspace(updated);
+                                      container
+                                          .read(
+                                            currentWorkspaceProvider.notifier,
+                                          )
+                                          .updateWorkspace(updated);
+                                      container
+                                          .read(
+                                            workspaceLockedProvider.notifier,
+                                          )
+                                          .setLocked(false);
+
                                       if (screenContext.mounted) {
-                                        ScaffoldMessenger.of(screenContext).showSnackBar(
-                                          const SnackBar(content: Text('Workspace lock removed.')),
+                                        ScaffoldMessenger.of(
+                                          screenContext,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Workspace lock removed.',
+                                            ),
+                                          ),
                                         );
                                       }
                                     }
@@ -1124,19 +1670,50 @@ class TodayScreen extends ConsumerWidget {
                             },
                           ),
                         ],
-                        
+
                         const SizedBox(height: HermesSpacing.sm),
                         const Divider(color: HermesColors.border),
                         const SizedBox(height: HermesSpacing.sm),
-                        
+
                         ListTile(
-                          leading: const Icon(Icons.swap_horiz_rounded, color: HermesColors.textSecondary),
-                          title: Text('Switch Workspace', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
+                          leading: const Icon(
+                            Icons.swap_horiz_rounded,
+                            color: HermesColors.textSecondary,
+                          ),
+                          title: Text(
+                            'Switch Workspace',
+                            style: HermesTypography.body.copyWith(
+                              color: HermesColors.textSecondary,
+                            ),
+                          ),
                           onTap: () {
                             Navigator.pop(bottomSheetContext);
                           },
                         ),
-                        const SizedBox(height: 90), // Extra padding above gesture bar
+                        ListTile(
+                          leading: const Icon(
+                            Icons.refresh_rounded,
+                            color: HermesColors.textSecondary,
+                          ),
+                          title: Text(
+                            'Reload Hermes',
+                            style: HermesTypography.body.copyWith(
+                              color: HermesColors.textSecondary,
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.pushAndRemoveUntil(
+                              screenContext,
+                              MaterialPageRoute(
+                                builder: (_) => const HermesShell(),
+                              ),
+                              (route) => false,
+                            );
+                          },
+                        ),
+                        const SizedBox(
+                          height: 90,
+                        ), // Extra padding above gesture bar
                       ],
                     );
                   },
@@ -1153,7 +1730,6 @@ class TodayScreen extends ConsumerWidget {
 // ═══════════════════════════════════════════════════════════════════════════════
 // EVOLUTIO ENTRY WIDGET
 // ═══════════════════════════════════════════════════════════════════════════════
-
 
 class _EvolutioEntry extends StatelessWidget {
   final String text;
@@ -1203,10 +1779,7 @@ class _EvolutioEntry extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: HermesSpacing.xs),
-                Text(
-                  '$block · $time',
-                  style: HermesTypography.metadata,
-                ),
+                Text('$block · $time', style: HermesTypography.metadata),
               ],
             ),
           ),
