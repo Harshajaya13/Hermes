@@ -178,7 +178,7 @@ class DomainDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(HermesSpacing.screenHorizontal),
                 child: Center(
                   child: InkWell(
-                    onTap: () => CreateBlockSheet.show(context),
+                    onTap: () => CreateBlockSheet.show(context, null, domain.id),
                     borderRadius: BorderRadius.circular(HermesRadius.pill),
                     child: Container(
                       padding: const EdgeInsets.symmetric(

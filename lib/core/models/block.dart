@@ -96,4 +96,25 @@ class Block {
       version: version ?? (this.version + 1),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is Block &&
+      other.id == id &&
+      other.domainId == domainId &&
+      other.name == name &&
+      other.icon == icon &&
+      other.colorHex == colorHex;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+      domainId.hashCode ^
+      name.hashCode ^
+      icon.hashCode ^
+      colorHex.hashCode;
+  }
 }

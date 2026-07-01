@@ -275,8 +275,10 @@ class _CreateManualSourceScreenState extends ConsumerState<CreateManualSourceScr
           const SizedBox(height: HermesSpacing.sm),
           TextField(
             onChanged: (val) => _sourceName = val,
+            style: HermesTypography.body,
             decoration: InputDecoration(
               hintText: 'e.g. Probability Pack',
+              hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
               filled: true,
               fillColor: HermesColors.surfaceElevated,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
@@ -376,7 +378,7 @@ class _CreateManualSourceScreenState extends ConsumerState<CreateManualSourceScr
           TextField(
             controller: _jsonController,
             maxLines: 8,
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: HermesColors.textSecondary),
             decoration: InputDecoration(
               hintText: 'Paste your generated JSON array here...',
               hintStyle: const TextStyle(color: HermesColors.textTertiary),

@@ -282,30 +282,26 @@ Without reflection, experience is just a series of events. With reflection, expe
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     
+    await prefs.clear();
+    
     await initialize();
   }
 
-  Future<void> advanceOneDay() async {
-    // Note: To truly simulate time passing for the scheduler without restarting the OS,
-    // we would need to mock DateTime.now(). Since we can't do that easily, 
-    // we can artificially age all surfaced items to be "yesterday".
-    final todayStr = DateTime.now().toIso8601String().substring(0, 10);
-    final yesterdayStr = DateTime.now().subtract(const Duration(days: 1)).toIso8601String().substring(0, 10);
-    
-    for (final item in _items.values.toList()) {
-      bool changed = false;
-      final meta = Map<String, dynamic>.from(item.metadata ?? {});
-      if (meta['surfacedDate'] == todayStr) {
-        meta['surfacedDate'] = yesterdayStr;
-        changed = true;
-      }
-      
-      if (changed) {
-        _items[item.id] = item.copyWith(metadata: meta);
-      }
-    }
-    
-    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+  int _simulatedDaysOffset = 0;
+  DateTime get currentDate => DateTime.now().add(Duration(days: _simulatedDaysOffset));
+
+  Future<void> advanceTime(int days) async {
+    _simulatedDaysOffset += days;
+  }
+
+  Future<void> jumpToDate(DateTime date) async {
+    final now = DateTime.now();
+    final difference = date.difference(now).inDays;
+    _simulatedDaysOffset = difference;
+  }
+
+  Future<void> resetTime() async {
+    _simulatedDaysOffset = 0;
   }
 
   // State to hold the restored queue
@@ -315,7 +311,7 @@ Without reflection, experience is just a series of events. With reflection, expe
   bool get isPursuitReset => _isPursuitReset;
 
   Future<void> resetTodayPursuit() async {
-    final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+    final todayStr = currentDate.toIso8601String().substring(0, 10);
     final todayItems = _items.values.where((i) => i.metadata?['surfacedDate'] == todayStr).toList();
     
     _restoredPursuitQueue = List.from(todayItems); // Backup for restore
@@ -344,7 +340,7 @@ Without reflection, experience is just a series of events. With reflection, expe
   Future<void> regenerateTodayPursuit() async {
     _isPursuitReset = false;
     _restoredPursuitQueue = null;
-    final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+    final todayStr = currentDate.toIso8601String().substring(0, 10);
     final todayItems = _items.values.where((i) => i.metadata?['surfacedDate'] == todayStr).toList();
     
     // Demote current items so next ones are picked

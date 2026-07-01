@@ -239,7 +239,8 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
     
     // We intentionally DO NOT seed the starter workspace here. 
     // New workspaces should be completely blank.
-    // We also DO NOT auto-jump to the new workspace.
+    
+    ref.read(currentWorkspaceProvider.notifier).updateWorkspace(ws);
     
     if (mounted) Navigator.pop(context);
   }

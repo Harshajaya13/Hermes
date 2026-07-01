@@ -7,10 +7,11 @@ import '../../core/providers/providers.dart';
 
 class CreateBlockSheet extends ConsumerStatefulWidget {
   final Block? existingBlock;
+  final String? initialDomainId;
 
-  const CreateBlockSheet({super.key, this.existingBlock});
+  const CreateBlockSheet({super.key, this.existingBlock, this.initialDomainId});
 
-  static void show(BuildContext context, [Block? existingBlock]) {
+  static void show(BuildContext context, [Block? existingBlock, String? initialDomainId]) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -22,7 +23,7 @@ class CreateBlockSheet extends ConsumerStatefulWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: CreateBlockSheet(existingBlock: existingBlock),
+        child: CreateBlockSheet(existingBlock: existingBlock, initialDomainId: initialDomainId),
       ),
     );
   }
@@ -46,12 +47,17 @@ class _CreateBlockSheetState extends ConsumerState<CreateBlockSheet> {
           _emojiController.text = widget.existingBlock!.icon;
           _selectedDomainId = widget.existingBlock!.domainId;
         });
-      } else {
-        final domains = ref.read(domainsProvider);
-        if (domains.isNotEmpty) {
+        if (widget.initialDomainId != null) {
           setState(() {
-            _selectedDomainId = domains.first.id;
+            _selectedDomainId = widget.initialDomainId!;
           });
+        } else {
+          final domains = ref.read(domainsProvider);
+          if (domains.isNotEmpty) {
+            setState(() {
+              _selectedDomainId = domains.first.id;
+            });
+          }
         }
       }
     });
@@ -88,13 +94,13 @@ class _CreateBlockSheetState extends ConsumerState<CreateBlockSheet> {
             colorHex: '#7C9EBC', // Default accent
           );
 
+    if (mounted) Navigator.pop(context);
+    
     await ref.read(storageEngineProvider).saveBlock(newBlock);
     
     // Invalidate provider so the UI updates
     ref.invalidate(blocksByDomainProvider(_selectedDomainId));
     ref.invalidate(allBlocksProvider);
-    
-    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -195,7 +201,7 @@ class _CreateBlockSheetState extends ConsumerState<CreateBlockSheet> {
                 onPressed: _saveBlock,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: HermesColors.accent,
-                  foregroundColor: Colors.white,
+                  foregroundColor: HermesColors.background,
                   padding: const EdgeInsets.symmetric(vertical: HermesSpacing.md),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(HermesRadius.pill),

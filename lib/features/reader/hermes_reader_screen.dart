@@ -233,6 +233,16 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
     final updatedMetadata = Map<String, dynamic>.from(latestItem.metadata ?? {});
     updatedMetadata['isSolved'] = true;
+    updatedMetadata['completed'] = true;
+    updatedMetadata['skipped'] = false;
+    updatedMetadata['completed_date'] = storage.currentDate.toIso8601String().substring(0, 10);
+    
+    if (latestItem.type == ItemType.article) {
+      final currentCount = updatedMetadata['readCount'] as int? ?? 0;
+      updatedMetadata['readCount'] = currentCount + 1;
+      updatedMetadata['lastCompleted'] = storage.currentDate.toIso8601String().substring(0, 10);
+    }
+    
     final updatedItem = latestItem.copyWith(metadata: updatedMetadata);
     await storage.saveItems([updatedItem]);
     if (mounted) {
@@ -381,6 +391,46 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                               },
                               tooltip: 'Edit Document',
                             ),
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert_rounded, color: HermesColors.textTertiary, size: 20),
+                            color: HermesColors.surfaceElevated,
+                            tooltip: 'More Actions',
+                            onSelected: (value) async {
+                              if (value == 'skip') {
+                                final storage = ref.read(storageEngineProvider);
+                                final todayStr = storage.currentDate.toIso8601String().substring(0, 10);
+                                
+                                final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                                updatedMeta['skippedDate'] = todayStr;
+                                updatedMeta['skipped_date'] = todayStr;
+                                updatedMeta['skipped'] = true;
+                                updatedMeta.remove('surfacedDate');
+                                
+                                final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+                                await storage.saveItems([updatedItem]);
+                                
+                                if (context.mounted) {
+                                  ref.invalidate(itemsByBlockProvider(widget.block.id));
+                                  HermesToast.show(context, 'Question skipped. Will return on a future day.');
+                                  Navigator.pop(context);
+                                }
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              if (widget.item.type == ItemType.question)
+                                PopupMenuItem(
+                                  value: 'skip',
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.next_plan_outlined, size: 18, color: HermesColors.textSecondary),
+                                      const SizedBox(width: HermesSpacing.sm),
+                                      Text('Skip Question', style: HermesTypography.bodySmall),
+                                    ],
+                                  ),
+                                ),
+                              // Can add more actions here in the future
+                            ],
+                          ),
                         ],
                       ),
                     ],
@@ -1516,6 +1566,123 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   bool _solutionRevealed = false;
 
   Widget _buildQuestionWorkflow() {
+    final storage = ref.read(storageEngineProvider);
+    final isSolved = widget.item.metadata?['isSolved'] == true;
+    
+    if (isSolved) {
+      final userAnswer = widget.item.metadata?['userAnswer'] as String? ?? '';
+      final officialSolution = widget.item.metadata?['officialSolution'] as String? ?? widget.item.metadata?['officialAnswer'] as String? ?? '';
+      final explanation = widget.item.metadata?['explanation'] as String? ?? '';
+      final reflection = widget.item.metadata?['questionReflection'] as String? ?? '';
+      final completedDateStr = widget.item.metadata?['completedDate'] as String? ?? widget.item.createdAt.toIso8601String();
+      
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildWorkflowHeader('Resolution (Completed)'),
+              TextButton.icon(
+                onPressed: () {
+                  final storage = ref.read(storageEngineProvider);
+                  final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+                  final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
+                  updatedMeta.remove('isSolved');
+                  updatedMeta.remove('completedDate');
+                  storage.saveItems([latestItem.copyWith(metadata: updatedMeta)]);
+                  if (mounted) setState(() {});
+                },
+                icon: const Icon(Icons.undo_rounded, size: 16),
+                label: const Text('Uncomplete'),
+                style: TextButton.styleFrom(foregroundColor: HermesColors.textTertiary),
+              ),
+            ],
+          ),
+          
+          Text('Your Answer', style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
+          const SizedBox(height: HermesSpacing.sm),
+          TextField(
+            controller: _answerController..text = userAnswer,
+            maxLines: null,
+            minLines: 3,
+            style: HermesTypography.body.copyWith(height: 1.6),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: const Color(0xFF111111),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
+              contentPadding: const EdgeInsets.all(HermesSpacing.lg),
+            ),
+            onChanged: (val) {
+              final storage = ref.read(storageEngineProvider);
+              final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+              final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
+              updatedMeta['userAnswer'] = val;
+              storage.saveItems([latestItem.copyWith(metadata: updatedMeta)]);
+            },
+          ),
+          const SizedBox(height: HermesSpacing.xl),
+          
+          if (officialSolution.isNotEmpty) ...[
+            Text('Official Solution', style: HermesTypography.metadata.copyWith(color: HermesColors.accent)),
+            const SizedBox(height: HermesSpacing.sm),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(HermesSpacing.lg),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117),
+                borderRadius: BorderRadius.circular(HermesRadius.md),
+                border: Border.all(color: HermesColors.accent.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(officialSolution, style: HermesTypography.body.copyWith(height: 1.6)),
+                  if (explanation.isNotEmpty) ...[
+                    const SizedBox(height: HermesSpacing.lg),
+                    Text('Explanation', style: HermesTypography.metadata.copyWith(color: HermesColors.textSecondary)),
+                    const SizedBox(height: HermesSpacing.xs),
+                    Text(explanation, style: HermesTypography.body.copyWith(color: HermesColors.textTertiary, height: 1.5)),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: HermesSpacing.xl),
+          ],
+          
+          Text('Your Reflection', style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
+          const SizedBox(height: HermesSpacing.sm),
+          TextField(
+            controller: _questionReflectionController..text = reflection,
+            maxLines: null,
+            minLines: 3,
+            style: HermesTypography.body.copyWith(height: 1.6),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: const Color(0xFF111111),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
+              contentPadding: const EdgeInsets.all(HermesSpacing.lg),
+              hintText: 'Add a reflection...',
+              hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+            ),
+            onChanged: (val) {
+              final storage = ref.read(storageEngineProvider);
+              final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+              final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
+              updatedMeta['questionReflection'] = val;
+              storage.saveItems([latestItem.copyWith(metadata: updatedMeta)]);
+            },
+          ),
+          const SizedBox(height: HermesSpacing.xl),
+          
+          Text('Completed on: ${completedDateStr.substring(0, 10)}', style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
+          
+          const SizedBox(height: HermesSpacing.md),
+          _buildConnectionsSection(),
+        ],
+      );
+    }
+    
     final officialSolution = widget.item.metadata?['officialSolution'] as String? ?? widget.item.metadata?['officialAnswer'] as String? ?? '';
     final explanation = widget.item.metadata?['explanation'] as String? ?? '';
     final hasOfficialAnswer = officialSolution.isNotEmpty;
@@ -1722,14 +1889,18 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                 final storage = ref.read(storageEngineProvider);
                 final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
                 final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
+                final todayStr = storage.currentDate.toIso8601String();
                 updatedMeta['userAnswer'] = _answerController.text.trim();
                 updatedMeta['isSolved'] = true;
+                updatedMeta['completedDate'] = todayStr;
                 if (hasReflection) updatedMeta['questionReflection'] = reflectionText;
                 
                 final updatedItem = latestItem.copyWith(metadata: updatedMeta);
                 storage.saveItems([updatedItem]);
                 
                 _recordEvolutio(hasReflection, customText: hasReflection ? reflectionText : 'Solved: ${latestItem.title}');
+                
+                if (mounted) setState(() {});
               },
               borderRadius: BorderRadius.circular(HermesRadius.md),
               child: Container(

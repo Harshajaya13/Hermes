@@ -43,39 +43,80 @@ class DeveloperScreen extends ConsumerWidget {
                 ref.read(camouflageModeProvider.notifier).toggle();
               }
             ),
-            _buildActionTile(context, 'Reload Hermes', 'Completely reload the UI and rebuild state', Icons.refresh_rounded, () {
-              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+
+            _buildActionTile(context, 'Advance Time', 'Simulate future dates to test scheduling', Icons.skip_next_rounded, () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: HermesColors.surfaceElevated,
+                  title: Text('Advance Time', style: HermesTypography.sectionTitle),
+                  content: Text('Simulating future dates allows you to test the scheduling engine.', style: HermesTypography.metadata),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await ref.read(storageEngineProvider).advanceTime(1);
+                        if (context.mounted) {
+                          HermesToast.show(context, 'Advanced 1 day. Generating pursuit...');
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                        }
+                      },
+                      child: const Text('+ 1 Day'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await ref.read(storageEngineProvider).advanceTime(7);
+                        if (context.mounted) {
+                          HermesToast.show(context, 'Advanced 7 days. Generating pursuit...');
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                        }
+                      },
+                      child: const Text('+ 7 Days'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.surfaceOverlay, foregroundColor: HermesColors.textPrimary),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        final selected = await showDatePicker(
+                          context: context,
+                          initialDate: ref.read(storageEngineProvider).currentDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2050),
+                          builder: (context, child) => Theme(
+                            data: ThemeData.dark(),
+                            child: child!,
+                          ),
+                        );
+                        if (selected != null) {
+                          await ref.read(storageEngineProvider).jumpToDate(selected);
+                          if (context.mounted) {
+                            HermesToast.show(context, 'Jumped to date. Generating pursuit...');
+                            Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                          }
+                        }
+                      },
+                      child: const Text('Jump to Date'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.veritasColor, foregroundColor: Colors.white),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await ref.read(storageEngineProvider).resetTime();
+                        if (context.mounted) {
+                          HermesToast.show(context, 'Returned to today. Generating pursuit...');
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                        }
+                      },
+                      child: const Text('Reset to Today'),
+                    ),
+                  ],
+                ),
+              );
             }),
-            _buildActionTile(context, "Regenerate Today's Pursuit", 'Clear today\'s queue and run scheduler again', Icons.auto_awesome_rounded, () async {
-              await ref.read(storageEngineProvider).regenerateTodayPursuit();
-              if (context.mounted) {
-                HermesToast.show(context, 'Success: Pursuit Regenerated.');
-                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-              }
-            }),
-            _buildActionTile(context, 'Advance One Day', 'Simulate tomorrow and generate new pursuit', Icons.skip_next_rounded, () async {
-              await ref.read(storageEngineProvider).advanceOneDay();
-              if (context.mounted) {
-                HermesToast.show(context, 'Time advanced. Generating tomorrow\'s pursuit...');
-                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-              }
-            }),
-            if (ref.watch(storageEngineProvider).isPursuitReset)
-              _buildActionTile(context, "Restore Today's Pursuit", 'Restore the queue that existed before reset', Icons.restore_rounded, () async {
-                await ref.read(storageEngineProvider).restoreTodayPursuit();
-                if (context.mounted) {
-                  HermesToast.show(context, 'Success: Pursuit Restored.');
-                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-                }
-              })
-            else
-              _buildActionTile(context, "Reset Today's Pursuit", 'Clear today\'s generated goals', Icons.clear_all_rounded, () async {
-                await ref.read(storageEngineProvider).resetTodayPursuit();
-                if (context.mounted) {
-                  HermesToast.show(context, 'Pursuit Cleared. Queue is empty.');
-                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-                }
-              }),
             _buildActionTile(context, 'Rebuild Search Index', 'Completely rebuild the FTS index in memory', Icons.search_rounded, () async {
               await ref.read(storageEngineProvider).rebuildSearchIndex();
               if (context.mounted) {
@@ -131,12 +172,6 @@ class DeveloperScreen extends ConsumerWidget {
             _buildSectionHeader('Render Testing', Icons.design_services_rounded),
             _buildActionTile(context, 'Reader Test Page', 'Load standard reader UI harness', Icons.menu_book_rounded, () {
               _openReaderTest(context, 'Standard Test', 'This is a standard text test. Nothing fancy.');
-            }),
-            _buildActionTile(context, 'Markdown Test', 'Renders all edge-case Markdown elements', Icons.text_format_rounded, () {
-              _openReaderTest(context, 'Markdown Stress Test', '# Header 1\n## Header 2\n\n**Bold**, *Italic*, `Code`\n\n> Blockquote\n\n- List 1\n- List 2\n\n```python\nprint("Hello")\n```');
-            }),
-            _buildActionTile(context, 'LaTeX Test', 'Renders complex MathJax/KaTeX formulas', Icons.functions_rounded, () {
-              _openReaderTest(context, 'LaTeX Test', 'Here is an inline equation: <math>E = mc^2</math>\n\nAnd a block equation:\n<math>\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}</math>');
             }),
             _buildActionTile(context, 'Large Article Test', 'Loads a 50,000 word dummy article to test FPS', Icons.speed_rounded, () {
               _openReaderTest(context, 'Large Article Test', List.generate(500, (i) => 'This is a massive paragraph block to test the scroll performance of the markdown renderer. $i').join('\n\n'));
@@ -272,18 +307,17 @@ class DeveloperScreen extends ConsumerWidget {
                         Navigator.pop(ctx);
                         final storage = ref.read(storageEngineProvider);
                         final existing = storage.workspaces.where((w) => w.name == 'Starter').firstOrNull;
-                        if (existing == null) {
-                          final ws = Workspace(name: 'Starter', isDefault: true, icon: '⭐');
-                          await storage.saveWorkspace(ws);
-                          await storage.seedStarterWorkspace(ws);
-                          ref.invalidate(currentWorkspaceProvider);
-                          ref.invalidate(domainsProvider);
-                          if (context.mounted) {
-                            HermesToast.show(context, 'Success: Starter Workspace Regenerated.');
-                            Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-                          }
-                        } else {
-                          if (context.mounted) HermesToast.show(context, 'Starter workspace already exists.');
+                        if (existing != null) {
+                          await storage.deleteWorkspace(existing.id);
+                        }
+                        final ws = Workspace(name: 'Starter', isDefault: true, icon: '⭐');
+                        await storage.saveWorkspace(ws);
+                        await storage.seedStarterWorkspace(ws);
+                        ref.invalidate(currentWorkspaceProvider);
+                        ref.invalidate(domainsProvider);
+                        if (context.mounted) {
+                          HermesToast.show(context, 'Success: Starter Workspace Regenerated.');
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
                         }
                       },
                     ),

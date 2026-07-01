@@ -24,9 +24,10 @@ class HermesColors {
   static const Color surfaceOverlay = Color(0xFF1A1A1A); // Dialogs / Modals
 
   // ── Text Hierarchy ─────────────────────────────────────────────────────────
-  static const Color textPrimary = Color(0xFFF0F0F0); // Headings
-  static const Color textSecondary = Color(0xFFB0B0B0); // Body text
-  static const Color textTertiary = Color(0xFF6B6B6B); // Metadata / hints
+  static const Color textPrimary = Color(0xFFE6E6E6); // Headings
+  static const Color textSecondary = Color(0xFFC8C8C8); // Body text
+  static const Color textTertiary = Color(0xFF9A9A9A); // Metadata
+  static const Color textHint = Color(0xFF7A7A7A); // Hints / placeholders
   static const Color textDisabled = Color(0xFF3A3A3A); // Truly inactive
 
   // ── Accent — Muted, Intentional ────────────────────────────────────────────

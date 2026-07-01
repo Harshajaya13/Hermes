@@ -137,15 +137,14 @@ class TodayScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final now = DateTime.now();
+    final storage = ref.watch(storageEngineProvider);
+    final now = storage.currentDate;
     final greeting = _getGreeting(now.hour);
     
     // Read dynamic data from offline storage
     final recentEvolutios = ref.watch(recentEvolutiosProvider);
     final workspace = ref.watch(currentWorkspaceProvider);
     final archivedSections = ref.watch(archivedSectionsProvider);
-    
-    final storage = ref.watch(storageEngineProvider);
     final veritasList = workspace != null ? storage.getVeritas(workspace.id) : <Veritas>[];
     
     final allDomains = ref.watch(domainsProvider);
@@ -159,19 +158,23 @@ class TodayScreen extends ConsumerWidget {
     final sources = ref.watch(sourcesProvider);
     final Map<String, KnowledgeSource> sourceMap = { for (var s in sources) s.id: s };
     
-    if (allBlocks.isNotEmpty && !ref.read(storageEngineProvider).isPursuitReset) {
+    if (allBlocks.isNotEmpty) {
       // Temporary map to track how many items we've taken per source today
       final sourceCounts = <String, int>{};
       
       for (final block in allBlocks) {
         final items = ref.watch(itemsByBlockProvider(block.id));
         
+        final todayStr = storage.currentDate.toIso8601String().substring(0, 10);
+        
         // Find all unsolved items meant for Today's Pursuit
         final unsolvedItems = items.where((i) {
           if (i.metadata?['isDailyGoal'] != true) return false;
           if (i.metadata?['isSolved'] == true) return false;
-          final todayStr = DateTime.now().toIso8601String().substring(0, 10);
-          if (i.metadata?['skippedDate'] == todayStr) return false;
+          
+          final skippedDates = (i.metadata?['skippedDates'] as List?)?.cast<String>() ?? [];
+          if (skippedDates.contains(todayStr)) return false;
+          
           return true;
         }).toList();
         
@@ -196,42 +199,7 @@ class TodayScreen extends ConsumerWidget {
           }
         }
       }
-      
-      // Handle Daily Cycling: Stamp today's date, or expire if from yesterday.
-      final todayStr = DateTime.now().toIso8601String().substring(0, 10);
-      final validDailyItems = <MapEntry<Block, Item>>[];
-      
-      for (final entry in dailyItems) {
-        final item = entry.value;
-        final surfacedDate = item.metadata?['surfacedDate'];
-        
-        if (surfacedDate == null) {
-          // Stamp it with today's date so it stays for today
-          final updatedMeta = Map<String, dynamic>.from(item.metadata ?? {});
-          updatedMeta['surfacedDate'] = todayStr;
-          final updatedItem = item.copyWith(metadata: updatedMeta);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ref.read(storageEngineProvider).saveItem(updatedItem);
-          });
-          validDailyItems.add(entry);
-        } else if (surfacedDate != todayStr) {
-          // Expire it! Remove daily goal status so it moves to blocks.
-          final updatedMeta = Map<String, dynamic>.from(item.metadata ?? {});
-          updatedMeta.remove('isDailyGoal');
-          updatedMeta.remove('surfacedDate');
-          final updatedItem = item.copyWith(metadata: updatedMeta);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ref.read(storageEngineProvider).saveItem(updatedItem);
-          });
-          // Do NOT add to validDailyItems, let it be replaced by the next item in the pipeline.
-        } else {
-          // Valid for today
-          validDailyItems.add(entry);
-        }
-      }
-      
-      dailyItems.clear();
-      dailyItems.addAll(validDailyItems);
+
 
       // Sort by newest first
       dailyItems.sort((a, b) => b.value.createdAt.compareTo(a.value.createdAt));
@@ -468,12 +436,32 @@ class TodayScreen extends ConsumerWidget {
                                         ),
                                         const SizedBox(width: HermesSpacing.xs),
                                         Expanded(
-                                          child: Text(
-                                            '${_getItemTypeBadge(item.type)}  •  ${item.title}',
-                                            style: HermesTypography.metadata.copyWith(
-                                              color: item.type.color,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: Opacity(
+                                                  opacity: item.metadata?['isSolved'] == true ? 0.4 : 1.0,
+                                                  child: Text(
+                                                    '${_getItemTypeBadge(item.type)}  •  ${item.title}',
+                                                    style: HermesTypography.metadata.copyWith(
+                                                      color: item.type.color,
+                                                      fontWeight: FontWeight.bold,
+                                                      decoration: item.metadata?['isSolved'] == true ? TextDecoration.lineThrough : null,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (item.type == ItemType.article) ...[
+                                                const SizedBox(width: HermesSpacing.sm),
+                                                if ((item.metadata?['readCount'] ?? 0) > 0)
+                                                  Text('✓ Read', style: HermesTypography.metadata.copyWith(color: HermesColors.accent, fontWeight: FontWeight.bold, fontSize: 10))
+                                                else if (item.metadata?['firstSurfacedDate'] != null || item.metadata?['surfacedDate'] != null)
+                                                  Text('○ Surfaced', style: HermesTypography.metadata.copyWith(color: HermesColors.textSecondary, fontSize: 10))
+                                                else
+                                                  Text('● New', style: HermesTypography.metadata.copyWith(color: HermesColors.veritasColor, fontSize: 10)),
+                                              ],
+                                            ],
                                           ),
                                         ),
                                         PopupMenuButton<String>(
@@ -481,15 +469,24 @@ class TodayScreen extends ConsumerWidget {
                                           padding: EdgeInsets.zero,
                                           color: HermesColors.surfaceElevated,
                                           onSelected: (value) async {
-                                            if (value == 'remove') {
+                                            if (value == 'skip' || value == 'remove') {
+                                              final todayStr = storage.currentDate.toIso8601String().substring(0, 10);
                                               final updatedMeta = Map<String, dynamic>.from(item.metadata ?? {});
-                                              updatedMeta['isDailyGoal'] = false;
+                                              
+                                              if (value == 'remove') {
+                                                updatedMeta['isDailyGoal'] = false; // permanent remove
+                                              } else {
+                                                final skipped = (updatedMeta['skippedDates'] as List?)?.cast<String>() ?? [];
+                                                if (!skipped.contains(todayStr)) skipped.add(todayStr);
+                                                updatedMeta['skippedDates'] = skipped;
+                                              }
+                                              
                                               final updatedItem = item.copyWith(metadata: updatedMeta);
                                               await ref.read(storageEngineProvider).saveItem(updatedItem);
                                               ref.invalidate(itemsByBlockProvider(item.blockId));
                                               if (context.mounted) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(content: Text('Removed from Today\'s Pursuit')),
+                                                  SnackBar(content: Text(value == 'remove' ? 'Removed from Today\'s Pursuit' : 'Skipped for today')),
                                                 );
                                               }
                                             } else if (value == 'open') {
@@ -513,6 +510,11 @@ class TodayScreen extends ConsumerWidget {
                                             }
                                           },
                                           itemBuilder: (context) => [
+                                            if (item.type == ItemType.question)
+                                              PopupMenuItem(
+                                                value: 'skip',
+                                                child: Text('Skip for Today', style: HermesTypography.bodySmall),
+                                              ),
                                             PopupMenuItem(
                                               value: 'remove',
                                               child: Text('Remove from Today\'s Pursuit', style: HermesTypography.bodySmall.copyWith(color: HermesColors.veritasColor)),
@@ -739,7 +741,7 @@ class TodayScreen extends ConsumerWidget {
                               child: _EvolutioEntry(
                                 text: evo.content,
                                 block: blockName,
-                                time: _formatTimeAgo(evo.createdAt),
+                                time: _formatTimeAgo(evo.createdAt, ref),
                                 onTap: () {
                                   final engine = ref.read(storageEngineProvider);
                                   final allReflections = engine.getAllReflections();
@@ -890,8 +892,9 @@ class TodayScreen extends ConsumerWidget {
     return '${days[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
   }
   
-  String _formatTimeAgo(DateTime date) {
-    final diff = DateTime.now().difference(date);
+  String _formatTimeAgo(DateTime date, WidgetRef ref) {
+    final storage = ref.watch(storageEngineProvider);
+    final diff = storage.currentDate.difference(date);
     if (diff.inDays > 0) return '${diff.inDays} days ago';
     if (diff.inHours > 0) return '${diff.inHours} hours ago';
     if (diff.inMinutes > 0) return '${diff.inMinutes} mins ago';

@@ -75,10 +75,9 @@ class _CreateDomainSheetState extends ConsumerState<CreateDomainSheet> {
             icon: _emojiController.text.trim().isEmpty ? '📁' : _emojiController.text.trim(),
           );
 
+    if (mounted) Navigator.pop(context);
     await ref.read(storageEngineProvider).saveDomain(newDomain);
     ref.invalidate(domainsProvider);
-    
-    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -151,7 +150,7 @@ class _CreateDomainSheetState extends ConsumerState<CreateDomainSheet> {
                 onPressed: _saveDomain,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: HermesColors.accent,
-                  foregroundColor: Colors.white,
+                  foregroundColor: HermesColors.background,
                   padding: const EdgeInsets.symmetric(vertical: HermesSpacing.md),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(HermesRadius.pill),

@@ -96,4 +96,23 @@ class Domain {
       version: version ?? (this.version + 1),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is Domain &&
+      other.id == id &&
+      other.workspaceId == workspaceId &&
+      other.name == name &&
+      other.icon == icon;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+      workspaceId.hashCode ^
+      name.hashCode ^
+      icon.hashCode;
+  }
 }

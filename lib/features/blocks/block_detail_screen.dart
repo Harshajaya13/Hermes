@@ -390,13 +390,17 @@ class _ItemRow extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.title,
-                      style: HermesTypography.itemTitle.copyWith(
-                        color: item.metadata?['isProject'] == true ? HermesColors.evolutioGlow : HermesColors.textSecondary,
+                    Opacity(
+                      opacity: item.metadata?['isSolved'] == true ? 0.4 : 1.0,
+                      child: Text(
+                        item.title,
+                        style: HermesTypography.itemTitle.copyWith(
+                          color: item.metadata?['isProject'] == true ? HermesColors.evolutioGlow : HermesColors.textSecondary,
+                          decoration: item.metadata?['isSolved'] == true ? TextDecoration.lineThrough : null,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: HermesSpacing.xxs),
                     Row(
@@ -413,6 +417,17 @@ class _ItemRow extends ConsumerWidget {
                             ),
                             child: Text('PROJECT ✦', style: HermesTypography.metadata.copyWith(color: HermesColors.evolutioGlow, fontSize: 10, fontWeight: FontWeight.bold)),
                           ),
+                        ],
+                        if (item.type == ItemType.article) ...[
+                          const SizedBox(width: HermesSpacing.sm),
+                          Text('•', style: HermesTypography.metadata),
+                          const SizedBox(width: HermesSpacing.sm),
+                          if ((item.metadata?['readCount'] ?? 0) > 0)
+                            Text('✓ Read', style: HermesTypography.metadata.copyWith(color: HermesColors.accent, fontWeight: FontWeight.bold))
+                          else if (item.metadata?['firstSurfacedDate'] != null || item.metadata?['surfacedDate'] != null)
+                            Text('○ Surfaced', style: HermesTypography.metadata.copyWith(color: HermesColors.textSecondary))
+                          else
+                            Text('● New', style: HermesTypography.metadata.copyWith(color: HermesColors.veritasColor)),
                         ],
                       ],
                     ),

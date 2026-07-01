@@ -217,8 +217,10 @@ class _CreateWebSourceScreenState extends ConsumerState<CreateWebSourceScreen> {
           const SizedBox(height: HermesSpacing.sm),
           TextField(
             onChanged: (val) => _sourceName = val,
+            style: HermesTypography.body,
             decoration: InputDecoration(
               hintText: 'e.g. Paul Graham Essay',
+              hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
               filled: true,
               fillColor: HermesColors.surfaceElevated,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),

@@ -161,11 +161,11 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
             metadata: metadata.isNotEmpty ? metadata : null,
           );
 
+    if (mounted) Navigator.pop(context);
+    
     await ref.read(storageEngineProvider).saveItem(newItem);
     // Invalidate the provider so UI updates
     ref.invalidate(itemsByBlockProvider(_selectedBlock!.id));
-    
-    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -333,7 +333,7 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
                 onPressed: _isFetching ? null : _saveItem,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: HermesColors.accent,
-                  foregroundColor: Colors.white,
+                  foregroundColor: HermesColors.background,
                   padding: const EdgeInsets.symmetric(vertical: HermesSpacing.md),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(HermesRadius.pill),
