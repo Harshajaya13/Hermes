@@ -159,7 +159,7 @@ class TodayScreen extends ConsumerWidget {
     final sources = ref.watch(sourcesProvider);
     final Map<String, KnowledgeSource> sourceMap = { for (var s in sources) s.id: s };
     
-    if (allBlocks.isNotEmpty) {
+    if (allBlocks.isNotEmpty && !ref.read(storageEngineProvider).isPursuitReset) {
       // Temporary map to track how many items we've taken per source today
       final sourceCounts = <String, int>{};
       
@@ -170,6 +170,8 @@ class TodayScreen extends ConsumerWidget {
         final unsolvedItems = items.where((i) {
           if (i.metadata?['isDailyGoal'] != true) return false;
           if (i.metadata?['isSolved'] == true) return false;
+          final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+          if (i.metadata?['skippedDate'] == todayStr) return false;
           return true;
         }).toList();
         

@@ -25,15 +25,30 @@ final exportEngineProvider = Provider<ExportEngine>((ref) {
 // ── Active Workspace ─────────────────────────────────────────────────────────
 
 class CurrentWorkspaceNotifier extends Notifier<Workspace?> {
+  Workspace? _manualState;
+
   @override
   Workspace? build() {
     final storage = ref.watch(storageEngineProvider);
+    final isCamouflage = ref.watch(camouflageModeProvider);
     final workspaces = storage.workspaces;
+    
+    if (isCamouflage) {
+      final dummy = workspaces.where((w) => w.name == 'Dummy Workspace' || w.name == 'Starter Workspace').firstOrNull;
+      if (dummy != null) return dummy;
+      return Workspace(id: 'temp_demo', name: 'Demo Workspace', isDefault: false);
+    }
+    
+    if (_manualState != null && workspaces.any((w) => w.id == _manualState!.id)) {
+      return workspaces.firstWhere((w) => w.id == _manualState!.id);
+    }
+
     return workspaces.where((w) => w.isDefault).firstOrNull ?? (workspaces.isNotEmpty ? workspaces.first : null);
   }
 
   void updateWorkspace(Workspace? ws) {
-    state = ws;
+    _manualState = ws;
+    ref.invalidateSelf();
   }
 }
 

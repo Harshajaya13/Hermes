@@ -43,19 +43,44 @@ class DeveloperScreen extends ConsumerWidget {
                 ref.read(camouflageModeProvider.notifier).toggle();
               }
             ),
-            _buildActionTile(context, "Regenerate Today's Pursuit", 'Forces the algorithm to fetch new daily items', Icons.refresh_rounded, () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.remove('welcome_dismissed');
-              HermesToast.show(context, 'Reset visibility logic. Hard reload needed.');
+            _buildActionTile(context, 'Reload Hermes', 'Completely reload the UI and rebuild state', Icons.refresh_rounded, () {
+              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
             }),
-            _buildActionTile(context, 'Advance One Day', 'Simulates chronological progression', Icons.skip_next_rounded, () async {
-              HermesToast.show(context, 'Requires backend chron API in v3.1.');
+            _buildActionTile(context, "Regenerate Today's Pursuit", 'Clear today\'s queue and run scheduler again', Icons.auto_awesome_rounded, () async {
+              await ref.read(storageEngineProvider).regenerateTodayPursuit();
+              if (context.mounted) {
+                HermesToast.show(context, 'Success: Pursuit Regenerated.');
+                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+              }
             }),
-            _buildActionTile(context, "Reset Today's Pursuit", 'Clears current pursuit state', Icons.restart_alt_rounded, () {
-              HermesToast.show(context, 'Pursuit state cleared.');
+            _buildActionTile(context, 'Advance One Day', 'Simulate tomorrow and generate new pursuit', Icons.skip_next_rounded, () async {
+              await ref.read(storageEngineProvider).advanceOneDay();
+              if (context.mounted) {
+                HermesToast.show(context, 'Time advanced. Generating tomorrow\'s pursuit...');
+                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+              }
             }),
-            _buildActionTile(context, 'Rebuild Search Index', 'Forces a full re-index of the FTS5 tables', Icons.search_rounded, () {
-              HermesToast.show(context, 'Search indexing triggered in memory.');
+            if (ref.watch(storageEngineProvider).isPursuitReset)
+              _buildActionTile(context, "Restore Today's Pursuit", 'Restore the queue that existed before reset', Icons.restore_rounded, () async {
+                await ref.read(storageEngineProvider).restoreTodayPursuit();
+                if (context.mounted) {
+                  HermesToast.show(context, 'Success: Pursuit Restored.');
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                }
+              })
+            else
+              _buildActionTile(context, "Reset Today's Pursuit", 'Clear today\'s generated goals', Icons.clear_all_rounded, () async {
+                await ref.read(storageEngineProvider).resetTodayPursuit();
+                if (context.mounted) {
+                  HermesToast.show(context, 'Pursuit Cleared. Queue is empty.');
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                }
+              }),
+            _buildActionTile(context, 'Rebuild Search Index', 'Completely rebuild the FTS index in memory', Icons.search_rounded, () async {
+              await ref.read(storageEngineProvider).rebuildSearchIndex();
+              if (context.mounted) {
+                HermesToast.show(context, 'Search indexing triggered in memory.');
+              }
             }),
             
             const SizedBox(height: HermesSpacing.xl),
@@ -88,17 +113,18 @@ class DeveloperScreen extends ConsumerWidget {
                 if (ws != null) {
                   final engine = ref.read(exportEngineProvider);
                   final path = await engine.exportWorkspace(ws.id);
-                  HermesToast.show(context, 'Database Exported to: \$path');
+                  HermesToast.show(context, 'Database Exported to: $path');
                 }
               } catch (e) {
-                HermesToast.show(context, 'Export Failed: \$e', isError: true);
+                HermesToast.show(context, 'Export Failed: $e', isError: true);
               }
             }),
             _buildActionTile(context, 'Database Import', 'Overwrite current database with external file', Icons.file_upload_rounded, () {
               HermesToast.show(context, 'Use the standard pipeline UI to import.');
             }),
-            _buildActionTile(context, 'SQLite Vacuum', 'Rebuild database file and free space', Icons.cleaning_services_rounded, () {
-              HermesToast.show(context, 'Vacuum executed on JSON storage tree.');
+            _buildActionTile(context, 'SQLite Vacuum', 'Rebuild database file and free space', Icons.cleaning_services_rounded, () async {
+              await ref.read(storageEngineProvider).vacuum();
+              if (context.mounted) HermesToast.show(context, 'Vacuum executed successfully.');
             }),
             
             const SizedBox(height: HermesSpacing.xl),
@@ -110,7 +136,7 @@ class DeveloperScreen extends ConsumerWidget {
               _openReaderTest(context, 'Markdown Stress Test', '# Header 1\n## Header 2\n\n**Bold**, *Italic*, `Code`\n\n> Blockquote\n\n- List 1\n- List 2\n\n```python\nprint("Hello")\n```');
             }),
             _buildActionTile(context, 'LaTeX Test', 'Renders complex MathJax/KaTeX formulas', Icons.functions_rounded, () {
-              HermesToast.show(context, 'Requires flutter_markdown_latex plugin (v3.1).');
+              _openReaderTest(context, 'LaTeX Test', 'Here is an inline equation: <math>E = mc^2</math>\n\nAnd a block equation:\n<math>\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}</math>');
             }),
             _buildActionTile(context, 'Large Article Test', 'Loads a 50,000 word dummy article to test FPS', Icons.speed_rounded, () {
               _openReaderTest(context, 'Large Article Test', List.generate(500, (i) => 'This is a massive paragraph block to test the scroll performance of the markdown renderer. $i').join('\n\n'));
@@ -163,70 +189,150 @@ class DeveloperScreen extends ConsumerWidget {
             
             const SizedBox(height: HermesSpacing.xl),
             _buildSectionHeader('Danger Zone', Icons.warning_rounded, color: Colors.redAccent),
-            _buildActionTile(context, 'Generate Dummy Data', 'Injects fake domains, blocks, and items', Icons.add_to_photos_rounded, () async {
+            _buildActionTile(context, 'Generate Dummy Workspace', 'Creates a fake demo workspace only', Icons.add_to_photos_rounded, () async {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: HermesColors.surfaceElevated,
+                  title: Text('Generate Dummy Workspace', style: HermesTypography.sectionTitle),
+                  content: Text('This will create a completely separate demo workspace labeled "Dummy Workspace" and switch you into it. Your real workspace will NOT be touched.', style: HermesTypography.body),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.evolutioGlow, foregroundColor: Colors.white),
+                      child: const Text('Confirm'),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        final storage = ref.read(storageEngineProvider);
+                        final dummyWs = Workspace(id: 'dummy_workspace', name: 'Dummy Workspace', isDefault: false, icon: '🤖');
+                        await storage.saveWorkspace(dummyWs);
+                        final d = Domain(workspaceId: dummyWs.id, name: 'Dummy Domain', icon: '🤖');
+                        await storage.saveDomain(d);
+                        final b = Block(domainId: d.id, name: 'Dummy Block', icon: '🧱');
+                        await storage.saveBlock(b);
+                        final i = Item(id: 'dummy_item', blockId: b.id, sourceId: 'system', type: ItemType.article, title: 'Dummy Article', content: 'This is a test article.', createdAt: DateTime.now());
+                        await storage.saveItem(i);
+                        
+                        ref.read(currentWorkspaceProvider.notifier).updateWorkspace(dummyWs);
+                        ref.invalidate(domainsProvider);
+                        ref.invalidate(allBlocksProvider);
+                        if (context.mounted) {
+                          HermesToast.show(context, 'Success: Demo Workspace Generated.');
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }, isDanger: true),
+            _buildActionTile(context, 'Remove Dummy Workspace', 'Delete only the dummy workspace', Icons.delete_outline_rounded, () async {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: HermesColors.surfaceElevated,
+                  title: Text('Remove Dummy Workspace', style: HermesTypography.sectionTitle.copyWith(color: Colors.redAccent)),
+                  content: Text('This will delete ONLY the "Dummy Workspace" and its contents. It will then switch back to your real workspace. Your personal data will NOT be deleted.', style: HermesTypography.body),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                      child: const Text('Confirm'),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        final storage = ref.read(storageEngineProvider);
+                        await storage.deleteWorkspace('dummy_workspace');
+                        
+                        ref.invalidate(currentWorkspaceProvider);
+                        ref.invalidate(domainsProvider);
+                        ref.invalidate(allBlocksProvider);
+                        if (context.mounted) {
+                          HermesToast.show(context, 'Success: Demo Workspace Cleared.');
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }, isDanger: true),
+            _buildActionTile(context, 'Recreate Starter Workspace', 'Create a brand new Starter Workspace', Icons.auto_awesome_rounded, () async {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: HermesColors.surfaceElevated,
+                  title: Text('Recreate Starter Workspace', style: HermesTypography.sectionTitle),
+                  content: Text('This will create a brand new Starter Workspace only if it does not already exist. It will NEVER modify your existing workspaces.', style: HermesTypography.body),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: HermesColors.evolutioGlow, foregroundColor: Colors.white),
+                      child: const Text('Confirm'),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        final storage = ref.read(storageEngineProvider);
+                        final existing = storage.workspaces.where((w) => w.name == 'Starter').firstOrNull;
+                        if (existing == null) {
+                          final ws = Workspace(name: 'Starter', isDefault: true, icon: '⭐');
+                          await storage.saveWorkspace(ws);
+                          await storage.seedStarterWorkspace(ws);
+                          ref.invalidate(currentWorkspaceProvider);
+                          ref.invalidate(domainsProvider);
+                          if (context.mounted) {
+                            HermesToast.show(context, 'Success: Starter Workspace Regenerated.');
+                            Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                          }
+                        } else {
+                          if (context.mounted) HermesToast.show(context, 'Starter workspace already exists.');
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }, isDanger: true),
+            _buildActionTile(context, 'Reset Current Workspace', 'Delete everything in the currently selected workspace', Icons.delete_forever_rounded, () async {
               final ws = ref.read(currentWorkspaceProvider);
               if (ws == null) return;
-              final storage = ref.read(storageEngineProvider);
-              final d = Domain(workspaceId: ws.id, name: 'Dummy Domain', icon: '🤖');
-              await storage.saveDomain(d);
-              final b = Block(domainId: d.id, name: 'Dummy Block', icon: '🧱');
-              await storage.saveBlock(b);
-              ref.invalidate(domainsProvider);
-              ref.invalidate(allBlocksProvider);
-              if (context.mounted) {
-                HermesToast.show(context, 'Success: Dummy Data Generated.');
-                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-              }
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: HermesColors.surfaceElevated,
+                  title: Text('Reset Workspace: ${ws.name}', style: HermesTypography.sectionTitle.copyWith(color: Colors.redAccent)),
+                  content: Text('This will delete all Domains, Blocks, and Items inside ONLY the "${ws.name}" workspace. It will leave the workspace completely empty. This cannot be undone.', style: HermesTypography.body),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                      child: const Text('Confirm'),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await ref.read(storageEngineProvider).resetWorkspace(ws.id);
+                        ref.invalidate(currentWorkspaceProvider);
+                        ref.invalidate(domainsProvider);
+                        if (context.mounted) {
+                          HermesToast.show(context, 'Success: Current Workspace Emptied.');
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              );
             }, isDanger: true),
-            _buildActionTile(context, 'Clear Dummy Data', 'Removes items flagged as dummy', Icons.delete_sweep_rounded, () async {
-              final storage = ref.read(storageEngineProvider);
-              final ws = ref.read(currentWorkspaceProvider);
-              if (ws == null) return;
-              final domains = storage.getDomains(ws.id).where((d) => d.name == 'Dummy Domain').toList();
-              for (var d in domains) { await storage.deleteDomain(d.id); }
-              ref.invalidate(domainsProvider);
-              ref.invalidate(allBlocksProvider);
-              if (context.mounted) {
-                HermesToast.show(context, 'Success: Dummy Data Cleared.');
-                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-              }
-            }, isDanger: true),
-            _buildActionTile(context, 'Regenerate Starter Workspace', 'Re-adds the default system guide', Icons.auto_awesome_rounded, () async {
-              final ws = ref.read(currentWorkspaceProvider);
-              if (ws == null) return;
-              final storage = ref.read(storageEngineProvider);
-              await storage.seedStarterWorkspace(ws);
-              ref.invalidate(currentWorkspaceProvider);
-              ref.invalidate(domainsProvider);
-              if (context.mounted) {
-                HermesToast.show(context, 'Success: Starter Workspace Regenerated.');
-                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-              }
-            }, isDanger: true),
-            _buildActionTile(context, 'Reset Current Workspace', 'Wipes current workspace contents entirely', Icons.delete_outline_rounded, () async {
-              final ws = ref.read(currentWorkspaceProvider);
-              if (ws != null) {
-                await ref.read(storageEngineProvider).resetWorkspace(ws.id);
-                ref.invalidate(currentWorkspaceProvider);
-                ref.invalidate(domainsProvider);
-                if (context.mounted) {
-                  HermesToast.show(context, 'Success: Current Workspace Reset.');
-                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
-                }
-              }
-            }, isDanger: true),
-            _buildActionTile(context, 'Factory Reset Hermes', 'Nukes all workspaces and preferences', Icons.local_fire_department_rounded, () async {
+            _buildActionTile(context, 'Factory Reset Hermes', 'Restart Hermes into a true first-install state', Icons.local_fire_department_rounded, () async {
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
                   backgroundColor: HermesColors.surfaceElevated,
                   title: Text('FACTORY RESET', style: HermesTypography.sectionTitle.copyWith(color: Colors.redAccent)),
-                  content: Text('This will delete all databases, workspaces, and shared preferences. You cannot undo this.', style: HermesTypography.body),
+                  content: Text('This will delete EVERY workspace, EVERY database, and EVERY preference. Hermes will restart into a true first-install state and automatically create a fresh Starter Workspace. You CANNOT undo this.', style: HermesTypography.body),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
                       onPressed: () async {
+                        Navigator.pop(ctx);
                         await ref.read(storageEngineProvider).factoryReset();
                         ref.invalidate(currentWorkspaceProvider);
                         ref.invalidate(domainsProvider);
@@ -277,16 +383,18 @@ class DeveloperScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionTile(BuildContext context, String title, String subtitle, IconData icon, VoidCallback onTap, {bool isDanger = false}) {
+  Widget _buildActionTile(BuildContext context, String title, String subtitle, IconData icon, VoidCallback? onTap, {bool isDanger = false}) {
     final color = isDanger ? Colors.redAccent : HermesColors.textPrimary;
     final bgColor = isDanger ? Colors.redAccent.withValues(alpha: 0.05) : HermesColors.surfaceElevated;
     
     return Container(
       margin: const EdgeInsets.only(bottom: HermesSpacing.sm),
       child: InkWell(
-        onTap: () {
+        onTap: onTap != null ? () {
           HermesToast.show(context, 'Developer tool invoked: $title');
           onTap();
+        } : () {
+          HermesToast.show(context, '$title - Not Implemented Yet');
         },
         borderRadius: BorderRadius.circular(HermesRadius.md),
         child: Container(

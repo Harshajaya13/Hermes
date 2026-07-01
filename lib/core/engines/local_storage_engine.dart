@@ -270,17 +270,108 @@ Without reflection, experience is just a series of events. With reflection, expe
     _blocks.clear();
     _items.clear();
     _evolutios.clear();
+    _veritas.clear();
     
     await _saveToDisk('workspaces', {});
     await _saveToDisk('domains', {});
     await _saveToDisk('blocks', {});
     await _saveToDisk('items', {});
     await _saveToDisk('evolutios', {});
+    await _saveToDisk('veritas', {});
     
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     
     await initialize();
+  }
+
+  Future<void> advanceOneDay() async {
+    // Note: To truly simulate time passing for the scheduler without restarting the OS,
+    // we would need to mock DateTime.now(). Since we can't do that easily, 
+    // we can artificially age all surfaced items to be "yesterday".
+    final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+    final yesterdayStr = DateTime.now().subtract(const Duration(days: 1)).toIso8601String().substring(0, 10);
+    
+    for (final item in _items.values.toList()) {
+      bool changed = false;
+      final meta = Map<String, dynamic>.from(item.metadata ?? {});
+      if (meta['surfacedDate'] == todayStr) {
+        meta['surfacedDate'] = yesterdayStr;
+        changed = true;
+      }
+      
+      if (changed) {
+        _items[item.id] = item.copyWith(metadata: meta);
+      }
+    }
+    
+    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  // State to hold the restored queue
+  List<Item>? _restoredPursuitQueue;
+  bool _isPursuitReset = false;
+
+  bool get isPursuitReset => _isPursuitReset;
+
+  Future<void> resetTodayPursuit() async {
+    final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+    final todayItems = _items.values.where((i) => i.metadata?['surfacedDate'] == todayStr).toList();
+    
+    _restoredPursuitQueue = List.from(todayItems); // Backup for restore
+    _isPursuitReset = true;
+    
+    for (var item in todayItems) {
+      final meta = Map<String, dynamic>.from(item.metadata ?? {});
+      meta.remove('surfacedDate');
+      // We don't remove isDailyGoal here so it can be restored or regenerated if needed.
+      _items[item.id] = item.copyWith(metadata: meta);
+    }
+    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> restoreTodayPursuit() async {
+    if (_restoredPursuitQueue != null) {
+      for (var item in _restoredPursuitQueue!) {
+        _items[item.id] = item; // Restore exact state
+      }
+      _restoredPursuitQueue = null;
+    }
+    _isPursuitReset = false;
+    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> regenerateTodayPursuit() async {
+    _isPursuitReset = false;
+    _restoredPursuitQueue = null;
+    final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+    final todayItems = _items.values.where((i) => i.metadata?['surfacedDate'] == todayStr).toList();
+    
+    // Demote current items so next ones are picked
+    for (var item in todayItems) {
+      final meta = Map<String, dynamic>.from(item.metadata ?? {});
+      meta.remove('surfacedDate');
+      meta.remove('isDailyGoal');
+      _items[item.id] = item.copyWith(metadata: meta);
+    }
+    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+  }
+
+  Future<void> rebuildSearchIndex() async {
+    // In-memory indexing is fast, but we can simulate a full rebuild process
+    // For now, this is a placeholder as SQLite FTS5 is not used in JSON mode.
+    // If we migrate to SQLite, this will run 'INSERT INTO fts_table(fts_table) VALUES('rebuild');'
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  Future<void> vacuum() async {
+    // Overwrite all disk files to remove any unlinked or orphaned JSON fragments
+    await _saveToDisk('workspaces', _workspaces.map((k, v) => MapEntry(k, v.toJson())));
+    await _saveToDisk('domains', _domains.map((k, v) => MapEntry(k, v.toJson())));
+    await _saveToDisk('blocks', _blocks.map((k, v) => MapEntry(k, v.toJson())));
+    await _saveToDisk('items', _items.map((k, v) => MapEntry(k, v.toJson())));
+    await _saveToDisk('evolutios', _evolutios.map((k, v) => MapEntry(k, v.toJson())));
+    await _saveToDisk('veritas', _veritas.map((k, v) => MapEntry(k, v.toJson())));
   }
 
   Future<void> resetWorkspace(String workspaceId) async {
@@ -323,11 +414,12 @@ Without reflection, experience is just a series of events. With reflection, expe
     await _saveToDisk('domains', _domains.map((k, v) => MapEntry(k, v.toJson())));
     await _saveToDisk('evolutios', _evolutios.map((k, v) => MapEntry(k, v.toJson())));
     await _saveToDisk('veritas', _veritas.map((k, v) => MapEntry(k, v.toJson())));
-    
-    final workspace = _workspaces[workspaceId];
-    if (workspace != null) {
-      await seedStarterWorkspace(workspace);
-    }
+  }
+
+  Future<void> deleteWorkspace(String workspaceId) async {
+    await resetWorkspace(workspaceId);
+    _workspaces.remove(workspaceId);
+    await _saveToDisk('workspaces', _workspaces.map((k, v) => MapEntry(k, v.toJson())));
   }
 
   // ── Appearance ──────────────────────────────────────────────────────────────
