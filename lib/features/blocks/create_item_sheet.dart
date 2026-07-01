@@ -112,12 +112,6 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
 
     if (_selectedType == ItemType.article && _urlController.text.isNotEmpty) {
       sourceUrl = _urlController.text.trim();
-      final fetchedMarkdown = await ArticleFetcher.fetchAndConvertToMarkdown(sourceUrl);
-      if (finalContent.isEmpty) {
-        finalContent = fetchedMarkdown;
-      } else {
-        finalContent = '$finalContent\n\n---\n\n$fetchedMarkdown';
-      }
     }
 
     if (_selectedBlock == null) {
@@ -161,11 +155,11 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
             metadata: metadata.isNotEmpty ? metadata : null,
           );
 
-    if (mounted) Navigator.pop(context);
-    
     await ref.read(storageEngineProvider).saveItem(newItem);
     // Invalidate the provider so UI updates
     ref.invalidate(itemsByBlockProvider(_selectedBlock!.id));
+    
+    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -288,6 +282,44 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
                   enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.border)),
                   focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: HermesColors.accent)),
                   prefixIcon: const Icon(Icons.link, color: HermesColors.textTertiary),
+                  suffixIcon: IconButton(
+                    icon: _isFetching 
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: HermesColors.textSecondary))
+                      : const Icon(Icons.download_rounded, color: HermesColors.accent),
+                    tooltip: 'Fetch Article Content',
+                    onPressed: _isFetching ? null : () async {
+                      final url = _urlController.text.trim();
+                      if (url.isEmpty || !url.startsWith('http')) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please enter a valid HTTP/HTTPS URL.')),
+                        );
+                        return;
+                      }
+                      
+                      setState(() => _isFetching = true);
+                      try {
+                        final fetchedMarkdown = await ArticleFetcher.fetchAndConvertToMarkdown(url);
+                        if (_contentController.text.isEmpty) {
+                          _contentController.text = fetchedMarkdown;
+                        } else {
+                          _contentController.text = '${_contentController.text}\n\n---\n\n$fetchedMarkdown';
+                        }
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Successfully extracted article text!')),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to fetch: $e'), backgroundColor: HermesColors.veritasColor),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => _isFetching = false);
+                      }
+                    },
+                  ),
                 ),
               ),
             ],

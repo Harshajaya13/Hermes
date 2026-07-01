@@ -75,9 +75,9 @@ class _CreateDomainSheetState extends ConsumerState<CreateDomainSheet> {
             icon: _emojiController.text.trim().isEmpty ? '📁' : _emojiController.text.trim(),
           );
 
-    if (mounted) Navigator.pop(context);
     await ref.read(storageEngineProvider).saveDomain(newDomain);
     ref.invalidate(domainsProvider);
+    if (mounted) Navigator.pop(context);
   }
 
   @override

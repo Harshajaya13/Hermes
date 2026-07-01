@@ -907,6 +907,7 @@ class TodayScreen extends ConsumerWidget {
   void _showWorkspaceSettings(BuildContext screenContext, WidgetRef ref, Workspace? currentWorkspace) {
     showModalBottomSheet(
       context: screenContext,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: HermesColors.surfaceElevated,
       shape: const RoundedRectangleBorder(

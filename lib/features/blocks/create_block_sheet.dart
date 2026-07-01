@@ -94,12 +94,13 @@ class _CreateBlockSheetState extends ConsumerState<CreateBlockSheet> {
             colorHex: '#7C9EBC', // Default accent
           );
 
-    if (mounted) Navigator.pop(context);
-    
     await ref.read(storageEngineProvider).saveBlock(newBlock);
     
-    // Invalidate provider so the UI updates
+    // Invalidate the provider so UI updates
+    ref.invalidate(allBlocksProvider);
     ref.invalidate(blocksByDomainProvider(_selectedDomainId));
+    
+    if (mounted) Navigator.pop(context);
     ref.invalidate(allBlocksProvider);
   }
 

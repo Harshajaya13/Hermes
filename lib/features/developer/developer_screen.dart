@@ -44,6 +44,10 @@ class DeveloperScreen extends ConsumerWidget {
               }
             ),
 
+            _buildActionTile(context, 'Reload Hermes', 'Force a complete application rebuild', Icons.refresh_rounded, () {
+              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
+            }),
+            
             _buildActionTile(context, 'Advance Time', 'Simulate future dates to test scheduling', Icons.skip_next_rounded, () {
               showDialog(
                 context: context,
