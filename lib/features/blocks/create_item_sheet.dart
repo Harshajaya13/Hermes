@@ -4,7 +4,7 @@ import '../../core/theme/hermes_theme.dart';
 import '../../core/widgets/hermes_widgets.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
-import '../../core/engines/article_fetcher.dart';
+import '../../core/utils/web_scraper.dart';
 
 class CreateItemSheet extends ConsumerStatefulWidget {
   final Block? initialBlock;
@@ -298,7 +298,8 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
                       
                       setState(() => _isFetching = true);
                       try {
-                        final fetchedMarkdown = await ArticleFetcher.fetchAndConvertToMarkdown(url);
+                        final fetchResult = await WebScraper.fetchArticle(url);
+                        final fetchedMarkdown = '# ${fetchResult['title']}\n\n${fetchResult['content']}';
                         if (_contentController.text.isEmpty) {
                           _contentController.text = fetchedMarkdown;
                         } else {
