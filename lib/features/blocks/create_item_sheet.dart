@@ -18,18 +18,8 @@ class CreateItemSheet extends ConsumerStatefulWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: HermesColors.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: SingleChildScrollView(
-          child: CreateItemSheet(initialBlock: block, existingItem: existingItem, initialType: initialType, isDailyGoal: isDailyGoal),
-        ),
-      ),
+      backgroundColor: Colors.transparent,
+      builder: (context) => CreateItemSheet(initialBlock: block, existingItem: existingItem, initialType: initialType, isDailyGoal: isDailyGoal),
     );
   }
 
@@ -159,19 +149,40 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
     // Invalidate the provider so UI updates
     ref.invalidate(itemsByBlockProvider(_selectedBlock!.id));
     
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item saved.')));
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(HermesSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: const BoxDecoration(
+        color: HermesColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl)),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: PopScope(
+          canPop: false,
+          onPopInvoked: (didPop) {
+            if (didPop) return;
+            if (_titleController.text.trim().isNotEmpty || _contentController.text.trim().isNotEmpty) {
+              _saveItem();
+            } else {
+              Navigator.of(context).pop();
+            }
+          },
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(HermesSpacing.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(widget.existingItem == null ? 'Create Item' : 'Edit Item', style: HermesTypography.sectionTitle),
@@ -378,6 +389,9 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
               ),
             ),
           ],
+        ),
+            ),
+          ),
         ),
       ),
     );

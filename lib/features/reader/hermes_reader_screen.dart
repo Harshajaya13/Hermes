@@ -285,7 +285,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     final surfaceColor = const Color(0xFF111111);
     
     final isGuide = widget.item.id.startsWith('hermes_guide');
-    final isEditable = [ItemType.note, ItemType.idea, ItemType.observation].contains(widget.item.type) && !isGuide;
+    final isEditable = !isGuide;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -1451,16 +1451,44 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       backgroundColor: HermesColors.surfaceElevated,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: HermesSpacing.lg, right: HermesSpacing.lg,
-          top: HermesSpacing.lg, bottom: MediaQuery.of(ctx).viewInsets.bottom + HermesSpacing.lg,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.9,
+        decoration: const BoxDecoration(
+          color: HermesColors.surfaceElevated,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Why worth recording', style: HermesTypography.sectionTitle),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: PopScope(
+            canPop: false,
+            onPopInvoked: (didPop) async {
+              if (didPop) return;
+              final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+              updatedMeta['reasoning'] = reasonController.text.trim();
+              final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+              await ref.read(storageEngineProvider).saveItems([updatedItem]);
+              ref.invalidate(itemsByBlockProvider(widget.block.id));
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(HermesSpacing.lg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Why worth recording', style: HermesTypography.sectionTitle),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.maybePop(ctx);
+                          },
+                          child: const Text('Save', style: TextStyle(color: HermesColors.evolutioGlow)),
+                        ),
+                      ],
+                    ),
             const SizedBox(height: HermesSpacing.md),
             // Original observation visible as context
             Container(
@@ -1486,23 +1514,11 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
               ),
             ),
-            const SizedBox(height: HermesSpacing.md),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () async {
-                  final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
-                  updatedMeta['reasoning'] = reasonController.text.trim();
-                  final updatedItem = widget.item.copyWith(metadata: updatedMeta);
-                  await ref.read(storageEngineProvider).saveItems([updatedItem]);
-                  ref.invalidate(itemsByBlockProvider(widget.block.id));
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  if (mounted) HermesToast.show(context, 'Reasoning added.');
-                },
-                child: Text('Save', style: TextStyle(color: HermesColors.evolutioGlow)),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

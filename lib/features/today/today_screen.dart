@@ -765,6 +765,12 @@ class TodayScreen extends ConsumerWidget {
                                                       await launchUrl(uri);
                                                     }
                                                   }
+                                                } else if (value == 'edit') {
+                                                  CreateItemSheet.show(
+                                                    context,
+                                                    block: block,
+                                                    existingItem: item,
+                                                  );
                                                 }
                                               },
                                               itemBuilder: (context) => [
@@ -778,6 +784,13 @@ class TodayScreen extends ConsumerWidget {
                                                           .bodySmall,
                                                     ),
                                                   ),
+                                                PopupMenuItem(
+                                                  value: 'edit',
+                                                  child: Text(
+                                                    'Edit Item',
+                                                    style: HermesTypography.bodySmall,
+                                                  ),
+                                                ),
                                                 PopupMenuItem(
                                                   value: 'remove',
                                                   child: Text(
