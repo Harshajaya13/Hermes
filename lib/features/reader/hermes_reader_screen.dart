@@ -1575,12 +1575,14 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                   ],
                 ),
               ),
-            );
-          }
-        );
-      },
-    );
-  }
+            ),
+          ),
+        ),
+      );
+    });
+  },
+);
+}
 
   void _showObservationPatternSheet() {
     final patternController = TextEditingController();
