@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/hermes_theme.dart';
 
 class HermesMarkdown extends StatelessWidget {
@@ -26,6 +27,14 @@ class HermesMarkdown extends StatelessWidget {
     return MarkdownBody(
       data: data,
       selectable: true,
+      onTapLink: (text, href, title) async {
+        if (href != null) {
+          final uri = Uri.parse(href);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        }
+      },
       styleSheet: MarkdownStyleSheet(
         p: HermesTypography.body.copyWith(
           height: 1.9 * lineHeightMultiplier, 

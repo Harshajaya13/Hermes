@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
+import { useRef, useState } from 'react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { STORY_SECTIONS } from './data';
@@ -9,6 +9,8 @@ function parseContent(markdown: string) {
   const lines = markdown.split('\n');
   let subtitle = '';
   let highlights: string[] = [];
+  let shortDescLines: string[] = [];
+  let paragraphCount = 0;
   
   let inPurpose = false;
   for (const line of lines) {
@@ -29,6 +31,14 @@ function parseContent(markdown: string) {
         subtitle += ' ' + trimmed;
       }
     }
+    
+    // Extract a tiny "Learn More" summary (max 2 paragraphs) to keep the website punchy
+    if (trimmed.length > 30 && !trimmed.startsWith('#') && !trimmed.startsWith('>')) {
+      if (paragraphCount < 2 && !shortDescLines.includes(trimmed)) {
+        shortDescLines.push(trimmed);
+        paragraphCount++;
+      }
+    }
   }
   
   if (!subtitle) {
@@ -36,46 +46,69 @@ function parseContent(markdown: string) {
     if (firstText) subtitle = firstText.trim();
   }
   
-  return { subtitle, highlights: highlights.slice(0, 5) };
+  return { 
+    subtitle, 
+    highlights: highlights.slice(0, 4), // Apple-style: max 4 feature chips 
+    shortDesc: shortDescLines.join('\n\n')
+  };
 }
 
-function StoryBlock({ item, index, setActiveIndex }: { item: any, index: number, setActiveIndex: (idx: number) => void }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { margin: "-50% 0px -50% 0px" });
+function StoryBlock({ item }: { item: any }) {
   const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    if (isInView) {
-      setActiveIndex(index);
-    }
-  }, [isInView, index, setActiveIndex]);
-
-  const { subtitle, highlights } = parseContent(item.desc);
+  const { subtitle, highlights, shortDesc } = parseContent(item.desc);
 
   return (
-    <div ref={ref} className="story-section" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 0' }}>
-      <h2 className="t-heading" style={{ marginBottom: '24px' }}>{item.title}</h2>
-      <p className="t-body" style={{ marginBottom: '40px' }}>{subtitle}</p>
+    <div className="story-section" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '120px 20px', textAlign: 'center' }}>
+      
+      {/* Hook */}
+      <h2 className="t-heading" style={{ marginBottom: '16px' }}>{item.title}</h2>
+      
+      {/* One Sentence */}
+      <p className="t-body" style={{ marginBottom: '80px', maxWidth: '600px', color: 'var(--text-secondary)' }}>{subtitle}</p>
 
+      {/* Large Phone Hero */}
+      <motion.div 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-20%" }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        style={{ marginBottom: '80px' }}
+      >
+        <div className="phone-frame">
+          <img src={item.img || '/images/home_firsthalf.jpeg'} alt={item.title} />
+        </div>
+      </motion.div>
+
+      {/* Feature Chips */}
       {highlights.length > 0 && (
-        <ul style={{ listStyle: 'none', marginBottom: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px', marginBottom: '60px', maxWidth: '800px' }}>
           {highlights.map((h, i) => (
-            <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px', color: 'var(--text-secondary)', fontSize: '18px', fontWeight: 500 }}>
-              <Check size={20} color="#fff" />
-              {h}
-            </li>
+            <div key={i} style={{ 
+              background: 'rgba(255,255,255,0.03)', 
+              padding: '12px 24px', 
+              borderRadius: '100px', 
+              border: '1px solid rgba(255,255,255,0.1)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+            }}>
+              <Check size={18} color="#fff" />
+              <span style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-secondary)' }}>{h}</span>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
 
-      <div>
+      {/* Learn More Button */}
+      <div style={{ marginBottom: expanded ? '40px' : '0' }}>
         <button 
           onClick={() => setExpanded(!expanded)}
           style={{
-            background: 'rgba(255,255,255,0.05)',
+            background: expanded ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.1)',
             color: '#fff',
-            padding: '12px 24px',
+            padding: '14px 32px',
             borderRadius: '100px',
             fontSize: '16px',
             fontWeight: 500,
@@ -83,26 +116,39 @@ function StoryBlock({ item, index, setActiveIndex }: { item: any, index: number,
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
-            transition: 'background 0.2s'
+            transition: 'all 0.2s'
           }}
           onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+          onMouseLeave={e => e.currentTarget.style.background = expanded ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)'}
         >
           {expanded ? 'Collapse' : 'Learn More'}
           {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </button>
       </div>
 
+      {/* Expandable Markdown */}
       <AnimatePresence>
         {expanded && (
           <motion.div 
             initial={{ height: 0, opacity: 0 }} 
             animate={{ height: 'auto', opacity: 1 }} 
             exit={{ height: 0, opacity: 0 }}
-            style={{ overflow: 'hidden' }}
+            style={{ overflow: 'hidden', width: '100%', maxWidth: '800px', textAlign: 'left' }}
           >
-            <div className="markdown-content" style={{ marginTop: '40px', color: 'var(--text-secondary)', fontSize: '18px', lineHeight: 1.6 }}>
-              <ReactMarkdown>{item.desc}</ReactMarkdown>
+            <div className="markdown-content" style={{ padding: '32px', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <ReactMarkdown>{shortDesc}</ReactMarkdown>
+              <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                <a 
+                  href={`https://github.com/Harshajaya13/Hermes#${item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: '14px', color: 'var(--text-tertiary)', textDecoration: 'none', transition: 'color 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                >
+                  Read the full methodology on GitHub →
+                </a>
+              </div>
             </div>
           </motion.div>
         )}
@@ -123,7 +169,7 @@ function App() {
   // Fade out the hero text
   const opacity = useTransform(heroProgress, [0, 0.2], [1, 0]);
 
-  const [activeIndex, setActiveIndex] = useState(0);
+
 
   return (
     <div>
@@ -146,39 +192,14 @@ function App() {
         </div>
       </div>
 
-      {/* Story Sequence */}
-      <div className="story-container">
-        
-        {/* Left: Scrolling Text */}
-        <div className="story-left">
-          {STORY_SECTIONS.map((item, index) => (
-            <StoryBlock 
-              key={item.id} 
-              item={item} 
-              index={index} 
-              setActiveIndex={setActiveIndex} 
-            />
-          ))}
-        </div>
-
-        {/* Right: Sticky Phone */}
-        <div className="story-right">
-          <div className="phone-frame">
-            <AnimatePresence mode="wait">
-              <motion.img
-                key={activeIndex}
-                // Fallback image if one is missing (e.g. export.md -> export.jpeg)
-                src={STORY_SECTIONS[activeIndex]?.img || '/images/home_firsthalf.jpeg'}
-                alt={STORY_SECTIONS[activeIndex]?.title || 'Hermes UI'}
-                initial={{ opacity: 0, scale: 0.94, y: 40 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              />
-            </AnimatePresence>
-          </div>
-        </div>
-
+      {/* Story Sequence (Vertical Apple-style Layout) */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '100px' }}>
+        {STORY_SECTIONS.map((item) => (
+          <StoryBlock 
+            key={item.id} 
+            item={item} 
+          />
+        ))}
       </div>
 
       {/* Final Philosophy Footer */}

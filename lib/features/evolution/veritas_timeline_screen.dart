@@ -8,6 +8,47 @@ import 'package:intl/intl.dart';
 class VeritasTimelineScreen extends ConsumerWidget {
   const VeritasTimelineScreen({super.key});
 
+  void _editVeritas(BuildContext context, WidgetRef ref, Veritas veritas) {
+    final controller = TextEditingController(text: veritas.reason);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: HermesColors.surfaceElevated,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HermesRadius.lg)),
+        title: Text('Edit Veritas', style: HermesTypography.sectionTitle),
+        content: TextField(
+          controller: controller,
+          maxLines: null,
+          autofocus: true,
+          style: HermesTypography.body,
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            hintText: 'Why did you pause?',
+            hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: HermesColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: HermesColors.veritasColor, foregroundColor: Colors.white),
+            onPressed: () async {
+              final newReason = controller.text.trim();
+              if (newReason.isNotEmpty && newReason != veritas.reason) {
+                final updated = veritas.copyWith(reason: newReason);
+                await ref.read(storageEngineProvider).saveVeritas(updated);
+              }
+              if (context.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspace = ref.watch(currentWorkspaceProvider);
@@ -115,13 +156,25 @@ class VeritasTimelineScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  DateFormat('EEEE, MMMM d, y').format(veritas.dateMissed),
-                                  style: HermesTypography.metadata.copyWith(
-                                    color: HermesColors.veritasColor.withValues(alpha: 0.8),
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.5,
-                                  ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      DateFormat('EEEE, MMMM d, y').format(veritas.dateMissed),
+                                      style: HermesTypography.metadata.copyWith(
+                                        color: HermesColors.veritasColor.withValues(alpha: 0.8),
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      icon: Icon(Icons.edit_rounded, size: 16, color: HermesColors.textTertiary),
+                                      onPressed: () => _editVeritas(context, ref, veritas),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: HermesSpacing.sm),
                                 Text(
