@@ -155,6 +155,8 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
     }
   }
 
+  bool _isPopping = false;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -166,14 +168,16 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: PopScope(
-          canPop: false,
+          canPop: _isPopping,
           onPopInvoked: (didPop) {
             if (didPop) return;
             if (_titleController.text.trim().isNotEmpty || _contentController.text.trim().isNotEmpty) {
               _saveItem();
-            } else {
-              Navigator.of(context).pop();
             }
+            setState(() => _isPopping = true);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) Navigator.pop(context);
+            });
           },
           child: SafeArea(
             child: SingleChildScrollView(

@@ -1501,26 +1501,34 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       backgroundColor: HermesColors.surfaceElevated,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl))),
-      builder: (ctx) => Container(
-        height: MediaQuery.of(ctx).size.height * 0.9,
-        decoration: const BoxDecoration(
-          color: HermesColors.surfaceElevated,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl)),
-        ),
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: PopScope(
-            canPop: false,
-            onPopInvoked: (didPop) async {
-              if (didPop) return;
-              final updatedMeta = Map<String, dynamic>.from(_currentItem.metadata ?? {});
-              updatedMeta['reasoning'] = reasonController.text.trim();
-              final updatedItem = _currentItem.copyWith(metadata: updatedMeta);
-              await ref.read(storageEngineProvider).saveItems([updatedItem]);
-              ref.invalidate(itemsByBlockProvider(widget.block.id));
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: SafeArea(
+      builder: (ctx) {
+        bool isPopping = false;
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Container(
+              height: MediaQuery.of(ctx).size.height * 0.9,
+              decoration: const BoxDecoration(
+                color: HermesColors.surfaceElevated,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(HermesRadius.xl)),
+              ),
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                body: PopScope(
+                  canPop: isPopping,
+                  onPopInvoked: (didPop) async {
+                    if (didPop) return;
+                    final updatedMeta = Map<String, dynamic>.from(_currentItem.metadata ?? {});
+                    updatedMeta['reasoning'] = reasonController.text.trim();
+                    final updatedItem = _currentItem.copyWith(metadata: updatedMeta);
+                    await ref.read(storageEngineProvider).saveItems([updatedItem]);
+                    ref.invalidate(itemsByBlockProvider(widget.block.id));
+                    
+                    setModalState(() => isPopping = true);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (ctx.mounted) Navigator.pop(ctx);
+                    });
+                  },
+                  child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(HermesSpacing.lg),
                 child: Column(
@@ -1567,10 +1575,10 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                   ],
                 ),
               ),
-            ),
-          ),
-        ),
-      ),
+            );
+          }
+        );
+      },
     );
   }
 
