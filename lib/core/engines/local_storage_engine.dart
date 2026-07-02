@@ -24,6 +24,14 @@ class LocalStorageEngine {
   final Map<String, Connection> _connections = {};
   
   AppearanceSettings _appearance = const AppearanceSettings();
+  bool _syncVeritasEvolutios = false;
+  bool get syncVeritasEvolutios => _syncVeritasEvolutios;
+
+  Future<void> toggleSyncVeritasEvolutios() async {
+    _syncVeritasEvolutios = !_syncVeritasEvolutios;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('sync_veritas_evolutios', _syncVeritasEvolutios);
+  }
 
   Future<void> initialize() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -50,6 +58,9 @@ class LocalStorageEngine {
       final json = jsonDecode(await appearanceFile.readAsString());
       _appearance = AppearanceSettings.fromJson(json);
     }
+
+    final prefs = await SharedPreferences.getInstance();
+    _syncVeritasEvolutios = prefs.getBool('sync_veritas_evolutios') ?? false;
   }
   Future<void> seedStarterWorkspace(Workspace workspace) async {
     // ── DOMAINS ─────────────────────────────────────────
@@ -646,9 +657,15 @@ Discover the complete guide, philosophy, and features of Hermes here:
   // ── Veritas ─────────────────────────────────────────────────────────────────
 
   List<Veritas> getVeritas(String workspaceId) {
-    final list = _veritas.values.where((v) => v.workspaceId == workspaceId && !v.deleted).toList();
-    list.sort((a, b) => b.dateMissed.compareTo(a.dateMissed));
-    return list;
+    if (_syncVeritasEvolutios) {
+      final list = _veritas.values.where((v) => !v.deleted).toList();
+      list.sort((a, b) => b.dateMissed.compareTo(a.dateMissed));
+      return list;
+    } else {
+      final list = _veritas.values.where((v) => v.workspaceId == workspaceId && !v.deleted).toList();
+      list.sort((a, b) => b.dateMissed.compareTo(a.dateMissed));
+      return list;
+    }
   }
   
   List<Veritas> getAllVeritasRaw() {

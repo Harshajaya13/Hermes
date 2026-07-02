@@ -43,6 +43,15 @@ class DeveloperScreen extends ConsumerWidget {
                 ref.read(camouflageModeProvider.notifier).toggle();
               }
             ),
+            _buildActionTile(
+              context, 
+              'Sync Veritas & Evolutios', 
+              ref.watch(syncVeritasEvolutiosProvider) ? 'Active. Sharing across all workspaces.' : 'Inactive. Isolated per workspace.', 
+              Icons.sync_rounded, 
+              () {
+                ref.read(syncVeritasEvolutiosProvider.notifier).toggle();
+              }
+            ),
 
             _buildActionTile(context, 'Reload Hermes', 'Force a complete application rebuild', Icons.refresh_rounded, () {
               Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);

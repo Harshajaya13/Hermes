@@ -6,24 +6,45 @@ import 'package:html2md/html2md.dart' as html2md;
 class ArticleFetcher {
   static Future<String> fetchAndConvertToMarkdown(String url) async {
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        },
+      );
       if (response.statusCode != 200) {
-        throw Exception('Failed to load article');
+        throw Exception('Failed to load article (Status: ${response.statusCode})');
       }
 
       final document = html_parser.parse(response.body);
       
-      // Try to find the main article container
+      // Try to find the main article container using common structural elements and class names
       Element? contentElement = document.querySelector('article') ?? 
+                                document.querySelector('.post-content') ??
+                                document.querySelector('.entry-content') ??
+                                document.querySelector('.article-content') ??
+                                document.querySelector('.story-body') ??
+                                document.querySelector('.story-content') ??
+                                document.querySelector('[itemprop="articleBody"]') ??
+                                document.querySelector('.post-body') ??
+                                document.querySelector('.page-content') ??
                                 document.querySelector('main') ?? 
+                                document.querySelector('#content') ??
                                 document.body;
 
       if (contentElement == null) {
         return 'Could not extract content from the page.';
       }
 
-      // Remove garbage elements
-      final selectorsToRemove = ['nav', 'header', 'footer', 'script', 'style', 'aside', '.ad', '.sidebar', '#comments'];
+      // Remove garbage elements that pollute the reading experience
+      final selectorsToRemove = [
+        'nav', 'header', 'footer', 'script', 'style', 'aside', 'noscript', 'iframe',
+        '.ad', '.sidebar', '#comments', '.comments', '.newsletter-form', '.share-buttons',
+        '.social-share', '.related-posts', '.author-bio', '[role="navigation"]',
+        '.cookie-banner', '#cookie-notice'
+      ];
       for (final selector in selectorsToRemove) {
         contentElement.querySelectorAll(selector).forEach((e) => e.remove());
       }

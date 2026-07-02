@@ -17,6 +17,7 @@ import '../blocks/create_item_sheet.dart';
 import 'workspace_security_dialogs.dart';
 import 'visibility_screen.dart';
 import '../../main.dart';
+import '../workspace/workspace_management_dialogs.dart';
 
 class StarterWelcomeBanner extends StatefulWidget {
   const StarterWelcomeBanner({super.key});
@@ -161,6 +162,7 @@ class TodayScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(syncVeritasEvolutiosProvider);
     final storage = ref.watch(storageEngineProvider);
     final now = storage.currentDate;
     final greeting = _getGreeting(now.hour);
@@ -1677,6 +1679,25 @@ class TodayScreen extends ConsumerWidget {
 
                         ListTile(
                           leading: const Icon(
+                            Icons.edit_outlined,
+                            color: HermesColors.textSecondary,
+                          ),
+                          title: Text(
+                            'Rename Workspace',
+                            style: HermesTypography.body.copyWith(
+                              color: HermesColors.textSecondary,
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.pop(bottomSheetContext);
+                            showDialog(
+                              context: screenContext,
+                              builder: (_) => const RenameWorkspaceDialog(),
+                            );
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(
                             Icons.swap_horiz_rounded,
                             color: HermesColors.textSecondary,
                           ),
@@ -1688,6 +1709,10 @@ class TodayScreen extends ConsumerWidget {
                           ),
                           onTap: () {
                             Navigator.pop(bottomSheetContext);
+                            showDialog(
+                              context: screenContext,
+                              builder: (_) => const SwitchWorkspaceDialog(),
+                            );
                           },
                         ),
                         ListTile(

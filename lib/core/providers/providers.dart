@@ -78,6 +78,22 @@ final currentWorkspaceProvider = NotifierProvider<CurrentWorkspaceNotifier, Work
   CurrentWorkspaceNotifier.new,
 );
 
+class SyncVeritasEvolutiosNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    return ref.watch(storageEngineProvider).syncVeritasEvolutios;
+  }
+
+  Future<void> toggle() async {
+    await ref.read(storageEngineProvider).toggleSyncVeritasEvolutios();
+    state = ref.read(storageEngineProvider).syncVeritasEvolutios;
+  }
+}
+
+final syncVeritasEvolutiosProvider = NotifierProvider<SyncVeritasEvolutiosNotifier, bool>(
+  SyncVeritasEvolutiosNotifier.new,
+);
+
 // ── Domains & Blocks ─────────────────────────────────────────────────────────
 
 final domainsProvider = Provider<List<Domain>>((ref) {
@@ -127,6 +143,11 @@ final sourcesProvider = Provider<List<KnowledgeSource>>((ref) {
 
 final allEvolutiosProvider = Provider<List<Evolutio>>((ref) {
   final storage = ref.watch(storageEngineProvider);
+  final isSynced = ref.watch(syncVeritasEvolutiosProvider);
+  if (isSynced) {
+    return storage.getEvolutios();
+  }
+  
   final allBlocks = ref.watch(allBlocksProvider);
   final blockIds = allBlocks.map((b) => b.id).toSet();
   return storage.getEvolutios().where((e) => blockIds.contains(e.blockId)).toList();
