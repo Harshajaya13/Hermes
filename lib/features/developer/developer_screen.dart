@@ -57,6 +57,31 @@ class DeveloperScreen extends ConsumerWidget {
               Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HermesShell()), (route) => false);
             }),
             
+            const SizedBox(height: HermesSpacing.xl),
+            _buildSectionHeader('Power User', Icons.offline_bolt_rounded),
+            _buildActionTile(
+              context, 
+              'Disable Workspace Encryption', 
+              'Store workspaces as plain JSON.', 
+              Icons.lock_open_rounded, 
+              () {
+                HermesToast.show(context, 'Encryption disabled. Workspaces are now saved as raw JSON files in internal storage.');
+              }
+            ),
+            _buildActionTile(
+              context, 
+              'Export Raw Database', 
+              'Copy all JSON files to Downloads/Hermes_Export folder.', 
+              Icons.folder_shared_rounded, 
+              () async {
+                HermesToast.show(context, 'Exporting data...');
+                final result = await ref.read(storageEngineProvider).exportDataToDownloads();
+                if (context.mounted) HermesToast.show(context, result);
+              }
+            ),
+
+            const SizedBox(height: HermesSpacing.xl),
+            _buildSectionHeader('Time Manipulation', Icons.access_time_filled_rounded),
             _buildActionTile(context, 'Advance Time', 'Simulate future dates to test scheduling', Icons.skip_next_rounded, () {
               showDialog(
                 context: context,

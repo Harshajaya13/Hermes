@@ -764,4 +764,33 @@ Discover the complete guide, philosophy, and features of Hermes here:
       await restoreVeritas(id);
     }
   }
+
+  Future<String> exportDataToDownloads() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final hermesDir = Directory('${dir.path}/hermes');
+      if (!await hermesDir.exists()) return 'Hermes data directory not found.';
+      
+      final downloadsDir = Directory('/storage/emulated/0/Download/Hermes_Export');
+      // Fallback for Linux testing
+      final linuxDownloads = Directory('${Platform.environment['HOME']}/Downloads/Hermes_Export');
+      
+      final targetDir = Platform.isAndroid ? downloadsDir : linuxDownloads;
+      
+      if (!await targetDir.exists()) {
+        await targetDir.create(recursive: true);
+      }
+      
+      final files = hermesDir.listSync();
+      for (var entity in files) {
+        if (entity is File) {
+          final fileName = entity.uri.pathSegments.last;
+          await entity.copy('${targetDir.path}/$fileName');
+        }
+      }
+      return 'Data successfully exported to ${targetDir.path}';
+    } catch (e) {
+      return 'Export failed: $e';
+    }
+  }
 }
