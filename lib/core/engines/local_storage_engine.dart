@@ -95,7 +95,9 @@ class LocalStorageEngine {
       type: ItemType.article,
       title: 'Welcome to Hermes v3.0',
       content: '''**👋 Note: This is an auto-generated Starter Workspace.** 
-This workspace exists only to show you how Hermes works. Once you understand the system, you can safely delete this workspace and create your own from the Control Center.
+This workspace exists only to show you how Hermes works. Please read this entire article first. Once you understand the core philosophy behind Hermes, using the other formats (Questions, Notes, Ideas) will feel completely natural. 
+
+After you finish experimenting, you can safely delete this workspace and create your own from the Control Center.
 
 ---
 
@@ -108,7 +110,7 @@ Hermes is a quiet, offline-first operating system designed to transform scattere
 You can use the **Fetch Article** tool to instantly strip away distractions from any web page and read it cleanly inside Hermes.
 
 Discover the complete guide, philosophy, and features of Hermes here:
-https://hermes.harshalabs.me/''',
+[hermes.harshalabs.me](https://hermes.harshalabs.me/)''',
       metadata: dailyMeta,
     );
     await saveItem(showcaseArticle);
