@@ -84,126 +84,58 @@ class LocalStorageEngine {
     final showcaseBlock = Block(domainId: lifeDomain.id, name: 'Hermes Showcase', icon: '✨', colorHex: '#F2C94C', pinned: true);
     await saveBlock(showcaseBlock);
 
-    // ── TODAY'S PURSUIT ITEMS (Living Showroom) ────────────────
+    // ── TODAY'S PURSUIT ITEMS ──────────────────────────────────
     
     final dailyMeta = {'isDailyGoal': true};
 
-    // ── SHOWCASE BLOCK (All 5 Types) ─────────────────────────
-
-    final showcaseQuestion = Item(
-      blockId: showcaseBlock.id,
-      type: ItemType.question,
-      title: 'The Turing Test',
-      content: 'If a machine can converse in a way that is indistinguishable from a human, does it mean the machine is actually thinking? Why did Alan Turing choose imitation as the benchmark for intelligence?',
-      metadata: dailyMeta,
-    );
-    await saveItem(showcaseQuestion);
+    // ── STARTER ARTICLE ────────────────────────────────────────
 
     final showcaseArticle = Item(
       blockId: showcaseBlock.id,
       type: ItemType.article,
-      title: 'The Philosophy of Hermes',
-      content: 'Hermes is designed to be a quiet place for your mind. It does not want to trap your attention. It wants you to capture a thought, distill it into knowledge, and close the app.',
+      title: 'Welcome to Hermes v3.0',
+      content: '''**👋 Note: This is an auto-generated Starter Workspace.** 
+This workspace exists only to show you how Hermes works. Once you understand the system, you can safely delete this workspace and create your own from the Control Center.
+
+---
+
+# The Philosophy of Hermes
+
+Information is easy to collect. Understanding is difficult to preserve.
+
+Hermes is a quiet, offline-first operating system designed to transform scattered information into permanent knowledge. It does not want to trap your attention with feeds or notifications. 
+
+You can use the **Fetch Article** tool to instantly strip away distractions from any web page and read it cleanly inside Hermes.
+
+Discover the complete guide, philosophy, and features of Hermes here:
+https://hermes.harshalabs.me/''',
       metadata: dailyMeta,
     );
     await saveItem(showcaseArticle);
-
-    final showcaseIdea = Item(
-      blockId: showcaseBlock.id,
-      type: ItemType.idea,
-      title: 'Friction as a Feature',
-      content: 'What if we deliberately added friction to note-taking? Instead of a quick capture button, you must select a Domain and Block. This forces you to categorize your thoughts and prevents a graveyard of unorganized notes.',
-      metadata: dailyMeta,
-    );
-    await saveItem(showcaseIdea);
-
-    final showcaseObservation = Item(
-      blockId: showcaseBlock.id,
-      type: ItemType.observation,
-      title: 'Digital Hoarding',
-      content: 'I noticed that I bookmark hundreds of articles but never read them. The act of saving feels like learning, but it is just a dopamine hit. True learning requires synthesis.',
-      metadata: dailyMeta,
-    );
-    await saveItem(showcaseObservation);
-
-    final showcaseNote = Item(
-      blockId: showcaseBlock.id,
-      type: ItemType.note,
-      title: 'Knowledge vs Information',
-      content: 'Information is abundant and cheap. Knowledge is structured, contextualized information. Hermes exists to convert information into knowledge through the synthesis loop.',
-      metadata: dailyMeta,
-    );
-    await saveItem(showcaseNote);
-
-    // ── GENERAL CAPABILITY DEMOS (Museum Pieces) ────────────────
-
-    // Note: Building Knowledge Through Reflection
-    final refNote = Item(
-      blockId: modelsBlock.id,
-      type: ItemType.note,
-      title: 'Building Knowledge Through Reflection',
-      content: '''# Building Knowledge Through Reflection
-
-Information consumption is passive. Knowledge generation is active. 
-
-Most people consume hundreds of hours of podcasts and books but retain almost nothing because they never stop to synthesize.
-
-## The Synthesis Loop
-
-1. **Capture**: Store raw insights.
-2. **Distill**: Write it down in your own words.
-3. **Reflect**: Connect the new insight to an existing mental model.
-
-> "We do not learn from experience... we learn from reflecting on experience." — John Dewey
-
-Without reflection, experience is just a series of events. With reflection, experience becomes wisdom.
-''',
-    );
-    await saveItem(refNote);
 
     // ── EVOLUTIOS AND VERITAS (Timeline Demonstration) ────────────────
 
     // Day 1: Today (Evolutio Only - State 1)
     final day1 = DateTime.now();
-    final evo1Ref = Reflection(itemId: showcaseNote.id, content: 'Dummy', createdAt: day1);
+    final evo1Ref = Reflection(itemId: showcaseArticle.id, content: 'Dummy', createdAt: day1);
     await saveReflection(evo1Ref);
     final evo1 = Evolutio(
       reflectionId: evo1Ref.id,
-      blockId: mathBlock.id,
-      content: 'Finally understood conditional probability after solving multiple problems.',
+      blockId: showcaseBlock.id,
+      content: 'Installed Hermes and began building my knowledge base.',
       createdAt: day1,
     );
     await saveEvolutio(evo1);
 
-    // Day 2: Today - 3 Days (Evolutio + Veritas - State 2)
+    // Day 2: Today - 3 Days (Veritas Only)
     final day2 = DateTime.now().subtract(const Duration(days: 3));
-    final evo2Ref = Reflection(itemId: showcaseArticle.id, content: 'Dummy', createdAt: day2);
-    await saveReflection(evo2Ref);
-    final evo2 = Evolutio(
-      reflectionId: evo2Ref.id,
-      blockId: modelsBlock.id,
-      content: 'Finished reading an article on Deep Learning optimization.',
-      createdAt: day2,
-    );
-    await saveEvolutio(evo2);
-
     final veritas2 = Veritas(
       workspaceId: workspace.id,
-      reason: 'I was mentally exhausted after college, but I still wanted to read something before sleeping.',
+      reason: 'I was traveling and could not complete my reading. Hermes acknowledges this honestly.',
       dateMissed: day2,
       createdAt: day2,
     );
     await saveVeritas(veritas2);
-
-    // Day 3: Today - 8 Days (Veritas Only - State 3)
-    final day3 = DateTime.now().subtract(const Duration(days: 8));
-    final veritas3 = Veritas(
-      workspaceId: workspace.id,
-      reason: 'Semester examinations demanded my complete attention today. I intentionally paused Hermes and will continue tomorrow.',
-      dateMissed: day3,
-      createdAt: day3,
-    );
-    await saveVeritas(veritas3);
   }
   Future<File> _getFile(String collection) async {
     final dir = await getApplicationDocumentsDirectory();
