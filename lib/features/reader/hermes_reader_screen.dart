@@ -21,8 +21,11 @@ class HermesReaderScreen extends ConsumerStatefulWidget {
 }
 
 class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
+  late Item _currentItem;
   final _scrollController = ScrollController();
   final _reflectionController = TextEditingController();
+  final _contentEditController = TextEditingController();
+  bool _isEditingContent = false;
   double _progress = 0.0;
   bool _showEvolutioPrompt = false;
   bool _isScrolled = false;
@@ -39,20 +42,21 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   @override
   void initState() {
     super.initState();
-    _articleStep = (widget.item.metadata?['isRead'] == true) ? 1 : 0;
-    _questionStep = (widget.item.metadata?['isSolved'] == true) ? 3 : 0;
-    if (widget.item.metadata?['userAnswer'] != null) {
-      _answerController.text = widget.item.metadata!['userAnswer'];
+    _currentItem = widget.item;
+    _articleStep = (_currentItem.metadata?['isRead'] == true) ? 1 : 0;
+    _questionStep = (_currentItem.metadata?['isSolved'] == true) ? 3 : 0;
+    if (_currentItem.metadata?['userAnswer'] != null) {
+      _answerController.text = _currentItem.metadata!['userAnswer'];
     }
-    if (widget.item.metadata?['questionReflection'] != null) {
-      _questionReflectionController.text = widget.item.metadata!['questionReflection'];
+    if (_currentItem.metadata?['questionReflection'] != null) {
+      _questionReflectionController.text = _currentItem.metadata!['questionReflection'];
     }
     
     _scrollController.addListener(_onScroll);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final storage = ref.read(storageEngineProvider);
-      final existing = storage.getAllReflections().where((r) => r.itemId == widget.item.id).firstOrNull;
+      final existing = storage.getAllReflections().where((r) => r.itemId == _currentItem.id).firstOrNull;
       if (existing != null) {
         _reflectionId = existing.id;
         _reflectionController.text = existing.content;
@@ -70,7 +74,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     if (!mounted) return;
     
     final storage = ref.read(storageEngineProvider);
-    final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final latestItem = storage.getItemById(_currentItem.id) ?? _currentItem;
     
     final storedAnswer = latestItem.metadata?['userAnswer'] as String? ?? '';
     final storedReflection = latestItem.metadata?['questionReflection'] as String? ?? '';
@@ -105,7 +109,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     final storage = ref.read(storageEngineProvider);
     final reflection = Reflection(
       id: _reflectionId,
-      itemId: widget.item.id,
+      itemId: _currentItem.id,
       content: _reflectionController.text.trim(),
     );
     _reflectionId = reflection.id;
@@ -234,10 +238,10 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   void _recordEvolutio(bool didChange, {String? customText}) async {
     final storage = ref.read(storageEngineProvider);
     
-    final content = customText ?? _reflectionController.text.trim();
+    final content = _reflectionController.text.trim();
     final reflection = Reflection(
       id: _reflectionId,
-      itemId: widget.item.id,
+      itemId: _currentItem.id,
       content: content,
     );
     _reflectionId = reflection.id;
@@ -257,7 +261,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       }
     }
     
-    final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final latestItem = storage.getItemById(_currentItem.id) ?? _currentItem;
     final updatedMetadata = Map<String, dynamic>.from(latestItem.metadata ?? {});
     updatedMetadata['isSolved'] = true;
     updatedMetadata['completed'] = true;
@@ -274,7 +278,9 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     await storage.saveItems([updatedItem]);
     if (mounted) {
       ref.invalidate(itemsByBlockProvider(widget.block.id));
-      setState(() {});
+      setState(() {
+        _currentItem = updatedItem;
+      });
     }
   }
 
@@ -284,7 +290,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     final bgColor = Colors.black;
     final surfaceColor = const Color(0xFF111111);
     
-    final isGuide = widget.item.id.startsWith('hermes_guide');
+    final isGuide = _currentItem.id.startsWith('hermes_guide');
     final isEditable = !isGuide;
 
     return Scaffold(
@@ -399,7 +405,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                             icon: const Icon(Icons.share_outlined, color: HermesColors.textTertiary, size: 20),
                             onPressed: () {
                               final content = _getShareContent();
-                              Share.share(content, subject: widget.item.title);
+                              Share.share(content, subject: _currentItem.title);
                             },
                             tooltip: 'Share',
                           ),
@@ -410,16 +416,35 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                             onPressed: _showReadingSettings,
                             tooltip: 'Reading Settings',
                           ),
-                          if (isEditable)
+                          if (isEditable && !_isEditingContent)
                             IconButton(
                               icon: const Icon(Icons.edit_outlined, color: HermesColors.textTertiary, size: 20),
                               onPressed: () {
-                                CreateItemSheet.show(context, block: widget.block, existingItem: widget.item);
+                                setState(() {
+                                  _isEditingContent = true;
+                                  _contentEditController.text = _currentItem.content;
+                                });
                               },
                               tooltip: 'Edit Document',
                             ),
-                          PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert_rounded, color: HermesColors.textTertiary, size: 20),
+                          if (_isEditingContent)
+                            IconButton(
+                              icon: const Icon(Icons.check_rounded, color: HermesColors.evolutioGlow, size: 20),
+                              onPressed: () async {
+                                final updatedItem = _currentItem.copyWith(content: _contentEditController.text.trim());
+                                await ref.read(storageEngineProvider).saveItems([updatedItem]);
+                                ref.invalidate(itemsByBlockProvider(widget.block.id));
+                                setState(() {
+                                  _currentItem = updatedItem;
+                                  _isEditingContent = false;
+                                });
+                                if (context.mounted) HermesToast.show(context, 'Content updated.');
+                              },
+                              tooltip: 'Save Document',
+                            ),
+                          if (!_isEditingContent)
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert_rounded, color: HermesColors.textTertiary, size: 20),
                             color: HermesColors.surfaceElevated,
                             tooltip: 'More Actions',
                             onSelected: (value) async {
@@ -427,13 +452,13 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                                 final storage = ref.read(storageEngineProvider);
                                 final todayStr = storage.currentDate.toIso8601String().substring(0, 10);
                                 
-                                final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                                final updatedMeta = Map<String, dynamic>.from(_currentItem.metadata ?? {});
                                 updatedMeta['skippedDate'] = todayStr;
                                 updatedMeta['skipped_date'] = todayStr;
                                 updatedMeta['skipped'] = true;
                                 updatedMeta.remove('surfacedDate');
                                 
-                                final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+                                final updatedItem = _currentItem.copyWith(metadata: updatedMeta);
                                 await storage.saveItems([updatedItem]);
                                 
                                 if (context.mounted) {
@@ -444,7 +469,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                               }
                             },
                             itemBuilder: (context) => [
-                              if (widget.item.type == ItemType.question)
+                              if (_currentItem.type == ItemType.question)
                                 PopupMenuItem(
                                   value: 'skip',
                                   child: Row(
@@ -514,7 +539,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
         ),
         const SizedBox(height: HermesSpacing.lg),
         Text(
-          widget.item.title, 
+          _currentItem.title, 
           style: HermesTypography.screenTitle.copyWith(
             fontSize: 40, 
             height: 1.1,
@@ -523,7 +548,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
         ),
         const SizedBox(height: HermesSpacing.md),
         Text(
-          widget.item.createdAt.toString().substring(0, 10), 
+          _currentItem.createdAt.toString().substring(0, 10), 
           style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary),
         ),
       ],
@@ -531,8 +556,31 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   }
 
   Widget _buildMarkdownContent() {
+    if (_isEditingContent) {
+      return TextField(
+        controller: _contentEditController,
+        maxLines: null,
+        autofocus: true,
+        style: HermesTypography.body.copyWith(
+          fontSize: 16 * _fontSizeMultiplier,
+          height: 1.6 * _lineHeightMultiplier,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Edit content...',
+          hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
+          filled: true,
+          fillColor: const Color(0xFF111111),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(HermesRadius.md),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.all(HermesSpacing.lg),
+        ),
+      );
+    }
+
     final storage = ref.watch(storageEngineProvider);
-    final currentItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final currentItem = storage.getItemById(_currentItem.id) ?? _currentItem;
     
     String mdData = currentItem.content;
     
@@ -586,7 +634,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   Widget _buildPostReadingWorkflow(bool isGuide) {
     if (isGuide) return const SizedBox.shrink();
 
-    switch (widget.item.type) {
+    switch (_currentItem.type) {
       case ItemType.article:
         return _buildArticleWorkflow();
       case ItemType.note:
@@ -664,9 +712,9 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             child: InkWell(
               onTap: () async {
                 setState(() => _articleStep = 1);
-                final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                final updatedMeta = Map<String, dynamic>.from(_currentItem.metadata ?? {});
                 updatedMeta['isRead'] = true;
-                await ref.read(storageEngineProvider).saveItems([widget.item.copyWith(metadata: updatedMeta)]);
+                await ref.read(storageEngineProvider).saveItems([_currentItem.copyWith(metadata: updatedMeta)]);
                 ref.invalidate(itemsByBlockProvider(widget.block.id));
               },
               borderRadius: BorderRadius.circular(HermesRadius.md),
@@ -733,7 +781,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                     InkWell(
                       onTap: () {
                         final text = _reflectionController.text.trim();
-                        _recordEvolutio(true, customText: text.isNotEmpty ? text : 'Read: ${widget.item.title}');
+                        _recordEvolutio(true, customText: text.isNotEmpty ? text : 'Read: ${_currentItem.title}');
                       },
                       borderRadius: BorderRadius.circular(HermesRadius.md),
                       child: Container(
@@ -759,9 +807,9 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             child: TextButton(
               onPressed: () async {
                 setState(() => _articleStep = 0);
-                final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                final updatedMeta = Map<String, dynamic>.from(_currentItem.metadata ?? {});
                 updatedMeta['isRead'] = false;
-                await ref.read(storageEngineProvider).saveItems([widget.item.copyWith(metadata: updatedMeta)]);
+                await ref.read(storageEngineProvider).saveItems([_currentItem.copyWith(metadata: updatedMeta)]);
                 ref.invalidate(itemsByBlockProvider(widget.block.id));
               },
               child: Text('Mark as Unread', style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary)),
@@ -777,7 +825,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     final storage = ref.read(storageEngineProvider);
     
     if (action == 'Archive') {
-      await storage.deleteItem(widget.item.id);
+      await storage.deleteItem(_currentItem.id);
       if (mounted) {
         ref.invalidate(itemsByBlockProvider(widget.block.id));
         Navigator.pop(context);
@@ -787,7 +835,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     }
     
     if (action == 'Convert to Idea' || action == 'Convert to Reflection') {
-      final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+      final latestItem = storage.getItemById(_currentItem.id) ?? _currentItem;
       final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
       if (!updatedMeta.containsKey('originalType')) {
         updatedMeta['originalType'] = latestItem.type.name;
@@ -798,7 +846,9 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       await storage.saveItems([updatedItem]);
       if (mounted) {
         ref.invalidate(itemsByBlockProvider(widget.block.id));
-        setState(() {});
+        setState(() {
+          _currentItem = updatedItem;
+        });
         HermesToast.show(context, 'Converted successfully.');
       }
       return;
@@ -807,7 +857,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     if (terminalActions.contains(action)) {
       _recordEvolutio(false, customText: 'Completed via: $action');
     } else if (action == 'Create Evolutio') {
-      _recordEvolutio(true, customText: 'Fundamental cognitive shift recorded.');
+      _recordEvolutio(true);
     } else {
       HermesToast.show(context, '$action workflow opens in next update.');
     }
@@ -815,7 +865,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
 
   Widget _buildRevertSection() {
     final storage = ref.read(storageEngineProvider);
-    final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final latestItem = storage.getItemById(_currentItem.id) ?? _currentItem;
     final originalTypeString = latestItem.metadata?['originalType'] as String?;
     
     if (originalTypeString == null) {
@@ -876,7 +926,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   Widget _buildConnectionsSection() {
     return Consumer(
       builder: (context, ref, child) {
-        final connections = ref.watch(itemConnectionsProvider(widget.item.id));
+        final connections = ref.watch(itemConnectionsProvider(_currentItem.id));
         final storage = ref.watch(storageEngineProvider);
         
         return Column(
@@ -888,7 +938,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                 child: Text('Connected Items', style: HermesTypography.metadata),
               ),
               ...connections.map((c) {
-                final targetId = c.itemAId == widget.item.id ? c.itemBId : c.itemAId;
+                final targetId = c.itemAId == _currentItem.id ? c.itemBId : c.itemAId;
                 final targetItem = storage.getItemById(targetId);
                 if (targetItem == null) return const SizedBox.shrink();
                 
@@ -897,7 +947,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                     Navigator.push(context, MaterialPageRoute(
                       builder: (_) => ConnectionDetailScreen(
                         connection: c,
-                        itemA: widget.item,
+                        itemA: _currentItem,
                         itemB: targetItem,
                       ),
                     ));
@@ -935,7 +985,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
 
   Widget _buildNoteWorkflow() {
     final storage = ref.watch(storageEngineProvider);
-    final currentItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final currentItem = storage.getItemById(_currentItem.id) ?? _currentItem;
     final keywords = (currentItem.metadata?['keywords'] as List?)?.cast<String>() ?? [];
     
     return Column(
@@ -967,7 +1017,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   }
   
   void _showKeywordsSheet() {
-    final currentItem = ref.read(storageEngineProvider).getItemById(widget.item.id) ?? widget.item;
+    final currentItem = ref.read(storageEngineProvider).getItemById(_currentItem.id) ?? _currentItem;
     final kwController = TextEditingController();
     final existingKw = List<String>.from(currentItem.metadata?['keywords'] ?? []);
     
@@ -998,7 +1048,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                     deleteIcon: const Icon(Icons.close, size: 14),
                     onDeleted: () async {
                       existingKw.remove(kw);
-                      final latestItem = ref.read(storageEngineProvider).getItemById(widget.item.id) ?? widget.item;
+                      final latestItem = ref.read(storageEngineProvider).getItemById(_currentItem.id) ?? _currentItem;
                       final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
                       updatedMeta['keywords'] = existingKw;
                       await ref.read(storageEngineProvider).saveItems([latestItem.copyWith(metadata: updatedMeta)]);
@@ -1023,7 +1073,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                 onSubmitted: (val) async {
                   if (val.trim().isEmpty) return;
                   existingKw.add(val.trim().toLowerCase());
-                  final latestItem = ref.read(storageEngineProvider).getItemById(widget.item.id) ?? widget.item;
+                  final latestItem = ref.read(storageEngineProvider).getItemById(_currentItem.id) ?? _currentItem;
                   final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
                   updatedMeta['keywords'] = existingKw;
                   await ref.read(storageEngineProvider).saveItems([latestItem.copyWith(metadata: updatedMeta)]);
@@ -1043,7 +1093,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
 
   Widget _buildIdeaWorkflow() {
     final storage = ref.watch(storageEngineProvider);
-    final currentItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final currentItem = storage.getItemById(_currentItem.id) ?? _currentItem;
     final isProject = currentItem.metadata?['isProject'] == true;
     
     return Column(
@@ -1070,7 +1120,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
           Icons.rocket_launch_outlined,
           color: isProject ? HermesColors.veritasColor : HermesColors.evolutioGlow,
           onTap: () async {
-            final latestItem = ref.read(storageEngineProvider).getItemById(widget.item.id) ?? widget.item;
+            final latestItem = ref.read(storageEngineProvider).getItemById(_currentItem.id) ?? _currentItem;
             final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
             updatedMeta['isProject'] = !isProject;
             final updatedItem = latestItem.copyWith(metadata: updatedMeta);
@@ -1095,7 +1145,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   
   void _showExpandIdeaSheet() async {
     final expansionController = TextEditingController(
-      text: widget.item.metadata?['expansion'] as String? ?? '',
+      text: _currentItem.metadata?['expansion'] as String? ?? '',
     );
     await showModalBottomSheet(
       context: context,
@@ -1120,7 +1170,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                 borderRadius: BorderRadius.circular(HermesRadius.sm),
                 border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
               ),
-              child: Text(widget.item.content, style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary), maxLines: 5, overflow: TextOverflow.ellipsis),
+              child: Text(_currentItem.content, style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary), maxLines: 5, overflow: TextOverflow.ellipsis),
             ),
             const SizedBox(height: HermesSpacing.md),
             TextField(
@@ -1151,11 +1201,11 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       ),
     );
     
-    final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+    final updatedMeta = Map<String, dynamic>.from(_currentItem.metadata ?? {});
     final newExpansion = expansionController.text.trim();
     if (updatedMeta['expansion'] != newExpansion) {
       updatedMeta['expansion'] = newExpansion;
-      final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+      final updatedItem = _currentItem.copyWith(metadata: updatedMeta);
       await ref.read(storageEngineProvider).saveItems([updatedItem]);
       ref.invalidate(itemsByBlockProvider(widget.block.id));
       if (mounted) {
@@ -1167,7 +1217,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   
   void _showApplicationsSheet() async {
     final storage = ref.read(storageEngineProvider);
-    final currentItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final currentItem = storage.getItemById(_currentItem.id) ?? _currentItem;
     
     final appsData = currentItem.metadata?['applications'];
     String initialText = '';
@@ -1257,7 +1307,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
         builder: (ctx, setSheetState) {
           final blocks = selectedDomainId != null ? storage.getBlocks(selectedDomainId!) : <Block>[];
           final items = selectedBlockId != null
-              ? storage.getItems(selectedBlockId!).where((i) => i.id != widget.item.id).toList()
+              ? storage.getItems(selectedBlockId!).where((i) => i.id != _currentItem.id).toList()
               : <Item>[];
           
           return Padding(
@@ -1342,7 +1392,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                           final targetItem = storage.getItemById(selectedItemId!);
                           if (targetItem == null) return;
                           
-                          final existingConnections = storage.getConnectionsForItem(widget.item.id);
+                          final existingConnections = storage.getConnectionsForItem(_currentItem.id);
                           final existing = existingConnections.where((c) => c.itemAId == selectedItemId || c.itemBId == selectedItemId).firstOrNull;
                           
                           Connection connection;
@@ -1350,14 +1400,14 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                             connection = existing;
                           } else {
                             connection = Connection(
-                              itemAId: widget.item.id,
+                              itemAId: _currentItem.id,
                               itemBId: selectedItemId!,
-                              title: '${widget.item.title} ↔ ${targetItem.title}',
+                              title: '${_currentItem.title} ↔ ${targetItem.title}',
                             );
                             await storage.saveConnection(connection);
                           }
                           
-                          ref.invalidate(itemConnectionsProvider(widget.item.id));
+                          ref.invalidate(itemConnectionsProvider(_currentItem.id));
                           ref.invalidate(itemConnectionsProvider(targetItem.id));
                           if (ctx.mounted) Navigator.pop(ctx);
                           if (mounted) {
@@ -1365,7 +1415,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                             Navigator.push(context, MaterialPageRoute(
                               builder: (_) => ConnectionDetailScreen(
                                 connection: connection,
-                                itemA: widget.item,
+                                itemA: _currentItem,
                                 itemB: targetItem,
                               ),
                             ));
@@ -1385,7 +1435,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
 
   Widget _buildObservationWorkflow() {
     final storage = ref.read(storageEngineProvider);
-    final currentItem = storage.getItemById(widget.item.id) ?? widget.item;
+    final currentItem = storage.getItemById(_currentItem.id) ?? _currentItem;
     final reasoning = currentItem.metadata?['reasoning'] as String?;
 
     return Column(
@@ -1444,7 +1494,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   
   void _showObservationReasoningSheet() {
     final reasonController = TextEditingController(
-      text: widget.item.metadata?['reasoning'] as String? ?? '',
+      text: _currentItem.metadata?['reasoning'] as String? ?? '',
     );
     showModalBottomSheet(
       context: context,
@@ -1463,9 +1513,9 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             canPop: false,
             onPopInvoked: (didPop) async {
               if (didPop) return;
-              final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+              final updatedMeta = Map<String, dynamic>.from(_currentItem.metadata ?? {});
               updatedMeta['reasoning'] = reasonController.text.trim();
-              final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+              final updatedItem = _currentItem.copyWith(metadata: updatedMeta);
               await ref.read(storageEngineProvider).saveItems([updatedItem]);
               ref.invalidate(itemsByBlockProvider(widget.block.id));
               if (ctx.mounted) Navigator.pop(ctx);
@@ -1498,7 +1548,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                 borderRadius: BorderRadius.circular(HermesRadius.sm),
                 border: Border.all(color: HermesColors.border.withValues(alpha: 0.1)),
               ),
-              child: Text(widget.item.content, style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary), maxLines: 5, overflow: TextOverflow.ellipsis),
+              child: Text(_currentItem.content, style: HermesTypography.bodySmall.copyWith(color: HermesColors.textTertiary), maxLines: 5, overflow: TextOverflow.ellipsis),
             ),
             const SizedBox(height: HermesSpacing.md),
             TextField(
@@ -1526,7 +1576,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
 
   void _showObservationPatternSheet() {
     final patternController = TextEditingController();
-    final existingPatterns = List<String>.from(widget.item.metadata?['patterns'] ?? []);
+    final existingPatterns = List<String>.from(_currentItem.metadata?['patterns'] ?? []);
     
     showModalBottomSheet(
       context: context,
@@ -1569,9 +1619,9 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                 onSubmitted: (val) async {
                   if (val.trim().isEmpty) return;
                   existingPatterns.add(val.trim());
-                  final updatedMeta = Map<String, dynamic>.from(widget.item.metadata ?? {});
+                  final updatedMeta = Map<String, dynamic>.from(_currentItem.metadata ?? {});
                   updatedMeta['patterns'] = existingPatterns;
-                  final updatedItem = widget.item.copyWith(metadata: updatedMeta);
+                  final updatedItem = _currentItem.copyWith(metadata: updatedMeta);
                   await ref.read(storageEngineProvider).saveItems([updatedItem]);
                   ref.invalidate(itemsByBlockProvider(widget.block.id));
                   patternController.clear();
@@ -1629,22 +1679,22 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
 
   Widget _buildQuestionWorkflow() {
     final storage = ref.read(storageEngineProvider);
-    final isSolved = widget.item.metadata?['isSolved'] == true;
-    final isExploration = widget.item.metadata?['situation'] != null;
+    final isSolved = _currentItem.metadata?['isSolved'] == true;
+    final isExploration = _currentItem.metadata?['situation'] != null;
     
     final answerLabel = isExploration ? 'My Thinking' : 'Your Answer';
     final reflectionLabel = isExploration ? 'Observation' : 'Your Reflection';
-    final observationPrompt = widget.item.metadata?['observation_prompt'] as String? ?? 'What did you notice or understand that you didn\'t notice before?';
+    final observationPrompt = _currentItem.metadata?['observation_prompt'] as String? ?? 'What did you notice or understand that you didn\'t notice before?';
     
-    final perspectives = widget.item.metadata?['perspectives'] as List<dynamic>?;
+    final perspectives = _currentItem.metadata?['perspectives'] as List<dynamic>?;
     final hasPerspectives = perspectives != null && perspectives.isNotEmpty;
     
     if (isSolved) {
-      final userAnswer = widget.item.metadata?['userAnswer'] as String? ?? '';
-      final officialSolution = widget.item.metadata?['officialSolution'] as String? ?? widget.item.metadata?['officialAnswer'] as String? ?? '';
-      final explanation = widget.item.metadata?['explanation'] as String? ?? '';
-      final reflection = widget.item.metadata?['questionReflection'] as String? ?? '';
-      final completedDateStr = widget.item.metadata?['completedDate'] as String? ?? widget.item.createdAt.toIso8601String();
+      final userAnswer = _currentItem.metadata?['userAnswer'] as String? ?? '';
+      final officialSolution = _currentItem.metadata?['officialSolution'] as String? ?? _currentItem.metadata?['officialAnswer'] as String? ?? '';
+      final explanation = _currentItem.metadata?['explanation'] as String? ?? '';
+      final reflection = _currentItem.metadata?['questionReflection'] as String? ?? '';
+      final completedDateStr = _currentItem.metadata?['completedDate'] as String? ?? _currentItem.createdAt.toIso8601String();
       
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1656,12 +1706,12 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
               TextButton.icon(
                 onPressed: () {
                   final storage = ref.read(storageEngineProvider);
-                  final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+                  final latestItem = storage.getItemById(_currentItem.id) ?? _currentItem;
                   final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
                   updatedMeta.remove('isSolved');
                   updatedMeta.remove('completedDate');
                   storage.saveItems([latestItem.copyWith(metadata: updatedMeta)]);
-                  ref.invalidate(itemsByBlockProvider(widget.item.blockId));
+                  ref.invalidate(itemsByBlockProvider(_currentItem.blockId));
                   if (mounted) setState(() {});
                 },
                 icon: const Icon(Icons.undo_rounded, size: 16),
@@ -1785,8 +1835,8 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
       );
     }
     
-    final officialSolution = widget.item.metadata?['officialSolution'] as String? ?? widget.item.metadata?['officialAnswer'] as String? ?? '';
-    final explanation = widget.item.metadata?['explanation'] as String? ?? '';
+    final officialSolution = _currentItem.metadata?['officialSolution'] as String? ?? _currentItem.metadata?['officialAnswer'] as String? ?? '';
+    final explanation = _currentItem.metadata?['explanation'] as String? ?? '';
     final hasOfficialAnswer = officialSolution.isNotEmpty;
     final hasNextStep = hasOfficialAnswer || isExploration; // Always allow next step for explorations
     
@@ -2025,7 +2075,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                 
                 // Save the user's answer into the item metadata
                 final storage = ref.read(storageEngineProvider);
-                final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
+                final latestItem = storage.getItemById(_currentItem.id) ?? _currentItem;
                 final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
                 final todayStr = storage.currentDate.toIso8601String();
                 updatedMeta['userAnswer'] = _answerController.text.trim();
@@ -2061,7 +2111,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   }
 
   String _getShareContent() {
-    final item = widget.item;
+    final item = _currentItem;
     final engine = ref.read(storageEngineProvider);
     final reflection = engine.getReflectionForItem(item.id);
     
