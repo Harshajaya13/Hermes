@@ -164,8 +164,9 @@ function App() {
     offset: ["start start", "end end"]
   });
 
-  // Scale from 35% to 95% as we scroll the first 250vh
-  const scale = useTransform(heroProgress, [0, 0.8], [0.35, 0.95]);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 900;
+  // Scale from 35% to 95% on desktop, but use smaller scale on mobile to prevent over-zooming
+  const scale = useTransform(heroProgress, [0, 0.8], [isMobile ? 0.45 : 0.35, isMobile ? 0.8 : 0.95]);
   // Fade out the hero text
   const opacity = useTransform(heroProgress, [0, 0.2], [1, 0]);
 
@@ -184,9 +185,9 @@ function App() {
           </motion.div>
 
           {/* Growing Phone */}
-          <motion.div style={{ scale, transformOrigin: 'center center' }}>
-            <div className="phone-frame">
-              <img src="/images/home_firsthalf.jpeg" alt="Hermes Dashboard" />
+          <motion.div style={{ scale, transformOrigin: 'center center', willChange: 'transform' }}>
+            <div className="phone-frame" style={{ transform: 'translateZ(0)' }}>
+              <img src="/images/home_firsthalf.jpeg" alt="Hermes Dashboard" loading="eager" />
             </div>
           </motion.div>
         </div>
