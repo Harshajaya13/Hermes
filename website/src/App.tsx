@@ -195,7 +195,7 @@ function App() {
             <motion.img 
               initial={{ opacity: 1 }}
               animate={{ opacity: 0 }}
-              transition={{ delay: 2.5, duration: 2.5, ease: "easeInOut" }}
+              transition={{ delay: 1.5, duration: 1.5, ease: "easeInOut" }}
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 2 }} 
               src="/images/locked.jpeg" 
               alt="Hermes Locked" 
