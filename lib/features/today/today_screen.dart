@@ -203,46 +203,51 @@ class TodayScreen extends ConsumerWidget {
 
         final todayStr = storage.currentDate.toIso8601String().substring(0, 10);
 
-        // Find all unsolved items meant for Today's Pursuit
-        final unsolvedItems = items.where((i) {
+        // Find all items that are part of the queue for Today's Pursuit
+        final queueItems = items.where((i) {
           if (i.metadata?['isDailyGoal'] != true) return false;
-          if (i.metadata?['isSolved'] == true) return false;
-
-          final skippedDates =
-              (i.metadata?['skippedDates'] as List?)?.cast<String>() ?? [];
-          final deletedDates =
-              (i.metadata?['deletedDates'] as List?)?.cast<String>() ?? [];
-          if (skippedDates.contains(todayStr) ||
-              deletedDates.contains(todayStr)) {
-            return false;
-          }
-
-          // If simulating a date before the item was even created, do not show it!
+          
           final itemDate = DateTime(i.createdAt.year, i.createdAt.month, i.createdAt.day);
           final simDate = DateTime(storage.currentDate.year, storage.currentDate.month, storage.currentDate.day);
           if (simDate.isBefore(itemDate)) return false;
 
+          final isSolved = i.metadata?['isSolved'] == true;
+          final completedDateStr = i.metadata?['completedDate'] as String? ?? '';
+          
+          // If solved on a previous day, it leaves the queue
+          if (isSolved && !completedDateStr.startsWith(todayStr)) return false;
+
           return true;
         }).toList();
 
-        // Stably sort them so the same items appear until solved
-        unsolvedItems.sort((a, b) => a.id.compareTo(b.id));
+        // Stably sort them so the queue order is deterministic
+        queueItems.sort((a, b) => a.id.compareTo(b.id));
 
         // Enforce the Daily Limit from the KnowledgeSource, and allow manual daily goals!
-        for (final item in unsolvedItems) {
+        for (final item in queueItems) {
+          final isSolved = item.metadata?['isSolved'] == true;
+          final skippedDates = (item.metadata?['skippedDates'] as List?)?.cast<String>() ?? [];
+          final deletedDates = (item.metadata?['deletedDates'] as List?)?.cast<String>() ?? [];
+          final shouldShow = !isSolved && !skippedDates.contains(todayStr) && !deletedDates.contains(todayStr);
+          
           if (item.sourceId != null) {
             final source = sourceMap[item.sourceId];
             if (source != null && source.includeInToday) {
               final limit = source.dailyLimit;
               final currentCount = sourceCounts[item.sourceId!] ?? 0;
               if (currentCount < limit) {
+                // Consume a slot whether it's shown, solved, or skipped
                 sourceCounts[item.sourceId!] = currentCount + 1;
-                dailyItems.add(MapEntry(block, item));
+                if (shouldShow) {
+                  dailyItems.add(MapEntry(block, item));
+                }
               }
             }
           } else {
-            // Manual goals that the user explicitly added to Today's Pursuit
-            dailyItems.add(MapEntry(block, item));
+            // Manual goals that the user explicitly pinned
+            if (shouldShow) {
+              dailyItems.add(MapEntry(block, item));
+            }
           }
         }
       }

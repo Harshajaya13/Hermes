@@ -79,26 +79,25 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     final currentReflection = _questionReflectionController.text;
     
     final hasChanges = currentAnswer != storedAnswer || currentReflection != storedReflection;
-    if (_hasQuestionChanges != hasChanges) {
-      setState(() => _hasQuestionChanges = hasChanges);
+    if (hasChanges) {
+      final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
+      updatedMeta['userAnswer'] = currentAnswer;
+      updatedMeta['questionReflection'] = currentReflection;
+      
+      final updatedItem = latestItem.copyWith(metadata: updatedMeta);
+      storage.saveItems([updatedItem]);
+      
+      if (!_hasQuestionChanges) {
+        setState(() => _hasQuestionChanges = true);
+      }
     }
   }
 
   void _saveQuestionChanges() {
-    final storage = ref.read(storageEngineProvider);
-    final latestItem = storage.getItemById(widget.item.id) ?? widget.item;
-    final updatedMeta = Map<String, dynamic>.from(latestItem.metadata ?? {});
-    updatedMeta['userAnswer'] = _answerController.text;
-    updatedMeta['questionReflection'] = _questionReflectionController.text;
-    
-    // Explicitly update so that erasing everything actually saves empty state
-    final updatedItem = latestItem.copyWith(metadata: updatedMeta);
-    storage.saveItems([updatedItem]);
-    
+    // Left for explicit save button click feedback
     setState(() {
       _hasQuestionChanges = false;
     });
-    
     HermesToast.show(context, 'Changes saved');
   }
 
@@ -536,6 +535,25 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     final currentItem = storage.getItemById(widget.item.id) ?? widget.item;
     
     String mdData = currentItem.content;
+    
+    final isExploration = currentItem.metadata?['situation'] != null;
+    if (isExploration) {
+      final situation = currentItem.metadata?['situation'] as String?;
+      final challenge = currentItem.metadata?['challenge'] as String?;
+      final thinkingPoints = currentItem.metadata?['thinking_points'] as List<dynamic>?;
+      
+      final parts = <String>[];
+      if (situation != null) parts.add('**Situation**\n\n$situation');
+      if (challenge != null) parts.add('---\n\n**Challenge**\n\n$challenge');
+      if (thinkingPoints != null && thinkingPoints.isNotEmpty) {
+        parts.add('---\n\n**Thinking Points**\n');
+        for (final p in thinkingPoints) {
+          parts.add('- $p');
+        }
+      }
+      mdData = parts.join('\n\n');
+    }
+    
     final titlePattern = '# ${currentItem.title}';
     if (mdData.trimLeft().startsWith(titlePattern)) {
       mdData = mdData.trimLeft().substring(titlePattern.length).trimLeft();
@@ -1596,6 +1614,14 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
   Widget _buildQuestionWorkflow() {
     final storage = ref.read(storageEngineProvider);
     final isSolved = widget.item.metadata?['isSolved'] == true;
+    final isExploration = widget.item.metadata?['situation'] != null;
+    
+    final answerLabel = isExploration ? 'My Thinking' : 'Your Answer';
+    final reflectionLabel = isExploration ? 'Observation' : 'Your Reflection';
+    final observationPrompt = widget.item.metadata?['observation_prompt'] as String? ?? 'What did you notice or understand that you didn\'t notice before?';
+    
+    final perspectives = widget.item.metadata?['perspectives'] as List<dynamic>?;
+    final hasPerspectives = perspectives != null && perspectives.isNotEmpty;
     
     if (isSolved) {
       final userAnswer = widget.item.metadata?['userAnswer'] as String? ?? '';
@@ -1610,7 +1636,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildWorkflowHeader('Resolution (Completed)'),
+              _buildWorkflowHeader(isExploration ? 'Exploration (Completed)' : 'Resolution (Completed)'),
               TextButton.icon(
                 onPressed: () {
                   final storage = ref.read(storageEngineProvider);
@@ -1629,7 +1655,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             ],
           ),
           
-          Text('Your Answer', style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
+          Text(answerLabel, style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
           const SizedBox(height: HermesSpacing.sm),
           TextField(
             controller: _answerController,
@@ -1646,7 +1672,33 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
           ),
           const SizedBox(height: HermesSpacing.xl),
           
-          if (officialSolution.isNotEmpty) ...[
+          if (isExploration && hasPerspectives) ...[
+            Text('Perspectives', style: HermesTypography.metadata.copyWith(color: HermesColors.accent)),
+            const SizedBox(height: HermesSpacing.sm),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(HermesSpacing.lg),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117),
+                borderRadius: BorderRadius.circular(HermesRadius.md),
+                border: Border.all(color: HermesColors.accent.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: perspectives.map((p) => Padding(
+                  padding: const EdgeInsets.only(bottom: HermesSpacing.md),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('• ', style: TextStyle(color: HermesColors.accent, fontSize: 18)),
+                      Expanded(child: Text(p.toString(), style: HermesTypography.body.copyWith(height: 1.6))),
+                    ],
+                  ),
+                )).toList(),
+              ),
+            ),
+            const SizedBox(height: HermesSpacing.xl),
+          ] else if (officialSolution.isNotEmpty) ...[
             Text('Official Solution', style: HermesTypography.metadata.copyWith(color: HermesColors.accent)),
             const SizedBox(height: HermesSpacing.sm),
             Container(
@@ -1673,7 +1725,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             const SizedBox(height: HermesSpacing.xl),
           ],
           
-          Text('Your Reflection', style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
+          Text(reflectionLabel, style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
           const SizedBox(height: HermesSpacing.sm),
           TextField(
             controller: _questionReflectionController,
@@ -1685,7 +1737,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
               fillColor: const Color(0xFF111111),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(HermesRadius.md), borderSide: BorderSide.none),
               contentPadding: const EdgeInsets.all(HermesSpacing.lg),
-              hintText: 'Add a reflection...',
+              hintText: isExploration ? observationPrompt : 'Add a reflection...',
               hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary),
             ),
             onChanged: (val) {},
@@ -1720,19 +1772,22 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
     final officialSolution = widget.item.metadata?['officialSolution'] as String? ?? widget.item.metadata?['officialAnswer'] as String? ?? '';
     final explanation = widget.item.metadata?['explanation'] as String? ?? '';
     final hasOfficialAnswer = officialSolution.isNotEmpty;
+    final hasNextStep = hasOfficialAnswer || isExploration; // Always allow next step for explorations
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildWorkflowHeader('Resolution'),
+        _buildWorkflowHeader(isExploration ? 'My Thinking' : 'Resolution'),
         
         // Step 0: Write your answer
         if (_questionStep == 0) ...[
-          Text(
-            'Write your answer before seeing the solution.',
-            style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6),
-          ),
-          const SizedBox(height: HermesSpacing.lg),
+          if (!isExploration) ...[
+            Text(
+              'Write your answer before seeing the solution.',
+              style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6),
+            ),
+            const SizedBox(height: HermesSpacing.lg),
+          ],
           TextField(
             controller: _answerController,
             maxLines: null,
@@ -1756,7 +1811,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             child: InkWell(
               onTap: () {
                 if (_answerController.text.trim().isNotEmpty) {
-                  setState(() => _questionStep = hasOfficialAnswer ? 1 : 3);
+                  setState(() => _questionStep = hasNextStep ? (isExploration ? 2 : 1) : 3);
                 }
               },
               borderRadius: BorderRadius.circular(HermesRadius.md),
@@ -1767,14 +1822,14 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
                   borderRadius: BorderRadius.circular(HermesRadius.md),
                   border: Border.all(color: HermesColors.border.withValues(alpha: 0.2)),
                 ),
-                child: Text(hasOfficialAnswer ? 'Validate Answer' : 'Continue to Reflection', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
+                child: Text(hasNextStep ? (isExploration ? 'Compare Perspectives' : 'Validate Answer') : (isExploration ? 'Continue to Observation' : 'Continue to Reflection'), style: HermesTypography.body.copyWith(color: HermesColors.textSecondary)),
               ),
             ),
           ),
         ],
         
-        // Step 1: Validate — confirm you're ready to see the solution
-        if (hasOfficialAnswer && _questionStep == 1) ...[
+        // Step 1: Validate — confirm you're ready to see the solution (Skipped for Explorations)
+        if (hasOfficialAnswer && !isExploration && _questionStep == 1) ...[
           Container(
             padding: const EdgeInsets.all(HermesSpacing.lg),
             decoration: BoxDecoration(
@@ -1822,8 +1877,8 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
           ),
         ],
         
-        // Step 2: Reveal Official Solution
-        if (hasOfficialAnswer && _questionStep == 2) ...[
+        // Step 2: Reveal Official Solution / Perspectives
+        if (hasNextStep && _questionStep == 2) ...[
           Container(
             padding: const EdgeInsets.all(HermesSpacing.lg),
             decoration: BoxDecoration(
@@ -1834,35 +1889,68 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Your Answer', style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
+                Text(answerLabel, style: HermesTypography.metadata.copyWith(color: HermesColors.textTertiary)),
                 const SizedBox(height: HermesSpacing.sm),
                 Text(_answerController.text.trim(), style: HermesTypography.body.copyWith(height: 1.6)),
               ],
             ),
           ),
           const SizedBox(height: HermesSpacing.xl),
-          Container(
-            padding: const EdgeInsets.all(HermesSpacing.lg),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0D1117),
-              borderRadius: BorderRadius.circular(HermesRadius.md),
-              border: Border.all(color: HermesColors.accent.withValues(alpha: 0.2)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Official Solution', style: HermesTypography.metadata.copyWith(color: HermesColors.accent)),
-                const SizedBox(height: HermesSpacing.sm),
-                Text(officialSolution, style: HermesTypography.body.copyWith(height: 1.6)),
-                if (explanation.isNotEmpty) ...[
-                  const SizedBox(height: HermesSpacing.lg),
-                  Text('Explanation', style: HermesTypography.metadata.copyWith(color: HermesColors.textSecondary)),
-                  const SizedBox(height: HermesSpacing.xs),
-                  Text(explanation, style: HermesTypography.body.copyWith(color: HermesColors.textTertiary, height: 1.5)),
+          
+          if (isExploration) ...[
+            Container(
+              padding: const EdgeInsets.all(HermesSpacing.lg),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117),
+                borderRadius: BorderRadius.circular(HermesRadius.md),
+                border: Border.all(color: HermesColors.accent.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Perspectives', style: HermesTypography.metadata.copyWith(color: HermesColors.accent)),
+                  const SizedBox(height: HermesSpacing.sm),
+                  if (hasPerspectives) 
+                    ...perspectives.map((p) => Padding(
+                      padding: const EdgeInsets.only(bottom: HermesSpacing.md),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('• ', style: TextStyle(color: HermesColors.accent, fontSize: 18)),
+                          Expanded(child: Text(p.toString(), style: HermesTypography.body.copyWith(height: 1.6))),
+                        ],
+                      ),
+                    ))
+                  else
+                    Text('No additional perspectives provided for this exploration.', style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, fontStyle: FontStyle.italic)),
                 ],
-              ],
+              ),
             ),
-          ),
+          ] else if (hasOfficialAnswer) ...[
+            Container(
+              padding: const EdgeInsets.all(HermesSpacing.lg),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117),
+                borderRadius: BorderRadius.circular(HermesRadius.md),
+                border: Border.all(color: HermesColors.accent.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Official Solution', style: HermesTypography.metadata.copyWith(color: HermesColors.accent)),
+                  const SizedBox(height: HermesSpacing.sm),
+                  Text(officialSolution, style: HermesTypography.body.copyWith(height: 1.6)),
+                  if (explanation.isNotEmpty) ...[
+                    const SizedBox(height: HermesSpacing.lg),
+                    Text('Explanation', style: HermesTypography.metadata.copyWith(color: HermesColors.textSecondary)),
+                    const SizedBox(height: HermesSpacing.xs),
+                    Text(explanation, style: HermesTypography.body.copyWith(color: HermesColors.textTertiary, height: 1.5)),
+                  ],
+                ],
+              ),
+            ),
+          ],
+          
           const SizedBox(height: HermesSpacing.xl),
           Align(
             alignment: Alignment.centerRight,
@@ -1885,12 +1973,12 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
         // Step 3: Reflection (optional) → Complete
         if (_questionStep == 3) ...[
           Text(
-            'Reflection (optional)',
+            isExploration ? 'Observation' : 'Reflection (optional)',
             style: HermesTypography.itemTitle.copyWith(fontSize: 18),
           ),
           const SizedBox(height: HermesSpacing.sm),
           Text(
-            'What did you learn from this? How can you apply it?',
+            isExploration ? observationPrompt : 'What did you learn from this? How can you apply it?',
             style: HermesTypography.body.copyWith(color: HermesColors.textSecondary, height: 1.6),
           ),
           const SizedBox(height: HermesSpacing.lg),
@@ -1900,7 +1988,7 @@ class _HermesReaderScreenState extends ConsumerState<HermesReaderScreen> {
             minLines: 3,
             style: HermesTypography.body.copyWith(fontSize: 16, height: 1.6),
             decoration: InputDecoration(
-              hintText: 'Optional: capture what changed in your understanding...',
+              hintText: isExploration ? 'Add an observation...' : 'Optional: capture what changed in your understanding...',
               hintStyle: HermesTypography.body.copyWith(color: HermesColors.textTertiary, fontSize: 16),
               filled: true,
               fillColor: const Color(0xFF111111),

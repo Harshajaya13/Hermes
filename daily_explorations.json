@@ -1,0 +1,272 @@
+[
+  {
+    "id": "prob_001",
+    "title": "The Coffee Shop Queue",
+    "situation": "You are standing in a busy coffee shop or student canteen with two parallel queues.",
+    "challenge": "Observe the two lines without moving. Try to identify the single 'bottleneck customer' in each line (e.g., someone ordering for a group, someone paying with exact change, or a slow cashier). Mentally calculate the probability that switching lines right now will actually save you time.",
+    "reflection_prompt": "What invisible costs (like transaction friction, psychological regret if the other line speeds up, or cognitive load of switching) did your probability model fail to capture?",
+    "category": "Probability & Decision Making",
+    "difficulty": 2
+  },
+  {
+    "id": "geom_001",
+    "title": "The Horizon Line Perspective",
+    "situation": "Look out a window or stand outside where you can see the horizon, or a long, flat road extending into the distance.",
+    "challenge": "Hold your finger horizontally to match the horizon. Now, tilt your head 45 degrees to the left. Observe whether the horizon line appears to rotate relative to your eyeballs, or if your brain keeps it aligned with the earth.",
+    "reflection_prompt": "How does your brain's internal visual processing engine dynamically perform matrix transformations to correct for head rotation and keep your orientation stable?",
+    "category": "Geometry & Trigonometry",
+    "difficulty": 3
+  },
+  {
+    "id": "phys_001",
+    "title": "The Carrying Efficiency",
+    "situation": "Pick up a heavy backpack, water bottle, or shoulder bag.",
+    "challenge": "Carry it in three distinct ways: pressed tightly against your chest, hanging straight down at your side with a straight arm, and held out with your elbow bent at a 90-degree angle. Note the difference in muscle fatigue in your arm, shoulder, and back.",
+    "reflection_prompt": "Since the mass of the object is constant, why does the physical effort change so dramatically? Where is the pivot point, and how does torque change the force required by your body?",
+    "category": "Physics Intuition",
+    "difficulty": 2
+  },
+  {
+    "id": "ai_model_001",
+    "title": "The Room as a Compressed Matrix",
+    "situation": "Look at the room or space you are currently sitting in.",
+    "challenge": "Divide your field of vision into a 4x4 grid. Identify which cells in the grid contain the highest amount of visual 'information' (high contrast, edges, text, movement) and which contain the lowest (flat walls, empty space).",
+    "reflection_prompt": "If an AI computer vision system wanted to compress this scene, how could it use this grid to allocate resolution and processing power dynamically?",
+    "category": "AI & Mathematical Modeling",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_eng_001",
+    "title": "The Continuous Squircle",
+    "situation": "Look closely at the corners of your smartphone, laptop screen, or monitor.",
+    "challenge": "Observe the curves of the corners. They are rarely simple 90-degree sharp angles, and often they aren't even simple circle arcs—they are 'squircles' (continuous curvature). Trace the transition from the straight edge to the curve with your eyes.",
+    "reflection_prompt": "Why did the industrial designers choose a continuous curvature (where the rate of change of the curve is smooth) over a simple circle arc? How does this affect how light reflects off the edges?",
+    "category": "Reverse Engineering",
+    "difficulty": 4
+  },
+  {
+    "id": "prob_002",
+    "title": "The Green Light Gamble",
+    "situation": "You are walking or driving and approaching a traffic light that has been green for a while.",
+    "challenge": "Estimate the probability that the light will turn yellow in the next 3 seconds. Use environmental clues to refine your guess: Are there pedestrian countdowns? Is the cross-street starting to fill with cars? How fast is the traffic flow?",
+    "reflection_prompt": "How does your brain compute this conditional probability update in real-time as you get closer to the intersection?",
+    "category": "Probability & Decision Making",
+    "difficulty": 3
+  },
+  {
+    "id": "geom_002",
+    "title": "The Projective Ellipse",
+    "situation": "Look at a circular glass, cup, or plate from an angled perspective (not directly from the top).",
+    "challenge": "Observe the shape of the rim. It is no longer a circle to your eye; it is an ellipse. Try to estimate the ratio of the minor axis (shortest diameter) to the major axis (longest diameter) based on your viewing angle.",
+    "reflection_prompt": "How does your brain know the glass is circular even though your eyes are literally receiving an ellipse? How does this projective transformation relate to 3D computer vision?",
+    "category": "Geometry & Trigonometry",
+    "difficulty": 2
+  },
+  {
+    "id": "phys_002",
+    "title": "The Hinge Leverage",
+    "situation": "Find a standard door that is slightly open.",
+    "challenge": "Try to push the door closed using one finger, but do it from three different positions: near the door handle, in the middle of the door, and exactly one inch away from the hinge. Pay attention to how much force your finger must apply in each case.",
+    "reflection_prompt": "Why does the location of your force scale the resistance? What mathematical relationship links distance from the axis of rotation to the torque generated?",
+    "category": "Physics Intuition",
+    "difficulty": 1
+  },
+  {
+    "id": "ai_model_002",
+    "title": "Human Clustering Heuristics",
+    "situation": "Look at a group of people sitting or standing in a public space (a library, park, or cafe).",
+    "challenge": "Mentally cluster these people into subgroups. What rules is your brain using to decide who belongs to which group? (e.g., physical distance, orientation, eye contact, conversation).",
+    "reflection_prompt": "If you modeled this as a K-Means clustering algorithm, how would you define the distance metric mathematically so a computer could recreate your intuitive groupings?",
+    "category": "AI & Mathematical Modeling",
+    "difficulty": 4
+  },
+  {
+    "id": "rev_eng_002",
+    "title": "The Strength of Cylinders",
+    "situation": "Hold an aluminum beverage can or look at a canned food container.",
+    "challenge": "Observe the shape. It is a cylinder with a slightly domed bottom and rounded top. Why did manufacturers choose this shape over a cuboid (which packs perfectly with zero empty space) or a sphere (which holds the most volume per surface area)?",
+    "reflection_prompt": "What structural advantages does the cylinder offer against internal pressure and external loads while maintaining decent packing efficiency?",
+    "category": "Reverse Engineering",
+    "difficulty": 3
+  },
+  {
+    "id": "prob_003",
+    "title": "The Elevator Direction Bias",
+    "situation": "You are waiting for an elevator on a high floor of a building (e.g., floor 8 of a 10-story building).",
+    "challenge": "Predict whether the next elevator that stops at your floor will be going up or down. If the building is busy and elevators are distributed randomly, explain why the elevator is statistically much more likely to be going down.",
+    "reflection_prompt": "How does your location relative to the boundaries of a system bias the direction of random walks?",
+    "category": "Probability & Decision Making",
+    "difficulty": 3
+  },
+  {
+    "id": "geom_003",
+    "title": "The Converging Parallel lines",
+    "situation": "Look down a long straight road, railway track, or hallway.",
+    "challenge": "Observe the parallel edges of the path. They appear to meet at a single point in the distance. Now look at the tiles or floorboards near your feet. At what distance does their distinct grid pattern blur into a single continuous texture?",
+    "reflection_prompt": "How does perspective compression act as a low-pass filter on spatial frequency, and how does this affect how camera sensors capture fine details?",
+    "category": "Geometry & Trigonometry",
+    "difficulty": 4
+  },
+  {
+    "id": "phys_003",
+    "title": "The Resonant Walk",
+    "situation": "Walk with a cup or mug filled with liquid close to the brim.",
+    "challenge": "Notice the frequency at which the liquid sloshes back and forth. Try to walk at a speed that matches this frequency, then try walking slightly faster or slower. Observe how the amplitude of the waves changes.",
+    "reflection_prompt": "What role does resonance play in spills? How does your body naturally adjust its walking cadence to act as an active dampening system?",
+    "category": "Physics Intuition",
+    "difficulty": 3
+  },
+  {
+    "id": "ai_model_003",
+    "title": "The Food Court Queueing Network",
+    "situation": "Observe a busy environment with multiple queues (like a food court, post office, or security check).",
+    "challenge": "Model the flow of people as a queueing network. Identify the arrival rate of people and the service rate of the cashiers. Where is the bottleneck, and how does a small delay there cascade through the entire system?",
+    "reflection_prompt": "If you had to design a routing algorithm to balance the load between cashiers without any communication between them, how would you do it?",
+    "category": "AI & Mathematical Modeling",
+    "difficulty": 4
+  },
+  {
+    "id": "rev_eng_003",
+    "title": "The Banked Highway Curve",
+    "situation": "Observe a curved road, highway off-ramp, or a running track.",
+    "challenge": "Look at the slope of the curve. Notice how it is tilted inward (banked) rather than being flat. Try to visualize the forces acting on a vehicle as it rounds this curve.",
+    "reflection_prompt": "How does the angle of the slope convert the normal force of the ground into centripetal acceleration? What happens if a car travels much faster or slower than the designed speed limit for that bank?",
+    "category": "Reverse Engineering",
+    "difficulty": 3
+  },
+  {
+    "id": "prob_004",
+    "title": "The Umbrella Utility Function",
+    "situation": "Check the weather forecast, which shows a 30% chance of rain today.",
+    "challenge": "You must decide whether to carry a heavy, inconvenient umbrella. Assign a negative score to getting wet (ruined clothes) and a negative score to carrying the umbrella. Estimate your personal utility of carrying vs not carrying it.",
+    "reflection_prompt": "Why do humans often make highly risk-averse decisions even when the expected mathematical value favors taking a risk?",
+    "category": "Probability & Decision Making",
+    "difficulty": 2
+  },
+  {
+    "id": "geom_004",
+    "title": "The Puddle Viewport",
+    "situation": "Observe a puddle of water on the ground reflecting the sky, a building, or a tree.",
+    "challenge": "Stand directly over the puddle, then take five steps back. Watch how the reflection changes. Try to identify which part of the reflected object becomes visible as you move away.",
+    "reflection_prompt": "How does the flat plane of the puddle act as a mirror that maps 3D coordinate space to a 2D viewport? What mathematical variables define the puddle's field of view?",
+    "category": "Geometry & Trigonometry",
+    "difficulty": 3
+  },
+  {
+    "id": "phys_004",
+    "title": "The Leg Pendulum",
+    "situation": "Pay attention to your legs as you take a normal, relaxed walk.",
+    "challenge": "Let your leg swing naturally forward without using muscular force to push it. Feel the rhythm and timing of this swing.",
+    "reflection_prompt": "How does the length of your leg act like a natural pendulum? How does your body naturally tune your walking speed to the resonant frequency of your legs to minimize energy consumption?",
+    "category": "Physics Intuition",
+    "difficulty": 3
+  },
+  {
+    "id": "ai_model_004",
+    "title": "Vector Embeddings on a Shelf",
+    "situation": "Look at a bookshelf, grocery shelf, or pharmacy aisle.",
+    "challenge": "Observe how the items are organized. If you had to define a vector space where each product's position is an embedding, which spatial dimensions (X, Y, Z) correspond to semantic characteristics (e.g., price, category, flavor)?",
+    "reflection_prompt": "How does physical product placement mimic the vector embeddings used in recommendation algorithms like collaborative filtering?",
+    "category": "AI & Mathematical Modeling",
+    "difficulty": 4
+  },
+  {
+    "id": "rev_eng_004",
+    "title": "The Hexagonal Cardboard Core",
+    "situation": "Examine a piece of cardboard packaging or lightweight structural panel.",
+    "challenge": "Look at the internal structure between the flat sheets. It is often a wave pattern or a hexagonal honeycomb pattern. Observe the geometry from different angles.",
+    "reflection_prompt": "Why are hexagons the optimal shape for tiling a flat plane? How does this geometry maximize strength-to-weight ratio and minimize material usage?",
+    "category": "Reverse Engineering",
+    "difficulty": 3
+  },
+  {
+    "id": "prob_005",
+    "title": "The Streak Fallacy",
+    "situation": "You hit three red traffic lights in a row on your way home.",
+    "challenge": "Estimate the likelihood of this happening purely by chance, assuming each light has a independent 50% probability of being red. Is it a coordinated timing system, or just random noise?",
+    "reflection_prompt": "Why does the human brain struggle to accept that random processes naturally produce clusters and streaks, often leading to the Gambler's Fallacy?",
+    "category": "Probability & Decision Making",
+    "difficulty": 3
+  },
+  {
+    "id": "geom_005",
+    "title": "The Shadow Stretching Acceleration",
+    "situation": "Walk past a single street lamp at night and watch your shadow on the ground.",
+    "challenge": "Observe how your shadow starts short, elongates rapidly as you walk away, and then fades. Try to pinpoint the exact moment when the speed of the shadow's growth is at its maximum.",
+    "reflection_prompt": "Why does the non-linear relationship between your distance from the lamp and the angle of light create a sudden acceleration in the length of the shadow?",
+    "category": "Geometry & Trigonometry",
+    "difficulty": 4
+  },
+  {
+    "id": "phys_005",
+    "title": "The Friction Transition",
+    "situation": "Try to slide a heavy mug, book, or laptop across a table by pushing it very gently with one finger.",
+    "challenge": "Gradually increase your force until the object starts moving. Pay close attention to the exact micro-second the object breaks free. Does it feel like it requires more force to start moving than it does to keep moving?",
+    "reflection_prompt": "What is happening at the microscopic interface of the two surfaces to make static friction higher than kinetic friction?",
+    "category": "Physics Intuition",
+    "difficulty": 2
+  },
+  {
+    "id": "ai_model_005",
+    "title": "The Crowd Vector Field",
+    "situation": "Observe a crowd of people dispersing from a room, exiting a bus, or walking through a bottleneck.",
+    "challenge": "Visualize the crowd as a vector field, where each person is a vector with a speed and a direction. Where are the points of divergence? Where is the gradient steepest?",
+    "reflection_prompt": "How does a physical bottleneck create a mathematical singularity in this vector field? How can fluid dynamics equations be adapted to model human movement?",
+    "category": "AI & Mathematical Modeling",
+    "difficulty": 4
+  },
+  {
+    "id": "rev_eng_005",
+    "title": "Plastic Bottle Ribs",
+    "situation": "Hold a plastic water bottle or soda bottle.",
+    "challenge": "Observe the ridges, rings, and indentations along its sides. Why is the bottle designed with these horizontal ridges instead of being a completely smooth, thin cylinder?",
+    "reflection_prompt": "How do these ridges act as structural stiffeners to prevent buckling under vertical load (during shipping) while allowing the use of extremely thin, lightweight plastic?",
+    "category": "Reverse Engineering",
+    "difficulty": 2
+  },
+  {
+    "id": "prob_006",
+    "title": "The Left-Digit Bias",
+    "situation": "Look at prices on menus, online stores, or grocery labels (e.g., $4.99, $19.95).",
+    "challenge": "Observe your immediate emotional response to these prices. Even knowing the math, why does your brain register the price as significantly lower than the rounded dollar amount?",
+    "reflection_prompt": "How does the brain use heuristics to process numerical values under cognitive load, and how does this bias mathematical decision-making?",
+    "category": "Probability & Decision Making",
+    "difficulty": 1
+  },
+  {
+    "id": "geom_006",
+    "title": "The Web Polar Grid",
+    "situation": "Find a spiderweb or observe a web pattern on a window or fence.",
+    "challenge": "Observe the structure. Notice the straight lines radiating outward from the center, and the concentric spiral/circular threads connecting them. Pay attention to the angles between the radiating lines.",
+    "reflection_prompt": "How does this polar grid structure distribute tension and minimize the chance of localized failure when a flying insect impacts the web?",
+    "category": "Geometry & Trigonometry",
+    "difficulty": 3
+  },
+  {
+    "id": "phys_006",
+    "title": "The Tea Leaf Paradox",
+    "situation": "Stir a cup of tea or coffee containing small tea leaves, bubbles, or suspended particles in a circular motion.",
+    "challenge": "Vigorously stir the liquid, then remove the spoon and watch the particles. Instead of being thrown to the outside edge by centrifugal force, observe where they accumulate as the liquid slows down.",
+    "reflection_prompt": "Why do the particles cluster at the center of the cup? How does the boundary layer friction at the bottom of the cup create a secondary flow that overrides centrifugal force?",
+    "category": "Physics Intuition",
+    "difficulty": 4
+  },
+  {
+    "id": "ai_model_006",
+    "title": "Ordering Food Decision Tree",
+    "situation": "Watch someone order food or make a menu selection.",
+    "challenge": "Map their decision-making process as a Decision Tree. What is the root node (e.g., price, diet, cuisine)? Which features yield the highest information gain?",
+    "reflection_prompt": "How does the human brain prune search trees in real-time to avoid decision paralysis when faced with dozens of choices?",
+    "category": "AI & Mathematical Modeling",
+    "difficulty": 3
+  },
+  {
+    "id": "rev_eng_006",
+    "title": "The Helical Lightbulb",
+    "situation": "Look at a fluorescent CFL bulb or the filament inside a clear incandescent bulb.",
+    "challenge": "Observe the spiral/helical shapes of the glass tubes or wire filaments. Why are they coiled instead of being straight lines?",
+    "reflection_prompt": "How does coiling maximize surface area or emitter length within a compact volume while reducing thermal loss to the surrounding environment?",
+    "category": "Reverse Engineering",
+    "difficulty": 3
+  }
+]

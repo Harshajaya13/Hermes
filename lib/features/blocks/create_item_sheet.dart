@@ -92,7 +92,7 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
 
     if (widget.isDailyGoal && widget.existingItem == null) {
       final allItems = ref.read(storageEngineProvider).getAllItemsRaw();
-      final dailyGoalCount = allItems.where((i) => i.metadata?['isDailyGoal'] == true && i.metadata?['isSolved'] != true).length;
+      final dailyGoalCount = allItems.where((i) => i.metadata?['isDailyGoal'] == true && i.metadata?['isSolved'] != true && i.sourceId == null).length;
       if (dailyGoalCount >= 20) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

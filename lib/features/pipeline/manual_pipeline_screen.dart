@@ -216,11 +216,25 @@ class ManualPipelineScreen extends ConsumerWidget {
         
         final parsedData = <Map<String, dynamic>>[];
         for (final item in decoded) {
-          if (item['title'] == null || item['content'] == null) throw Exception('Missing required fields.');
+          if (item['title'] == null) throw Exception('Missing required "title" field.');
+          
+          final hasContent = item['content'] != null && item['content'].toString().trim().isNotEmpty;
+          final hasSituation = item['situation'] != null && item['situation'].toString().trim().isNotEmpty;
+          final hasChallenge = item['challenge'] != null && item['challenge'].toString().trim().isNotEmpty;
+
+          if (!hasContent && !(hasSituation && hasChallenge)) {
+            throw Exception('Missing required "content" field (or "situation" and "challenge").');
+          }
+
           parsedData.add({
             'title': item['title'].toString().trim(),
-            'content': item['content'].toString().trim(),
+            'content': item['content']?.toString().trim() ?? '',
             'sourceUrl': item['sourceUrl']?.toString().trim(),
+            'situation': item['situation']?.toString().trim(),
+            'challenge': item['challenge']?.toString().trim(),
+            'thinking_points': item['thinking_points'],
+            'perspectives': item['perspectives'],
+            'observation_prompt': (item['observation_prompt'] ?? item['reflection_prompt'])?.toString().trim(),
           });
         }
         
@@ -242,6 +256,11 @@ class ManualPipelineScreen extends ConsumerWidget {
           sourceUrl: data['sourceUrl'],
           metadata: {
             'isDailyGoal': source.includeInToday,
+            if (data['situation'] != null) 'situation': data['situation'],
+            if (data['challenge'] != null) 'challenge': data['challenge'],
+            if (data['thinking_points'] != null) 'thinking_points': data['thinking_points'],
+            if (data['perspectives'] != null) 'perspectives': data['perspectives'],
+            if (data['observation_prompt'] != null) 'observation_prompt': data['observation_prompt'],
           },
         )).toList();
         

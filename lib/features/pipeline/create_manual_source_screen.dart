@@ -95,8 +95,12 @@ class _CreateManualSourceScreenState extends ConsumerState<CreateManualSourceScr
           setState(() => _validationError = 'Item at index $i is missing a required "title" field.');
           return;
         }
-        if (item['content'] == null || item['content'].toString().trim().isEmpty) {
-          setState(() => _validationError = 'Item at index $i is missing a required "content" field.');
+        final hasContent = item['content'] != null && item['content'].toString().trim().isNotEmpty;
+        final hasSituation = item['situation'] != null && item['situation'].toString().trim().isNotEmpty;
+        final hasChallenge = item['challenge'] != null && item['challenge'].toString().trim().isNotEmpty;
+
+        if (!hasContent && !(hasSituation && hasChallenge)) {
+          setState(() => _validationError = 'Item at index $i is missing a required "content" field (or "situation" and "challenge" for explorations).');
           return;
         }
         
@@ -108,8 +112,13 @@ class _CreateManualSourceScreenState extends ConsumerState<CreateManualSourceScr
         
         _parsedData.add({
           'title': item['title'].toString().trim(),
-          'content': item['content'].toString().trim(),
+          'content': item['content']?.toString().trim() ?? '',
           'sourceUrl': sourceUrl,
+          'situation': item['situation']?.toString().trim(),
+          'challenge': item['challenge']?.toString().trim(),
+          'thinking_points': item['thinking_points'],
+          'perspectives': item['perspectives'],
+          'observation_prompt': (item['observation_prompt'] ?? item['reflection_prompt'])?.toString().trim(),
         });
       }
       
@@ -151,6 +160,11 @@ class _CreateManualSourceScreenState extends ConsumerState<CreateManualSourceScr
       sourceUrl: data['sourceUrl'],
       metadata: {
         'isDailyGoal': _includeInToday,
+        if (data['situation'] != null) 'situation': data['situation'],
+        if (data['challenge'] != null) 'challenge': data['challenge'],
+        if (data['thinking_points'] != null) 'thinking_points': data['thinking_points'],
+        if (data['perspectives'] != null) 'perspectives': data['perspectives'],
+        if (data['observation_prompt'] != null) 'observation_prompt': data['observation_prompt'],
       },
     )).toList();
     
