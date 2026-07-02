@@ -191,8 +191,22 @@ function App() {
             <p className="t-section" style={{ color: 'var(--text-secondary)' }}>The Personal Development Operating System.</p>
           </div>
           
-          <div className="phone-frame" style={{ transform: 'translateZ(0)' }}>
-            <img src="/images/unlocking.jpeg" alt="Hermes Dashboard" loading="eager" />
+          <div className="phone-frame" style={{ transform: 'translateZ(0)', position: 'relative' }}>
+            <motion.img 
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 0 }}
+              transition={{ delay: 2.5, duration: 2.5, ease: "easeInOut" }}
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 2 }} 
+              src="/images/locked.jpeg" 
+              alt="Hermes Locked" 
+              loading="eager" 
+            />
+            <img 
+              style={{ width: '100%', height: '100%' }} 
+              src="/images/unlocking.jpeg" 
+              alt="Hermes Unlocking" 
+              loading="eager" 
+            />
           </div>
         </div>
       ) : (
