@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence, useSpring } from 'framer-motion';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { STORY_SECTIONS } from './data';
@@ -159,39 +159,72 @@ function StoryBlock({ item }: { item: any }) {
 
 function App() {
   const heroRef = useRef(null);
-  const { scrollYProgress: heroProgress } = useScroll({
+  const { scrollYProgress: rawHeroProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end end"]
   });
 
+  // Apply Apple-like physics to the scroll animation so it feels smooth like butter
+  const heroProgress = useSpring(rawHeroProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 900;
-  // Scale from 35% to 95% on desktop, but use smaller scale on mobile to prevent over-zooming
-  const scale = useTransform(heroProgress, [0, 0.8], [isMobile ? 0.45 : 0.35, isMobile ? 0.8 : 0.95]);
+  // Scale from 35% to 95% on desktop
+  const scale = useTransform(heroProgress, [0, 0.8], [0.35, 0.95]);
   // Fade out the hero text
   const opacity = useTransform(heroProgress, [0, 0.2], [1, 0]);
-
-
+  
+  // Crossfade between locked and unlocking on desktop
+  const lockedOpacity = useTransform(heroProgress, [0.3, 0.5], [1, 0]);
+  const unlockingOpacity = useTransform(heroProgress, [0.3, 0.5], [0, 1]);
 
   return (
     <div>
       {/* Hero Intro - Cinematic Scale */}
-      <div ref={heroRef} style={{ height: '250vh' }}>
-        <div style={{ position: 'sticky', top: 0, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          
-          {/* Hero Text */}
-          <motion.div style={{ position: 'absolute', opacity, textAlign: 'center', zIndex: 10 }}>
-            <h1 className="t-hero gradient-text" style={{ marginBottom: '40px' }}>Hermes OS</h1>
+      {isMobile ? (
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '60px 20px', gap: '40px' }}>
+          <div style={{ textAlign: 'center', zIndex: 10 }}>
+            <h1 className="t-hero gradient-text" style={{ marginBottom: '20px' }}>Hermes OS</h1>
             <p className="t-section" style={{ color: 'var(--text-secondary)' }}>The Personal Development Operating System.</p>
-          </motion.div>
-
-          {/* Growing Phone */}
-          <motion.div style={{ scale, transformOrigin: 'center center', willChange: 'transform' }}>
-            <div className="phone-frame" style={{ transform: 'translateZ(0)' }}>
-              <img src="/images/home_firsthalf.jpeg" alt="Hermes Dashboard" loading="eager" />
-            </div>
-          </motion.div>
+          </div>
+          
+          <div className="phone-frame" style={{ transform: 'translateZ(0)' }}>
+            <img src="/images/unlocking.jpeg" alt="Hermes Dashboard" loading="eager" />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div ref={heroRef} style={{ height: '250vh' }}>
+          <div style={{ position: 'sticky', top: 0, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            
+            {/* Hero Text */}
+            <motion.div style={{ position: 'absolute', opacity, textAlign: 'center', zIndex: 10 }}>
+              <h1 className="t-hero gradient-text" style={{ marginBottom: '40px' }}>Hermes OS</h1>
+              <p className="t-section" style={{ color: 'var(--text-secondary)' }}>The Personal Development Operating System.</p>
+            </motion.div>
+
+            {/* Growing Phone */}
+            <motion.div style={{ scale, transformOrigin: 'center center', willChange: 'transform' }}>
+              <div className="phone-frame" style={{ transform: 'translateZ(0)', position: 'relative' }}>
+                <motion.img 
+                  style={{ opacity: lockedOpacity, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} 
+                  src="/images/locked.jpeg" 
+                  alt="Hermes Locked" 
+                  loading="eager" 
+                />
+                <motion.img 
+                  style={{ opacity: unlockingOpacity, width: '100%', height: '100%' }} 
+                  src="/images/unlocking.jpeg" 
+                  alt="Hermes Unlocking" 
+                  loading="eager" 
+                />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      )}
 
       {/* Story Sequence (Vertical Apple-style Layout) */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '100px' }}>
